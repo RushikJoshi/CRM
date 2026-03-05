@@ -1,0 +1,145 @@
+const Company = require("../models/Company");
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { seedMasterDataForCompany } = require("../utils/masterSeeder");
+
+// ============================
+// REGISTER COMPANY + ADMIN
+// ============================
+exports.registerCompany = async (req, res) => {
+  try {
+    const { companyName, adminName, email, phone, password } = req.body;
+
+    // Validation
+    if (!companyName || !adminName || !email || !password) {
+      return res.status(400).json({
+        message: "All required fields must be provided"
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Email already registered"
+      });
+    }
+
+    // Create company
+    const company = await Company.create({
+      name: companyName,
+      email,
+      phone: phone || ""
+    });
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create admin user
+    const user = await User.create({
+      name: adminName,
+      email,
+      password: hashedPassword,
+      role: "company_admin",
+      companyId: company._id
+    });
+
+    // Seed Master Data for new company
+    await seedMasterDataForCompany(company._id, user._id);
+
+    res.status(201).json({
+      message: "Company Registered Successfully",
+      company,
+      user
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+// ============================
+// LOGIN
+// ============================
+// exports.createSuperAdmin = async (req, res) => {
+//   try {
+//     const bcrypt = require("bcryptjs");
+//     const User = require("../models/User");
+
+//     const hashedPassword = await bcrypt.hash("123456", 10);
+
+//     const user = await User.create({
+//       name: "Super Admin",
+//       email: "super@admin.com",
+//       password: hashedPassword,
+//       role: "super_admin",
+//       companyId: null
+//     });
+
+//     res.json({ message: "Super Admin Created", user });
+
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required"
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found"
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Invalid password"
+      });
+    }
+
+    if (user.status !== "active") {
+      return res.status(403).json({
+        message: "Your account is inactive. Please contact your administrator."
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+        companyId: user.companyId,
+        branchId: user.branchId || null
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Login Successful",
+      token,
+      user
+    });
+
+    // Auto-seed if missing during login
+    if (user.companyId) {
+      seedMasterDataForCompany(user.companyId, user._id).catch(err => console.error("Login Seeding Fail:", err));
+    }
+
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
