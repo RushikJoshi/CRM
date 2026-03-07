@@ -1,23 +1,18 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { ROLE_HOME } from "../context/AuthContext";
+import { getSessionKeyForPath, readSession } from "../context/AuthContext";
 
 /**
- * SessionGuard — wraps all protected routes.
- * Verifies token AND user exist; redirects to login if either is missing.
+ * SessionGuard — checks the path-isolated session for the current panel.
+ * If no valid session exists → redirect to /login.
+ * This replaces the old single-key approach and eliminates cross-tab contamination.
  */
 const SessionGuard = ({ children }) => {
-    const token = localStorage.getItem("token");
-    let user = null;
-    try {
-        user = JSON.parse(localStorage.getItem("user") || "null");
-    } catch {
-        localStorage.clear();
-        return <Navigate to="/" replace />;
-    }
+    const { pathname } = useLocation();
+    const key = getSessionKeyForPath(pathname);
+    const session = readSession(key);
 
-    if (!token || !user || !user.role) {
-        localStorage.clear();
-        return <Navigate to="/" replace />;
+    if (!session?.token || !session?.user?.role) {
+        return <Navigate to="/login" replace />;
     }
 
     return children;

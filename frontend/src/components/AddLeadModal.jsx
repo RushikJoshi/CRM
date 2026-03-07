@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiX, FiUser, FiPhone, FiMail, FiBriefcase, FiFlag, FiLayers } from "react-icons/fi";
-import API from "../services/api";
+import { FiX, FiUser, FiMail, FiPhone, FiPlus, FiGlobe, FiMessageSquare, FiBriefcase, FiFlag, FiTrendingUp, FiTarget } from "react-icons/fi";
 
 const AddLeadModal = ({ isOpen, onClose, onSubmit, editingData }) => {
     const [formData, setFormData] = useState({
@@ -8,92 +7,50 @@ const AddLeadModal = ({ isOpen, onClose, onSubmit, editingData }) => {
         email: "",
         phone: "",
         companyName: "",
+        industry: "",
+        status: "new",
+        source: "Manual",
         value: 0,
-        source: "Website",
-        status: "New",
         priority: "medium",
-        assignedTo: "",
-        companyId: "",
-        branchId: "",
-        industry: ""
+        notes: ""
     });
 
-    const [companies, setCompanies] = useState([]);
-    const [branches, setBranches] = useState([]);
-    const [users, setUsers] = useState([]);
-    const [masterStatuses, setMasterStatuses] = useState([]);
-    const [masterSources, setMasterSources] = useState([]);
-    const [masterIndustries, setMasterIndustries] = useState([]);
-
     useEffect(() => {
-        if (isOpen) {
-            fetchCompanies();
-            fetchMasterData();
-            if (editingData) {
-                setFormData({
-                    ...editingData,
-                    companyId: editingData.companyId?._id || editingData.companyId || "",
-                    branchId: editingData.branchId?._id || editingData.branchId || "",
-                    assignedTo: editingData.assignedTo?._id || editingData.assignedTo || "",
-                    status: editingData.status?._id || editingData.status || "New",
-                    source: editingData.source?._id || editingData.source || "Website",
-                    industry: editingData.industry?._id || editingData.industry || ""
-                });
-            } else {
-                setFormData({ name: "", email: "", phone: "", companyName: "", value: 0, source: "", status: "", priority: "medium", assignedTo: "", companyId: "", branchId: "", industry: "" });
-            }
-        }
-    }, [isOpen, editingData]);
-
-    useEffect(() => {
-        if (formData.companyId) {
-            fetchBranches(formData.companyId);
-            fetchUsers(formData.companyId);
+        if (editingData) {
+            setFormData({
+                name: editingData.name || "",
+                email: editingData.email || "",
+                phone: editingData.phone || "",
+                companyName: editingData.companyName || "",
+                industry: editingData.industry || "",
+                status: editingData.status || "new",
+                source: editingData.source || "Manual",
+                value: editingData.value || 0,
+                priority: editingData.priority || "medium",
+                notes: editingData.notes || ""
+            });
         } else {
-            setBranches([]);
-            setUsers([]);
+            setFormData({
+                name: "",
+                email: "",
+                phone: "",
+                companyName: "",
+                industry: "",
+                status: "new",
+                source: "Manual",
+                value: 0,
+                priority: "medium",
+                notes: ""
+            });
         }
-    }, [formData.companyId]);
-
-    const fetchBranches = async (cid) => {
-        try {
-            const res = await API.get(`/super-admin/branches?companyId=${cid}`);
-            setBranches(res.data.branches || []);
-        } catch (err) { console.error(err); }
-    };
-
-    const fetchMasterData = async () => {
-        try {
-            const [statusRes, sourceRes, industryRes] = await Promise.all([
-                API.get("/master?type=lead_status"),
-                API.get("/master?type=lead_source"),
-                API.get("/master?type=industry")
-            ]);
-            setMasterStatuses(statusRes.data.data || []);
-            setMasterSources(sourceRes.data.data || []);
-            setMasterIndustries(industryRes.data.data || []);
-        } catch (err) { console.error(err); }
-    };
-
-    const fetchCompanies = async () => {
-        try {
-            const res = await API.get("/super-admin/companies");
-            setCompanies(res.data.companies || []);
-        } catch (err) { console.error(err); }
-    };
-
-    const fetchUsers = async (cid) => {
-        try {
-            const res = await API.get(`/super-admin/users?companyId=${cid}`);
-            setUsers(res.data || []);
-        } catch (err) { console.error(err); }
-    };
+    }, [editingData, isOpen]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleFormSubmit = (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(formData);
     };
@@ -101,96 +58,197 @@ const AddLeadModal = ({ isOpen, onClose, onSubmit, editingData }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 border border-gray-100">
-                <div className="px-10 py-8 text-center border-b border-gray-50 relative bg-green-50/30">
-                    <button onClick={onClose} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-xl transition-all active:scale-90 shadow-sm border border-transparent hover:border-gray-100">
-                        <FiX size={20} />
-                    </button>
-                    <div className="w-16 h-16 bg-green-100/50 rounded-2xl flex items-center justify-center text-green-600 font-black mx-auto mb-6 shadow-inner ring-4 ring-green-50 ring-offset-2">
-                        <FiFlag size={28} strokeWidth={2.5} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-300">
+                {/* Header */}
+                <div className="px-8 py-6 bg-gradient-to-r from-green-50 to-white flex items-center justify-between border-b border-gray-50">
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                            {editingData ? "Refine Lead Profile" : "Initialize Lead Record"}
+                        </h2>
+                        <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-1">
+                            {editingData ? "Market Asset Modernization" : "Strategic Acquisition Entry"}
+                        </p>
                     </div>
-                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-                        {editingData ? "Refine Prospect Intelligence" : "Market Inbound Deployment"}
-                    </h2>
-                    <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mt-2">Jurisdictional Prospect Synchronization</p>
+                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                        <FiX size={24} />
+                    </button>
                 </div>
 
-                <form onSubmit={handleFormSubmit} className="px-10 py-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-                        <div className="space-y-5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Primary Identity</label>
+                <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        {/* Name */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Prospect Identity *</label>
                             <div className="relative group">
-                                <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-green-500 transition-colors" />
-                                <input name="name" required value={formData.name} onChange={handleChange} placeholder="Full Legal Name..." className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm" />
-                            </div>
-                            <div className="relative group">
-                                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-green-500 transition-colors" />
-                                <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Communication Route (Email)..." className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm" />
-                            </div>
-                            <div className="relative group">
-                                <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-green-500 transition-colors" />
-                                <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Contact Terminal (Phone)..." className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm" />
-                            </div>
-                        </div>
-
-                        <div className="space-y-5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Firmographics & Value</label>
-                            <div className="relative group">
-                                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-green-500 transition-colors" />
-                                <input name="companyName" value={formData.companyName} onChange={handleChange} placeholder="Corporate Entity Name..." className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm" />
-                            </div>
-                            <div className="relative group">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 font-black group-focus-within:text-green-500 transition-colors">₹</span>
-                                <input name="value" type="number" value={formData.value} onChange={handleChange} placeholder="Projected Capital Value..." className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm" />
-                            </div>
-                            <div className="relative group">
-                                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none group-focus-within:text-green-500 transition-colors" />
-                                <select name="source" value={formData.source} onChange={handleChange} className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-black text-gray-700 text-sm appearance-none shadow-sm cursor-pointer">
-                                    <option value="">Origin Source...</option>
-                                    {masterSources.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
-                                </select>
-                            </div>
-                            <div className="relative group">
-                                <FiLayers className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none group-focus-within:text-green-500 transition-colors" />
-                                <select name="industry" value={formData.industry} onChange={handleChange} className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-black text-gray-700 text-sm appearance-none shadow-sm cursor-pointer">
-                                    <option value="">Select Industry...</option>
-                                    {masterIndustries.map(i => <option key={i._id} value={i.name}>{i.name}</option>)}
-                                </select>
+                                <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                                <input
+                                    required
+                                    name="name"
+                                    type="text"
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 text-sm"
+                                    placeholder="Enter full name..."
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                />
                             </div>
                         </div>
 
-                        <div className="space-y-5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Structural & Status</label>
+                        {/* Email */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Communication Terminal (Email)</label>
                             <div className="relative group">
-                                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none group-focus-within:text-green-500 transition-colors" />
-                                <select name="companyId" required value={formData.companyId} onChange={handleChange} className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-black text-gray-700 text-sm appearance-none shadow-sm cursor-pointer">
-                                    <option value="">Target Enterprise...</option>
-                                    {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                                </select>
+                                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                                <input
+                                    name="email"
+                                    type="email"
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 text-sm"
+                                    placeholder="prospect@network.io"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                />
                             </div>
+                        </div>
+
+                        {/* Phone */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Direct Dial Access</label>
                             <div className="relative group">
-                                <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none group-focus-within:text-green-500 transition-colors" />
-                                <select name="assignedTo" value={formData.assignedTo} onChange={handleChange} className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-black text-gray-700 text-sm appearance-none shadow-sm cursor-pointer">
-                                    <option value="">Assign Overseer...</option>
-                                    {users.map(u => <option key={u._id} value={u._id}>{u.name} ({u.role})</option>)}
-                                </select>
+                                <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                                <input
+                                    name="phone"
+                                    type="tel"
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 text-sm"
+                                    placeholder="+00 (000) 000-0000"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                />
                             </div>
+                        </div>
+
+                        {/* Company */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Organizational Entity</label>
                             <div className="relative group">
-                                <FiFlag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none group-focus-within:text-green-500 transition-colors" />
-                                <select name="status" value={formData.status} onChange={handleChange} className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-black text-gray-700 text-sm appearance-none shadow-sm cursor-pointer">
-                                    <option value="">Pipeline Status...</option>
-                                    {masterStatuses.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
+                                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                                <input
+                                    name="companyName"
+                                    type="text"
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 text-sm"
+                                    placeholder="Entity Name Ltd."
+                                    value={formData.companyName}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Status */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Pipeline Phase</label>
+                            <div className="relative group">
+                                <FiFlag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors z-10" />
+                                <select
+                                    name="status"
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 text-sm appearance-none cursor-pointer"
+                                    value={formData.status}
+                                    onChange={handleChange}
+                                >
+                                    <option value="new">New Inbound</option>
+                                    <option value="contacted">Phase: Contacted</option>
+                                    <option value="qualified">Phase: Qualified</option>
+                                    <option value="proposal">Phase: Proposal</option>
+                                    <option value="closed">Phase: Archive/Closed</option>
                                 </select>
                             </div>
                         </div>
 
+                        {/* Priority */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Impact Priority</label>
+                            <div className="relative group">
+                                <FiTarget className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors z-10" />
+                                <select
+                                    name="priority"
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 text-sm appearance-none cursor-pointer"
+                                    value={formData.priority}
+                                    onChange={handleChange}
+                                >
+                                    <option value="low">Low Impact</option>
+                                    <option value="medium">Medium Priority</option>
+                                    <option value="high">Critical / High</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Value */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Estimated Asset Value (₹)</label>
+                            <div className="relative group">
+                                <FiTrendingUp className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                                <input
+                                    name="value"
+                                    type="number"
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 text-sm"
+                                    placeholder="0.00"
+                                    value={formData.value}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Source */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Acquisition Source</label>
+                            <div className="relative group">
+                                <FiGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors z-10" />
+                                <select
+                                    name="source"
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 text-sm appearance-none cursor-pointer"
+                                    value={formData.source}
+                                    onChange={handleChange}
+                                >
+                                    <option value="Manual">Manual Entry</option>
+                                    <option value="Website">Global Website</option>
+                                    <option value="Referral">Network Referral</option>
+                                    <option value="Social Media">Social Intelligence</option>
+                                    <option value="Partner">Business Partner</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="pt-10 flex gap-4">
-                        <button type="button" onClick={onClose} className="flex-1 py-4 bg-gray-50 text-gray-400 font-black rounded-xl text-xs uppercase tracking-widest hover:text-gray-600 hover:bg-gray-100 transition-all border border-transparent hover:border-gray-200">Abandon</button>
-                        <button type="submit" className="flex-2 px-10 py-4 bg-green-500 text-white font-black rounded-xl shadow-xl shadow-green-500/20 text-xs uppercase tracking-widest hover:bg-green-600 hover:scale-[1.02] active:scale-95 transition-all">Synchronize Intelligence</button>
+                    {/* Notes */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Intelligence Notes</label>
+                        <div className="relative group">
+                            <FiMessageSquare className="absolute left-4 top-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                            <textarea
+                                name="notes"
+                                rows={3}
+                                className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-3xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 text-sm resize-none"
+                                placeholder="Additional intelligence data or contextual observations..."
+                                value={formData.notes}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-4 pt-4">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 px-8 py-4 bg-gray-100 text-gray-500 font-black rounded-2xl hover:bg-gray-200 transition-all text-xs uppercase tracking-widest"
+                        >
+                            Abort
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-[2] flex items-center justify-center gap-3 px-8 py-4 bg-green-500 text-white font-black rounded-2xl shadow-xl shadow-green-500/20 hover:bg-green-600 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest"
+                        >
+                            <FiPlus size={18} />
+                            {editingData ? "Update Intelligence" : "Commit Record"}
+                        </button>
                     </div>
                 </form>
             </div>

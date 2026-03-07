@@ -8,16 +8,21 @@ const app = express();
 
 /* ================= MIDDLEWARE ================= */
 
-// CRM internal CORS — restrict to configured frontend origin
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim())
-    : ["http://localhost:5173"];
+// Dynamic CORS configuration
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : [])
+].filter(Boolean).map(o => o.trim());
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*")) {
             callback(null, true);
         } else {
+            console.warn(`Blocked by CORS: ${origin}`);
             callback(new Error("Not allowed by CORS"));
         }
     },
@@ -64,8 +69,9 @@ app.get("/", (req, res) => {
 
 /* ================= ERROR HANDLER ================= */
 app.use((err, req, res, next) => {
-    console.error("Unhandled error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+    console.error("🔥 ERROR DETECTED:", err.name, "-", err.message);
+    if (err.stack) console.error(err.stack);
+    res.status(500).json({ success: false, message: err.message, stack: process.env.NODE_ENV === 'development' ? err.stack : undefined });
 });
 
 /* ================= DATABASE ================= */

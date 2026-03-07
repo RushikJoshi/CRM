@@ -1,22 +1,14 @@
 import React, { useState, useContext, useEffect } from "react";
 import { FiBell, FiMenu, FiSearch, FiMessageSquare, FiPower, FiArrowUpRight } from "react-icons/fi";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext, getCurrentUser } from "../context/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../services/api";
 
 const Navbar = ({ toggleMobileSidebar }) => {
     const { logout } = useContext(AuthContext);
     const location = useLocation();
-    const navigate = useNavigate();
-
-    // Simple Breadcrumb/Title logic
-    const getPageTitle = () => {
-        const path = location.pathname.split("/")[1];
-        if (!path) return "Home";
-        return path.charAt(0).toUpperCase() + path.slice(1);
-    };
-
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    // ✅ Read user from path-isolated session key (never bleeds cross-tab)
+    const user = getCurrentUser() || {};
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
     const [showResults, setShowResults] = useState(false);
@@ -25,14 +17,14 @@ const Navbar = ({ toggleMobileSidebar }) => {
     const [showNotifications, setShowNotifications] = useState(false);
 
     useEffect(() => {
-        if (user.id) fetchNotifications();
+        if (user.id || user._id) fetchNotifications();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchNotifications = async () => {
         try {
             const res = await API.get("/notifications/unread");
-            setNotifications(res.data.data || []);
+            setNotifications(res.data?.data || res.data || []);
         } catch (err) { console.error(err); }
     };
 
@@ -59,10 +51,12 @@ const Navbar = ({ toggleMobileSidebar }) => {
         }
     };
 
-    const handleLogout = () => {
-        logout();
-        navigate("/");
+    const getPageTitle = () => {
+        const path = location.pathname.split("/")[2] || location.pathname.split("/")[1] || "Home";
+        return path.charAt(0).toUpperCase() + path.slice(1);
     };
+
+    const handleLogout = () => { logout(); };
 
     return (
         <header className="h-16 bg-white border-b border-gray-100 sticky top-0 z-40 flex items-center justify-between px-6 shadow-sm">
@@ -183,7 +177,8 @@ const Navbar = ({ toggleMobileSidebar }) => {
 
                 <button
                     onClick={handleLogout}
-                    className="p-2.5 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all sm:hidden"
+                    title="Sign Out"
+                    className="p-2.5 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
                 >
                     <FiPower size={22} />
                 </button>

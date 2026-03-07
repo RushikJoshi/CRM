@@ -1,7 +1,6 @@
-import React from "react";
-import { FiEdit2, FiTrash2, FiUser, FiPhone, FiCheckCircle, FiBriefcase, FiFlag, FiEye } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiUser, FiPhone, FiCheckCircle, FiBriefcase, FiFlag, FiEye, FiUserPlus } from "react-icons/fi";
 
-const LeadTable = ({ leads, onEdit, onDelete, onConvert, onView }) => {
+const LeadTable = ({ leads, onEdit, onDelete, onConvert, onView, onAssign }) => {
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
             <div className="overflow-x-auto">
@@ -31,7 +30,7 @@ const LeadTable = ({ leads, onEdit, onDelete, onConvert, onView }) => {
                                                 <span className="font-black text-gray-900 tracking-tight">{lead.name}</span>
                                                 <div className="flex items-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                                                     <FiBriefcase className="mr-1.5" />
-                                                    {lead.company || "Independent Entity"}
+                                                    {lead.companyName || "Independent Entity"}
                                                 </div>
                                             </div>
                                         </div>
@@ -52,10 +51,10 @@ const LeadTable = ({ leads, onEdit, onDelete, onConvert, onView }) => {
                                     </td>
                                     <td className="px-8 py-5">
                                         <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${String(lead.status?.name || lead.status).toLowerCase() === 'qualified' ? 'bg-green-100 text-green-600' :
-                                                String(lead.status?.name || lead.status).toLowerCase() === 'negotiation' ? 'bg-emerald-100 text-emerald-600' :
-                                                    String(lead.status?.name || lead.status).toLowerCase() === 'lost' ? 'bg-red-100 text-red-600' :
-                                                        String(lead.status?.name || lead.status).toLowerCase() === 'converted' ? 'bg-blue-100 text-blue-600' :
-                                                            'bg-gray-100 text-gray-500'
+                                            String(lead.status?.name || lead.status).toLowerCase() === 'negotiation' ? 'bg-emerald-100 text-emerald-600' :
+                                                String(lead.status?.name || lead.status).toLowerCase() === 'lost' ? 'bg-red-100 text-red-600' :
+                                                    String(lead.status?.name || lead.status).toLowerCase() === 'converted' ? 'bg-blue-100 text-blue-600' :
+                                                        'bg-gray-100 text-gray-500'
                                             }`}>
                                             <FiFlag className="mr-1.5" />
                                             {lead.status?.name || lead.status}
@@ -69,6 +68,13 @@ const LeadTable = ({ leads, onEdit, onDelete, onConvert, onView }) => {
                                                 title="View Observations"
                                             >
                                                 <FiEye size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => onAssign(lead)}
+                                                className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all hover:scale-110 active:scale-95 bg-white border border-transparent hover:border-blue-100 shadow-sm"
+                                                title="Assign Ownership"
+                                            >
+                                                <FiUserPlus size={16} />
                                             </button>
                                             <button
                                                 onClick={() => onConvert(lead._id)}

@@ -86,9 +86,12 @@ exports.updateLead = async (req, res) => {
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
     if (req.user.role === "sales") query.assignedTo = req.user.id;
 
+    // ✅ Never allow client to overwrite these protected fields
+    const { companyId, branchId, createdBy, isDeleted, isConverted, ...safeBody } = req.body;
+
     const lead = await Lead.findOneAndUpdate(
       query,
-      req.body,
+      safeBody,
       { new: true }
     );
 

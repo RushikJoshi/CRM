@@ -9,7 +9,7 @@ const { seedMasterDataForCompany } = require("../utils/masterSeeder");
 /* ================= COMPANIES ================= */
 
 // Get All Companies (Search & Pagination)
-exports.getAllCompanies = async (req, res) => {
+exports.getAllCompanies = async (req, res, next) => {
   try {
     const { search, page = 1, limit = 10 } = req.query;
     let query = {};
@@ -31,49 +31,64 @@ exports.getAllCompanies = async (req, res) => {
       total
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 // Create Company + Auto Company Admin
-exports.createCompany = async (req, res) => {
+exports.createCompany = async (req, res, next) => {
   try {
     const { name, email, phone, website, industry, address, adminName, adminEmail, adminPassword } = req.body;
 
-    // 1. Create Company
+    const targetEmail = adminEmail || email;
+
+    // A. Verify if user already exists (critical check)
+    const existingUser = await User.findOne({ email: targetEmail.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: `An account with ${targetEmail} is already registered as a ${existingUser.role}. Please use a different admin email.`
+      });
+    }
+
+    // B. Create Company
     const newCompany = await Company.create({ name, email, phone, website, industry, address });
 
-    // 2. Create Company Admin User
+    // C. Create Company Admin User
     const hashedPassword = await bcrypt.hash(adminPassword || "Company@123", 10);
-    await User.create({
+    const newUser = await User.create({
       name: adminName || `${name} Admin`,
-      email: adminEmail || email,
+      email: targetEmail.toLowerCase(),
       password: hashedPassword,
       role: "company_admin",
       companyId: newCompany._id
     });
 
-    // Seed default master data for the new company
+    // D. Seed default master data for the new company
     await seedMasterDataForCompany(newCompany._id, newUser._id);
 
-    res.status(201).json(newCompany);
+    res.status(201).json({
+      success: true,
+      message: "Company and Admin profile initialized successfully.",
+      data: newCompany
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 // Update Company
-exports.updateCompany = async (req, res) => {
+exports.updateCompany = async (req, res, next) => {
   try {
     const updated = await Company.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 // Delete Company
-exports.deleteCompany = async (req, res) => {
+exports.deleteCompany = async (req, res, next) => {
   try {
     const { id } = req.params;
     await Company.findByIdAndDelete(id);
@@ -81,13 +96,13 @@ exports.deleteCompany = async (req, res) => {
     await Branch.deleteMany({ companyId: id });
     res.json({ message: "Company Deleted Successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 /* ================= BRANCHES ================= */
 
-exports.getAllBranches = async (req, res) => {
+exports.getAllBranches = async (req, res, next) => {
   try {
     const { search, companyId } = req.query;
     let query = {};
@@ -97,40 +112,40 @@ exports.getAllBranches = async (req, res) => {
     const branches = await Branch.find(query).populate("companyId", "name");
     res.json(branches);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.createBranch = async (req, res) => {
+exports.createBranch = async (req, res, next) => {
   try {
     const newBranch = await Branch.create(req.body);
     res.status(201).json(newBranch);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.updateBranch = async (req, res) => {
+exports.updateBranch = async (req, res, next) => {
   try {
     const updated = await Branch.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.deleteBranch = async (req, res) => {
+exports.deleteBranch = async (req, res, next) => {
   try {
     await Branch.findByIdAndDelete(req.params.id);
     res.json({ message: "Branch Deleted Successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 /* ================= USERS ================= */
 
-exports.getAllUsers = async (req, res) => {
+exports.getAllUsers = async (req, res, next) => {
   try {
     const { role, companyId, branchId } = req.query;
     let query = {};
@@ -144,22 +159,22 @@ exports.getAllUsers = async (req, res) => {
       .select("-password");
     res.json(users);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.createUser = async (req, res) => {
+exports.createUser = async (req, res, next) => {
   try {
     const { password, ...body } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({ ...body, password: hashedPassword });
     res.status(201).json(newUser);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.updateUser = async (req, res) => {
+exports.updateUser = async (req, res, next) => {
   try {
     if (req.body.password) {
       req.body.password = await bcrypt.hash(req.body.password, 10);
@@ -167,22 +182,22 @@ exports.updateUser = async (req, res) => {
     const updated = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select("-password");
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.deleteUser = async (req, res) => {
+exports.deleteUser = async (req, res, next) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: "User Deleted Successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 /* ================= LEADS ================= */
 
-exports.getAllLeads = async (req, res) => {
+exports.getAllLeads = async (req, res, next) => {
   try {
     const { companyId, status, search } = req.query;
     let query = {};
@@ -196,22 +211,22 @@ exports.getAllLeads = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(leads);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.deleteLead = async (req, res) => {
+exports.deleteLead = async (req, res, next) => {
   try {
     await Lead.findByIdAndDelete(req.params.id);
     res.json({ message: "Lead Purged Successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 /* ================= DEALS ================= */
 
-exports.getAllDeals = async (req, res) => {
+exports.getAllDeals = async (req, res, next) => {
   try {
     const { companyId, stage } = req.query;
     let query = {};
@@ -225,31 +240,31 @@ exports.getAllDeals = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(deals);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.updateDeal = async (req, res) => {
+exports.updateDeal = async (req, res, next) => {
   try {
     const updated = await Deal.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-exports.deleteDeal = async (req, res) => {
+exports.deleteDeal = async (req, res, next) => {
   try {
     await Deal.findByIdAndDelete(req.params.id);
     res.json({ message: "Deal Purged Successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 /* ================= STATS ================= */
 
-exports.getStats = async (req, res) => {
+exports.getStats = async (req, res, next) => {
   try {
     const totalCompanies = await Company.countDocuments();
     const totalUsers = await User.countDocuments();
@@ -307,6 +322,6 @@ exports.getStats = async (req, res) => {
       upcomingAgenda
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };

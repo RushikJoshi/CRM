@@ -1,29 +1,23 @@
-import { Navigate } from "react-router-dom";
-import { ROLE_HOME } from "../context/AuthContext";
+import { Navigate, useLocation } from "react-router-dom";
+import { getSessionKeyForPath, readSession, ROLE_HOME } from "../context/AuthContext";
 
 /**
- * RoleGuard — wraps a layout section to ensure the current user
- * actually belongs to the expected role. If not, redirects to their
- * correct home page. This is what prevents panel cross-contamination.
+ * RoleGuard — verifies the current panel's session user has the expected role.
+ * Each layout passes its allowedRole. If the stored user's role doesn't match →
+ * redirect to that user's correct home (never allow cross-panel access).
  */
 const RoleGuard = ({ allowedRole, children }) => {
-    let user = null;
-    try {
-        user = JSON.parse(localStorage.getItem("user") || "null");
-    } catch {
-        localStorage.clear();
-        return <Navigate to="/" replace />;
+    const { pathname } = useLocation();
+    const key = getSessionKeyForPath(pathname);
+    const session = readSession(key);
+    const user = session?.user;
+
+    if (!user?.role) {
+        return <Navigate to="/login" replace />;
     }
 
-    if (!user || !user.role) {
-        localStorage.clear();
-        return <Navigate to="/" replace />;
-    }
-
-    // If this user's role doesn't match the layout's expected role,
-    // redirect them to their own correct home — never allow cross-panel access.
     if (user.role !== allowedRole) {
-        const correctHome = ROLE_HOME[user.role] || "/";
+        const correctHome = ROLE_HOME[user.role] || "/login";
         return <Navigate to={correctHome} replace />;
     }
 

@@ -75,7 +75,16 @@ exports.getDashboardStats = async (req, res) => {
       ]),
       Lead.find(filter).sort({ createdAt: -1 }).limit(5).populate("assignedTo", "name"),
       Deal.find(dealFilter).sort({ createdAt: -1 }).limit(5).populate("assignedTo", "name"),
-      require("../models/Inquiry").countDocuments(role === "super_admin" ? {} : { companyId: filter.companyId }),
+      (() => {
+        let inquiryFilter = {};
+        if (role !== "super_admin") {
+          inquiryFilter.companyId = companyId;
+          if (role === "branch_manager" || role === "sales") {
+            if (branchId) inquiryFilter.branchId = branchId;
+          }
+        }
+        return require("../models/Inquiry").countDocuments(inquiryFilter);
+      })(),
       Lead.find({ ...filter, score: { $gte: 60 } }).sort({ score: -1 }).limit(5).populate("assignedTo", "name")
     ]);
 

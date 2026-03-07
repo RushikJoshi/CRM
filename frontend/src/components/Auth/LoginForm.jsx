@@ -14,11 +14,16 @@ const LoginForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
-        setLoading(true);
 
+        // Client-side validation before hitting API
+        if (!email.trim()) { setError("Email address is required."); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Enter a valid email address."); return; }
+        if (!password) { setError("Password is required."); return; }
+        if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+
+        setLoading(true);
         try {
-            localStorage.clear();
-            const res = await API.post("/auth/login", { email, password });
+            const res = await API.post("/auth/login", { email: email.trim().toLowerCase(), password });
             const { token, user } = res.data;
 
             if (!token || !user?.role) {
@@ -26,8 +31,11 @@ const LoginForm = () => {
                 return;
             }
 
+            // ✅ Store under role-specific key — does NOT clear other roles' sessions
             login(token, user);
-            window.location.replace(ROLE_HOME[user.role] || "/");
+
+            // Redirect to role home
+            window.location.replace(ROLE_HOME[user.role] || "/login");
         } catch (err) {
             setError(
                 err.response?.data?.message ||
@@ -53,8 +61,16 @@ const LoginForm = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                {/* Error Banner */}
+                {error && (
+                    <div className="flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-bold animate-in slide-in-from-top-2 duration-300">
+                        <FiAlertCircle size={18} className="shrink-0 mt-0.5 text-red-500" />
+                        <span>{error}</span>
+                    </div>
+                )}
+
                 {/* Email */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                     <label className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">
                         Email Address
                     </label>
@@ -64,7 +80,6 @@ const LoginForm = () => {
                         </div>
                         <input
                             type="email"
-                            required
                             autoComplete="email"
                             placeholder="name@company.com"
                             value={email}
@@ -77,22 +92,16 @@ const LoginForm = () => {
                 </div>
 
                 {/* Password */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <label className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">
-                            Password
-                        </label>
-                        <button type="button" tabIndex={-1} className="text-sm font-black text-green-600 hover:text-green-800 transition-colors">
-                            {/* Forgot password? */}
-                        </button>
-                    </div>
+                <div className="space-y-2">
+                    <label className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">
+                        Password
+                    </label>
                     <div className="relative group">
                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors duration-200">
                             <FiLock size={20} />
                         </div>
                         <input
                             type={showPass ? "text" : "password"}
-                            required
                             autoComplete="current-password"
                             placeholder="Enter your password"
                             value={password}
@@ -115,7 +124,7 @@ const LoginForm = () => {
                 {/* Submit */}
                 <button
                     type="submit"
-                    disabled={loading || !email || !password}
+                    disabled={loading}
                     className="w-full flex items-center justify-center gap-4 py-6 rounded-2xl font-black text-base uppercase tracking-widest text-white
                         bg-gradient-to-r from-green-600 to-emerald-600
                         shadow-2xl shadow-green-500/30
@@ -129,7 +138,7 @@ const LoginForm = () => {
                     ) : (
                         <>
                             Sign In
-                            <FiArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
+                            <FiArrowRight size={17} />
                         </>
                     )}
                 </button>

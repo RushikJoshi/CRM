@@ -22,7 +22,7 @@ const LeadDetailsModal = ({ isOpen, onClose, lead }) => {
                             <h2 className="text-4xl font-black text-gray-900 tracking-tighter">{lead.name}</h2>
                             <span className="px-4 py-1.5 bg-green-100 text-green-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">{lead.status}</span>
                         </div>
-                        <p className="text-gray-400 font-black uppercase tracking-[0.3em] text-[10px] mt-2 opacity-80">{lead.company || "Independent Enterprise Objective"}</p>
+                        <p className="text-gray-400 font-black uppercase tracking-[0.3em] text-[10px] mt-2 opacity-80">{lead.companyName || "Independent Enterprise Objective"}</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <button

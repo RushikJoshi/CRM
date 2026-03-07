@@ -35,6 +35,7 @@ exports.getDeals = async (req, res) => {
       filter.stage = stage;
     }
 
+    // Role-based filtering
     if (req.user.role === "branch_manager") {
       filter.branchId = req.user.branchId;
     }
@@ -61,6 +62,7 @@ exports.updateStage = async (req, res) => {
 
     const query = { _id: req.params.id, companyId: req.user.companyId };
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
+    if (req.user.role === "sales") query.assignedTo = req.user.id;
 
     const deal = await Deal.findOneAndUpdate(
       query,
@@ -86,9 +88,12 @@ exports.updateDeal = async (req, res) => {
     const query = { _id: req.params.id, companyId: req.user.companyId };
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
 
+    // ✅ Never allow client to overwrite these protected fields
+    const { companyId, branchId, createdBy, ...safeBody } = req.body;
+
     const deal = await Deal.findOneAndUpdate(
       query,
-      req.body,
+      safeBody,
       { new: true }
     );
     if (!deal) return res.status(404).json({ message: "Deal not found" });
@@ -103,6 +108,7 @@ exports.deleteDeal = async (req, res) => {
   try {
     const query = { _id: req.params.id, companyId: req.user.companyId };
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
+    if (req.user.role === "sales") query.assignedTo = req.user.id;
 
     const deal = await Deal.findOneAndDelete(query);
     if (!deal) return res.status(404).json({ message: "Deal not found" });

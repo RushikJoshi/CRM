@@ -9,11 +9,11 @@ const CompanyAdminLayout = () => {
 
     return (
         <RoleGuard allowedRole="company_admin">
-            <div className="flex h-screen bg-gray-50 overflow-hidden">
-                <CompanyAdminSidebar />
-                <div className="flex flex-col flex-1 ml-64 min-w-0 overflow-hidden transition-all duration-300">
+            <div className="flex h-screen bg-gray-50 overflow-hidden relative">
+                <CompanyAdminSidebar isOpen={mobileSidebar} onClose={() => setMobileSidebar(false)} />
+                <div className="flex flex-col flex-1 lg:ml-64 min-w-0 overflow-hidden transition-all duration-300">
                     <Navbar toggleMobileSidebar={() => setMobileSidebar(!mobileSidebar)} />
-                    <main className="flex-1 overflow-y-auto p-6">
+                    <main className="flex-1 overflow-y-auto p-4 lg:p-6">
                         <Outlet />
                     </main>
                 </div>

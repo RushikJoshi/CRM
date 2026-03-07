@@ -15,7 +15,7 @@ const TodosPage = () => {
         setLoading(true);
         try {
             const res = await API.get("/crm/todos");
-            setData(res.data);
+            setData(res.data?.data || res.data || []);
         } catch (err) {
             console.error(err);
         } finally {

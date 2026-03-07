@@ -86,9 +86,17 @@ exports.updateUser = async (req, res) => {
     const query = { _id: id, companyId: req.user.companyId };
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
 
+    const updateData = { ...req.body };
+    // ✅ Hash password if it's being updated
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    } else {
+      delete updateData.password; // Never overwrite with empty string
+    }
+
     const user = await User.findOneAndUpdate(
       query,
-      req.body,
+      updateData,
       { new: true }
     ).select("-password");
 

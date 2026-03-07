@@ -13,4 +13,8 @@ const publicCors = cors({
 router.options("/inquiry", publicCors);
 router.post("/inquiry", publicCors, publicCreateInquiry);
 
+// Alias for WordPress/External Integrations
+router.options("/external/inquiries/single", publicCors);
+router.post("/external/inquiries/single", publicCors, publicCreateInquiry);
+
 module.exports = router;

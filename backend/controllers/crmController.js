@@ -73,8 +73,8 @@ exports.getCustomer360 = async (req, res) => {
         const { id } = req.params;
         const companyId = req.user.companyId;
 
-        const customer = await Customer.findById(id);
-        if (!customer) return res.status(404).json({ message: "Customer not found" });
+        const customer = await Customer.findOne({ _id: id, companyId });
+        if (!customer) return res.status(404).json({ message: "Customer not found or access denied" });
 
         // Aggregate everything related to this customer
         const [contacts, deals, calls, meetings, todos, notes] = await Promise.all([

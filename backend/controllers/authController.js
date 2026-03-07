@@ -127,10 +127,24 @@ exports.login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    const baseUrl = process.env.BASE_URL || "http://localhost:5000";
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+    // ✅ Never return password hash to frontend
+    const safeUser = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      companyId: user.companyId || null,
+      branchId: user.branchId || null,
+      status: user.status
+    };
+
     res.json({
       message: "Login Successful",
       token,
-      user
+      user: safeUser
     });
 
     // Auto-seed if missing during login
