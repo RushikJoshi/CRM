@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Lead = require("../models/Lead");
 const Deal = require("../models/Deal");
 const Customer = require("../models/Customer");
@@ -15,6 +16,16 @@ exports.getDashboardStats = async (req, res) => {
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
+    const now = new Date();
+
+    // Helper for safe ObjectId casting in Aggregations
+    const toObjectId = (id) => {
+      try {
+        return id ? new mongoose.Types.ObjectId(String(id)) : null;
+      } catch (e) {
+        return null;
+      }
+    };
 
     // Dynamic Filter
     let filter = { isDeleted: false };
@@ -32,9 +43,23 @@ exports.getDashboardStats = async (req, res) => {
       else if (role === "sales") dealFilter.assignedTo = userId;
     }
 
+    // Aggression-specific IDs (Aggregations need manual casting)
+    const companyOid = toObjectId(companyId);
+    const branchOid = toObjectId(branchId);
+    const userOid = toObjectId(userId);
+
+    // Build specific filter for Aggregations (which don't auto-cast)
+    let aggDealFilter = {};
+    if (role !== "super_admin") {
+      if (companyOid) aggDealFilter.companyId = companyOid;
+      if (role === "branch_manager" && branchOid) aggDealFilter.branchId = branchOid;
+      else if (role === "sales" && userOid) aggDealFilter.assignedTo = userOid;
+    }
+
     // Fetch All Stats in Parallel
     const [
       totalLeads,
+      totalQualifiedLeads,
       totalDeals,
       totalCustomers,
       totalContacts,
@@ -46,9 +71,15 @@ exports.getDashboardStats = async (req, res) => {
       recentLeads,
       recentDeals,
       totalInquiries,
-      hotLeads
+      hotLeads,
+      overdueTasks,
+      agingLeads,
+      dealsWon,
+      activeUsers,
+      performanceLeaderboard
     ] = await Promise.all([
       Lead.countDocuments(filter),
+      Lead.countDocuments({ ...filter, status: /qualified/i }),
       Deal.countDocuments(dealFilter),
       Customer.countDocuments({
         ...filter,
@@ -68,11 +99,11 @@ exports.getDashboardStats = async (req, res) => {
         dueDate: { $gte: todayStart, $lte: todayEnd }
       }),
       Deal.aggregate([
-        { $match: { ...dealFilter, stage: "Closed Won" } },
+        { $match: { ...aggDealFilter, stage: "Closed Won" } },
         { $group: { _id: null, totalRevenue: { $sum: "$value" } } }
       ]),
       Deal.aggregate([
-        { $match: dealFilter },
+        { $match: aggDealFilter },
         { $group: { _id: "$stage", count: { $sum: 1 } } }
       ]),
       Lead.find(filter).sort({ createdAt: -1 }).limit(5).populate("assignedTo", "name"),
@@ -87,14 +118,61 @@ exports.getDashboardStats = async (req, res) => {
         }
         return require("../models/Inquiry").countDocuments(inquiryFilter);
       })(),
-      Lead.find({ ...filter, score: { $gte: 60 } }).sort({ score: -1 }).limit(5).populate("assignedTo", "name")
+      Lead.find({ ...filter, score: { $gte: 60 } }).sort({ score: -1 }).limit(5).populate("assignedTo", "name"),
+      Todo.countDocuments({
+        ...filter,
+        status: { $ne: "Completed" },
+        dueDate: { $lt: now }
+      }),
+      // Lead Aging: Leads not updated in 3 days
+      Lead.countDocuments({
+        ...filter,
+        status: { $nin: ["Closed Won", "Closed Lost", "Won", "Lost"] },
+        updatedAt: { $lt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) }
+      }),
+      // Funnel Stage: Deals Won
+      Deal.countDocuments({ ...dealFilter, stage: { $in: ["Won", "Closed Won"] } }),
+      // Active Users Count
+      require("../models/User").countDocuments({
+        companyId,
+        status: "active",
+        ...(role === "branch_manager" ? { branchId } : {})
+      }),
+      // Performance Leaderboard (Rank users by revenue/deals)
+      (role === "company_admin" || role === "branch_manager") ? Deal.aggregate([
+        { $match: { companyId: companyOid, stage: { $in: ["Won", "Closed Won"] } } },
+        {
+          $group: {
+            _id: "$assignedTo",
+            dealsWon: { $sum: 1 },
+            totalRevenue: { $sum: "$value" }
+          }
+        },
+        { $sort: { totalRevenue: -1 } },
+        { $limit: 5 },
+        {
+          $lookup: {
+            from: "users",
+            localField: "_id",
+            foreignField: "_id",
+            as: "userDetails"
+          }
+        },
+        { $unwind: "$userDetails" },
+        {
+          $project: {
+            name: "$userDetails.name",
+            dealsWon: 1,
+            totalRevenue: 1
+          }
+        }
+      ]) : Promise.resolve([])
     ]);
 
     const totalRevenue = revenueData.length > 0 ? revenueData[0].totalRevenue : 0;
     const conversionRate = totalLeads > 0 ? ((totalDeals / totalLeads) * 100).toFixed(1) : 0;
 
     // Agenda / Recent Activities
-    const now = new Date();
     const futureLimit = new Date();
     futureLimit.setHours(futureLimit.getHours() + 48); // 48 hour lookahead
 
@@ -144,7 +222,20 @@ exports.getDashboardStats = async (req, res) => {
         recentLeads,
         recentDeals,
         totalInquiries,
-        hotLeads
+        totalProspects: totalQualifiedLeads,
+        hotLeads,
+        overdueTasks,
+        agingLeads,
+        dealsWon,
+        activeUsers,
+        performanceLeaderboard,
+        funnel: [
+          { label: "Inquiries", count: totalInquiries || 0, color: "bg-blue-500" },
+          { label: "Leads", count: totalLeads || 0, color: "bg-emerald-500" },
+          { label: "Prospects", count: totalQualifiedLeads || 0, color: "bg-amber-500" },
+          { label: "Deals", count: totalDeals || 0, color: "bg-indigo-500" },
+          { label: "Won", count: dealsWon || 0, color: "bg-green-600" }
+        ]
       }
     });
 

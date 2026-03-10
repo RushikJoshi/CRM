@@ -85,6 +85,9 @@ app.use("/api/messages", require("./routes/messageRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
 app.use("/api/pipelines", require("./routes/pipelineRoutes"));
 app.use("/api/lead-sources", require("./routes/leadSourceRoutes"));
+app.use("/api/targets", require("./routes/targetRoutes"));
+app.use("/api/branch-analytics", require("./routes/branchAnalyticsRoutes"));
+app.use("/api/planner", require("./routes/plannerRoutes"));
 
 app.get("/", (req, res) => {
     res.json({

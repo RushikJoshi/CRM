@@ -157,3 +157,85 @@ exports.login = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// ============================
+// GET CURRENT USER (any role)
+// ============================
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ============================
+// UPDATE PROFILE (any role)
+// ============================
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+
+    // Validate email uniqueness if changing email
+    if (email) {
+      const existing = await User.findOne({ email: email.toLowerCase(), _id: { $ne: req.user.id } });
+      if (existing) {
+        return res.status(400).json({ success: false, message: "This email is already in use by another account." });
+      }
+    }
+
+    const updatedFields = {};
+    if (name && name.trim()) updatedFields.name = name.trim();
+    if (email && email.trim()) updatedFields.email = email.trim().toLowerCase();
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      updatedFields,
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser) return res.status(404).json({ success: false, message: "User not found." });
+
+    res.json({ success: true, message: "Profile updated successfully.", data: updatedUser });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// ============================
+// CHANGE PASSWORD (any role)
+// ============================
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword) {
+      return res.status(400).json({ success: false, message: "Current password is required to set a new password." });
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: "New password must be at least 6 characters long." });
+    }
+
+    // Find user WITH password field
+    const user = await User.findById(req.user.id).select("+password");
+    if (!user) return res.status(404).json({ success: false, message: "User not found." });
+
+    // Validate current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "The current password you entered is incorrect." });
+    }
+
+    // Hash and save new password
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ success: true, message: "Password updated successfully! Please use your new password next time you log in." });
+  } catch (error) {
+    console.error("Change Password Error:", error);
+    res.status(500).json({ success: false, message: "Internal server error while updating password." });
+  }
+};

@@ -32,12 +32,25 @@ exports.getCustomers = async (req, res) => {
         let query = { companyId: req.user.companyId };
         if (req.user.role === "branch_manager" || req.user.role === "sales") query.branchId = req.user.branchId;
         if (search) query.name = { $regex: search, $options: "i" };
+
         const data = await Customer.find(query)
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort({ createdAt: -1 });
+
+        // Parallel fetch for task counts
+        const customersWithTaskCounts = await Promise.all(
+            data.map(async (customer) => {
+                const pendingTasksCount = await Todo.countDocuments({
+                    customerId: customer._id,
+                    status: { $in: ["Pending", "In Progress"] }
+                });
+                return { ...customer.toObject(), pendingTasksCount };
+            })
+        );
+
         const total = await Customer.countDocuments(query);
-        res.json({ success: true, data, total, pages: Math.ceil(total / limit), currentPage: page });
+        res.json({ success: true, data: customersWithTaskCounts, total, pages: Math.ceil(total / limit), currentPage: page });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -313,9 +326,16 @@ exports.createTodo = async (req, res) => {
 };
 exports.getTodos = async (req, res) => {
     try {
+        const { leadId, dealId, customerId } = req.query;
         let query = { companyId: req.user.companyId };
+
         if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
         if (req.user.role === "sales") query.assignedTo = req.user.id;
+
+        if (leadId) query.leadId = leadId;
+        if (dealId) query.dealId = dealId;
+        if (customerId) query.customerId = customerId;
+
         const data = await Todo.find(query).sort({ dueDate: 1 });
         res.json({ success: true, data });
     } catch (error) {

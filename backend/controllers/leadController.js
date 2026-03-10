@@ -4,6 +4,8 @@ const Customer = require("../models/Customer");
 const Contact = require("../models/Contact");
 const { runAutomation } = require("../utils/automationEngine");
 const { calculateLeadScore, assignLeadAutomatically } = require("../utils/leadManagement");
+const { logChange } = require("../utils/auditLogger"); // Added logChange import
+const Activity = require("../models/Activity");
 
 /* ================= CREATE LEAD ================= */
 exports.createLead = async (req, res) => {
@@ -24,12 +26,16 @@ exports.createLead = async (req, res) => {
       return res.json({ success: true, message: "Lead already exists, updated notes.", data: existingLead });
     }
 
+    const cleanData = { ...req.body };
+    if (cleanData.sourceId === "") cleanData.sourceId = null;
+    if (cleanData.assignedTo === "") cleanData.assignedTo = null;
+
     const lead = await Lead.create({
-      ...req.body,
+      ...cleanData,
       companyId: req.user.companyId,
       branchId: req.user.branchId || req.body.branchId || null,
       createdBy: req.user.id,
-      assignedTo: req.user.role === "sales" ? req.user.id : (req.body.assignedTo || null)
+      assignedTo: req.user.role === "sales" ? req.user.id : (cleanData.assignedTo || null)
     });
 
     if (req.body.sourceId) {
@@ -49,8 +55,17 @@ exports.createLead = async (req, res) => {
     // Module 1: AI Lead Scoring
     await calculateLeadScore(lead._id);
 
-    // Refresh lead data for response
+    // refresh lead data for response
     const finalizedLead = await Lead.findById(lead._id).populate("assignedTo", "name email");
+
+    // LOG ACTIVITY
+    await Activity.create({
+      leadId: finalizedLead._id,
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      type: "lead",
+      note: `New Lead Created: ${finalizedLead.name}`
+    });
 
     // Run Automations
     await runAutomation("lead_created", req.user.companyId, { record: finalizedLead, userId: req.user.id, ...finalizedLead.toObject() });
@@ -70,6 +85,8 @@ exports.createLead = async (req, res) => {
 };
 
 
+const Todo = require("../models/Todo");
+
 /* ================= GET LEADS ================= */
 exports.getLeads = async (req, res) => {
   try {
@@ -78,7 +95,13 @@ exports.getLeads = async (req, res) => {
     const { search, status } = req.query;
     let filter = { isDeleted: false };
     if (search) filter.name = { $regex: search, $options: "i" };
-    if (status) filter.status = status;
+    if (status) {
+      if (status.includes(",")) {
+        filter.status = { $in: status.split(",") };
+      } else {
+        filter.status = status;
+      }
+    }
 
     if (req.user.role !== "super_admin") {
       filter.companyId = req.user.companyId;
@@ -96,7 +119,18 @@ exports.getLeads = async (req, res) => {
       .populate("sourceId")
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, data: leads });
+    // ENHANCEMENT: Fetch pending tasks count for each lead in parallel
+    const leadsWithTaskCounts = await Promise.all(
+      leads.map(async (lead) => {
+        const pendingTasksCount = await Todo.countDocuments({
+          leadId: lead._id,
+          status: { $in: ["Pending", "In Progress"] }
+        });
+        return { ...lead.toObject(), pendingTasksCount };
+      })
+    );
+
+    res.json({ success: true, data: leadsWithTaskCounts });
 
   } catch (error) {
     console.error("GET LEADS ERROR:", error);
@@ -120,9 +154,12 @@ exports.updateLead = async (req, res) => {
     if (!previousLead) return res.status(404).json({ success: false, message: "Lead not found" });
 
     const updateData = { ...req.body };
-    if (req.body.sourceId) {
+    if (updateData.sourceId === "") updateData.sourceId = null;
+    if (updateData.assignedTo === "") updateData.assignedTo = null;
+
+    if (updateData.sourceId) {
       const LeadSource = require("../models/LeadSource");
-      const sourceObj = await LeadSource.findById(req.body.sourceId);
+      const sourceObj = await LeadSource.findById(updateData.sourceId);
       if (sourceObj) {
         updateData.source = sourceObj.name;
       }
@@ -134,8 +171,26 @@ exports.updateLead = async (req, res) => {
       { new: true }
     );
 
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    // Enterprise Audit Logging
+    await logChange({
+      leadId: lead._id,
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      oldData: previousLead,
+      newData: lead,
+      fields: ["status", "assignedTo", "value", "phone", "email"]
+    });
+
+    // Re-calculate AI Score whenever lead info changes
+    await calculateLeadScore(lead._id);
+
     // STEP 8 — CUSTOMER CREATION on "Won"
-    if (safeBody.status && safeBody.status.toLowerCase() === "won" && previousLead.status.toLowerCase() !== "won") {
+    const isNowWon = safeBody.status && safeBody.status.toLowerCase().includes("won");
+    const wasAlreadyWon = previousLead.status.toLowerCase().includes("won");
+
+    if (isNowWon && !wasAlreadyWon) {
       if (!lead.isConverted) {
         const Customer = require("../models/Customer");
         const Contact = require("../models/Contact");
@@ -180,8 +235,8 @@ exports.assignLead = async (req, res) => {
     const { assignedTo } = req.body;
     if (!assignedTo) return res.status(400).json({ success: false, message: "assignedTo is required" });
 
-    const query = { _id: req.params.id, companyId: req.user.companyId };
-    if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
+    const previousLead = await Lead.findOne(query).lean();
+    if (!previousLead) return res.status(404).json({ success: false, message: "Lead not found or access denied" });
 
     const lead = await Lead.findOneAndUpdate(
       query,
@@ -189,7 +244,15 @@ exports.assignLead = async (req, res) => {
       { new: true }
     ).populate("assignedTo", "name email");
 
-    if (!lead) return res.status(404).json({ success: false, message: "Lead not found or access denied" });
+    // Enterprise Audit Logging
+    await logChange({
+      leadId: lead._id,
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      oldData: previousLead,
+      newData: lead,
+      fields: ["assignedTo"]
+    });
 
     const { createNotification } = require("../utils/notificationService");
     await createNotification({
@@ -198,6 +261,15 @@ exports.assignLead = async (req, res) => {
       title: "New Lead Assigned",
       message: `You have been assigned a new lead: ${lead.name}`,
       type: "info"
+    });
+
+    // LOG ASSIGNMENT ACTIVITY
+    await Activity.create({
+      leadId: lead._id,
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      type: "system",
+      note: `Lead assigned to ${lead.assignedTo?.name || "Unknown"}`
     });
 
     res.json({ success: true, message: "Lead assigned successfully", data: lead });
@@ -284,6 +356,16 @@ exports.convertLead = async (req, res) => {
     lead.status = "Won";
     await lead.save();
 
+    // LOG CONVERSION ACTIVITY
+    await Activity.create({
+      leadId: lead._id,
+      dealId: deal._id,
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      type: "deal",
+      note: `Converted to Deal: ${deal.title}`
+    });
+
     await runAutomation("deal_created", lead.companyId, { record: deal, userId: req.user.id });
 
     res.json({
@@ -294,6 +376,57 @@ exports.convertLead = async (req, res) => {
 
   } catch (error) {
     console.error("CONVERT LEAD ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/* ================= BULK UPDATE LEADS ================= */
+exports.bulkUpdateLeads = async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const { ids, updateData, action } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: "No leads selected" });
+    }
+
+    const query = { _id: { $in: ids }, companyId: req.user.companyId };
+    if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
+    if (req.user.role === "sales") query.assignedTo = req.user.id;
+
+    let dbUpdate = {};
+    let note = "";
+
+    if (action === "update_status") {
+      dbUpdate = { status: updateData.status };
+      note = `Bulk Status Update to ${updateData.status}`;
+    } else if (action === "assign_user") {
+      dbUpdate = { assignedTo: updateData.assignedTo };
+      note = `Bulk Assigned to user: ${updateData.assignedToName || "New User"}`;
+    } else if (action === "delete") {
+      dbUpdate = { isDeleted: true };
+      note = `Bulk Leads Deleted`;
+    }
+
+    const result = await Lead.updateMany(query, dbUpdate);
+
+    // LOG BULK ACTIVITY
+    const Activity = require("../models/Activity");
+    await Activity.create({
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      type: "system",
+      note: `${note} (${result.modifiedCount} leads updated)`
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully updated ${result.modifiedCount} leads.`,
+      modifiedCount: result.modifiedCount
+    });
+
+  } catch (error) {
+    console.error("BULK UPDATE LEAD ERROR:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

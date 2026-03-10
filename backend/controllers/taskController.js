@@ -1,25 +1,32 @@
-const Task = require("../models/Task");
+const Todo = require("../models/Todo");
 const Lead = require("../models/Lead");
-const User = require("../models/User");
+const Activity = require("../models/Activity");
 
 // ── CREATE TASK ──────────────────────────────────────────────────────────────
 exports.createTask = async (req, res) => {
     try {
-        const { leadId, assignedTo, dueDate } = req.body;
-
-        if (!leadId || !assignedTo || !dueDate) {
-            return res.status(400).json({ success: false, message: "leadId, assignedTo, and dueDate are required." });
-        }
-
-        const task = await Task.create({
-            leadId,
-            assignedTo,
-            dueDate,
+        const data = await Todo.create({
+            ...req.body,
             companyId: req.user.companyId,
-            createdBy: req.user.id
+            branchId: req.user.branchId || null,
+            createdBy: req.user.id,
+            assignedTo: req.body.assignedTo || req.user.id
         });
 
-        res.status(201).json({ success: true, data: task });
+        // LOG ACTIVITY
+        if (data.leadId || data.dealId || data.customerId) {
+            await Activity.create({
+                leadId: data.leadId || null,
+                dealId: data.dealId || null,
+                customerId: data.customerId || null,
+                userId: req.user.id,
+                companyId: req.user.companyId,
+                type: "system",
+                note: `Task Scheduled: ${data.title}`
+            });
+        }
+
+        res.status(201).json({ success: true, data });
     } catch (error) {
         console.error("CREATE TASK ERROR:", error);
         res.status(500).json({ success: false, message: error.message });
@@ -29,17 +36,22 @@ exports.createTask = async (req, res) => {
 // ── GET TASKS ─────────────────────────────────────────────────────────────────
 exports.getTasks = async (req, res) => {
     try {
-        let filter = { companyId: req.user.companyId };
+        const { leadId, dealId, customerId } = req.query;
+        let query = { companyId: req.user.companyId };
 
-        // Users might want to see their own tasks or all tasks if they're admin
-        if (req.user.role === "sales") {
-            filter.assignedTo = req.user.id;
-        }
+        if (req.user.role === "sales") query.assignedTo = req.user.id;
+        if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
 
-        const tasks = await Task.find(filter)
-            .populate("leadId", "name email companyName")
+        if (leadId) query.leadId = leadId;
+        if (dealId) query.dealId = dealId;
+        if (customerId) query.customerId = customerId;
+
+        const tasks = await Todo.find(query)
+            .populate("leadId", "name email phone companyName")
+            .populate("dealId", "title value")
+            .populate("customerId", "name")
             .populate("assignedTo", "name")
-            .sort({ dueDate: 1 }); // Sort by closest due date
+            .sort({ dueDate: 1 });
 
         res.json({ success: true, data: tasks });
     } catch (error) {
@@ -51,25 +63,32 @@ exports.getTasks = async (req, res) => {
 // ── UPDATE TASK STATUS ────────────────────────────────────────────────────────
 exports.updateTaskStatus = async (req, res) => {
     try {
-        const { status } = req.body;
-
-        if (!["pending", "completed", "cancelled"].includes(status)) {
-            return res.status(400).json({ success: false, message: "Invalid status" });
-        }
-
-        const task = await Task.findOneAndUpdate(
-            { _id: req.params.id, companyId: req.user.companyId },
-            { status },
+        const query = { _id: req.params.id, companyId: req.user.companyId };
+        const updated = await Todo.findOneAndUpdate(
+            query,
+            req.body,
             { new: true }
         );
 
-        if (!task) {
-            return res.status(404).json({ success: false, message: "Task not found" });
+        if (!updated) return res.status(404).json({ success: false, message: "Task not found" });
+
+        // LOG ACTIVITY IF STATUS CHANGED
+        if (req.body.status) {
+            await Activity.create({
+                leadId: updated.leadId || null,
+                dealId: updated.dealId || null,
+                customerId: updated.customerId || null,
+                userId: req.user.id,
+                companyId: req.user.companyId,
+                type: "system",
+                note: `Task ${updated.status}: ${updated.title}`
+            });
         }
 
-        res.json({ success: true, data: task });
+        res.json({ success: true, data: updated });
     } catch (error) {
         console.error("UPDATE TASK ERROR:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
+

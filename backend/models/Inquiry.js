@@ -19,6 +19,10 @@ const inquirySchema = new mongoose.Schema(
         message: {
             type: String
         },
+        value: {
+            type: Number,
+            default: 0
+        },
         source: { // Legacy Support
             type: String,
             default: "Other"
@@ -30,6 +34,26 @@ const inquirySchema = new mongoose.Schema(
         website: {
             type: String,
             default: ""
+        },
+        city: {
+            type: String,
+            default: ""
+        },
+        address: {
+            type: String,
+            default: ""
+        },
+        course: {
+            type: String,
+            default: ""
+        },
+        location: {
+            type: String,
+            default: ""
+        },
+        inquiryStatus: {
+            type: String,
+            default: "Fresh"
         },
         status: {
             type: String,

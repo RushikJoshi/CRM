@@ -1,13 +1,15 @@
 const express = require("express");
 const router = express.Router();
-
+const auth = require("../middleware/auth");
 const authController = require("../controllers/authController");
 
-// Register company
+// Public routes
 router.post("/register-company", authController.registerCompany);
-
-// Login
 router.post("/login", authController.login);
-// router.post("/create-super-admin", authController.createSuperAdmin);
+
+// ── Self-service: any authenticated user can get/update their own profile ──────
+router.get("/me", auth, authController.getMe);
+router.put("/me/profile", auth, authController.updateProfile);
+router.put("/me/password", auth, authController.changePassword);
 
 module.exports = router;

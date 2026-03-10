@@ -3,6 +3,7 @@ const Lead = require("../models/Lead");
 const User = require("../models/User");
 const MasterData = require("../models/MasterData");
 const { assignLeadAutomatically, calculateLeadScore } = require("../utils/leadManagement");
+const Activity = require("../models/Activity");
 
 // ── CREATE INQUIRY (Company Admin manually creates) ──────────────────────────
 exports.createInquiry = async (req, res) => {
@@ -44,6 +45,12 @@ exports.createInquiry = async (req, res) => {
             source: req.body.source || "Manual",
             sourceId: req.body.sourceId || null,
             website: req.body.website || "",
+            city: req.body.city || "",
+            address: req.body.address || "",
+            course: req.body.course || "",
+            location: req.body.location || "",
+            inquiryStatus: req.body.inquiryStatus || "Fresh",
+            value: req.body.value || 0,
             status: "Open",
             companyId,
             branchId
@@ -133,7 +140,8 @@ exports.convertInquiryToLead = async (req, res) => {
         if (sourceObj) defaultSource = sourceObj.name;
 
         // ✅ assignedTo from body, support explicitly passing `null` for auto-assign
-        const assignedToId = req.body.hasOwnProperty("assignedTo") ? req.body.assignedTo : req.user.id;
+        let assignedToId = req.body.hasOwnProperty("assignedTo") ? req.body.assignedTo : req.user.id;
+        if (assignedToId === "") assignedToId = null;
 
         // Resolve branchId of the assigned user if not already present on inquiry
         let targetBranchId = inquiry.branchId || req.user.branchId || null;
@@ -150,9 +158,15 @@ exports.convertInquiryToLead = async (req, res) => {
             phone: inquiry.phone,
             companyName: inquiry.companyName || "",
             notes: inquiry.message,
+            city: inquiry.city || "",
+            address: inquiry.address || "",
+            course: inquiry.course || "",
+            location: inquiry.location || "",
+            inquiryStatus: inquiry.inquiryStatus || "",
             source: inquiry.source || defaultSource,
             sourceId: inquiry.sourceId || null,
             status: defaultStatus,
+            value: inquiry.value || 0,
             companyId: inquiry.companyId,
             branchId: targetBranchId,
             createdBy: req.user.id,
@@ -186,6 +200,15 @@ exports.convertInquiryToLead = async (req, res) => {
                 type: "info"
             });
         }
+
+        // LOG ACTIVITY
+        await Activity.create({
+            leadId: lead._id,
+            userId: req.user.id,
+            companyId: lead.companyId,
+            type: "system",
+            note: `Inquiry from ${inquiry.source || "Website"} converted to Lead`
+        });
 
         res.json({
             success: true,

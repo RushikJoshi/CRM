@@ -1,5 +1,6 @@
 const Deal = require("../models/Deal");
 const { runAutomation } = require("../utils/automationEngine");
+const { logChange } = require("../utils/auditLogger");
 
 /* ================= CREATE DEAL ================= */
 exports.createDeal = async (req, res) => {
@@ -80,6 +81,9 @@ exports.updateStage = async (req, res) => {
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
     if (req.user.role === "sales") query.assignedTo = req.user.id;
 
+    const previousDeal = await Deal.findOne(query).lean();
+    if (!previousDeal) return res.status(404).json({ success: false, message: "Deal not found" });
+
     const updateData = { ...req.body };
 
     // Legacy support: if stageId is passed, find the name and update the 'stage' string
@@ -96,6 +100,16 @@ exports.updateStage = async (req, res) => {
       updateData,
       { new: true }
     );
+
+    // Enterprise Audit Logging
+    await logChange({
+      dealId: deal._id,
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      oldData: previousDeal,
+      newData: deal,
+      fields: ["stage", "assignedTo", "value", "title"]
+    });
 
     if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
 

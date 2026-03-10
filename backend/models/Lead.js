@@ -57,7 +57,26 @@ const leadSchema = new mongoose.Schema(
     notes: {
       type: String
     },
-
+    city: {
+      type: String,
+      default: ""
+    },
+    address: {
+      type: String,
+      default: ""
+    },
+    course: {
+      type: String,
+      default: ""
+    },
+    location: {
+      type: String,
+      default: ""
+    },
+    inquiryStatus: {
+      type: String,
+      default: ""
+    },
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
