@@ -1,3 +1,83 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --primary-main: #3169E1;
+    --primary-light: #60A5FA;
+    --primary-dark: #1E40AF;
+    --surface: #FFFFFF;
+    --background: #F4F7FB;
+    --border: #E5EAF2;
+    --text-primary: #1A202C;
+    --text-secondary: #718096;
+    --text-muted: #A0AEC0;
+  }
+
+  body {
+    @apply bg-[#F4F7FB] text-[#1A202C];
+    font-family: 'Outfit', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  /* 
+     ZOHO CANVAS STYLE: 
+     Extremely clean, white-boxed sections with very soft borders.
+  */
+  .canvas-card {
+    @apply bg-white border border-[#E5EAF2] rounded-[14px] shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .canvas-header {
+    @apply border-b border-[#E5EAF2] px-6 py-4 flex items-center justify-between;
+  }
+
+  .canvas-title {
+    @apply text-lg font-bold text-[#1A201C] tracking-tight;
+  }
+
+  .canvas-button-primary {
+    @apply px-5 py-2.5 bg-[#3169E1] hover:bg-[#2557C3] text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-blue-500/10 active:scale-95;
+  }
+
+  .canvas-button-secondary {
+    @apply px-5 py-2.5 bg-white border border-[#E5EAF2] text-[#1A202C] hover:bg-gray-50 rounded-xl font-bold text-sm flex items-center gap-2 transition-all active:scale-95;
+  }
+
+  /* SIDEBAR: Dark or clean light. Zoho uses a clean Navy/Slate side. */
+  .sidebar-container {
+    @apply bg-[#151D36] text-white; /* Zoho-style Navy Sidebar */
+  }
+
+  .sidebar-link {
+    @apply flex items-center px-6 py-3.5 text-slate-400 hover:text-white hover:bg-white/5 transition-all font-medium text-[13px] tracking-wide;
+  }
+
+  .sidebar-link-active {
+    @apply text-white bg-white/10 border-r-4 border-[#3169E1];
+  }
+
+  /* TABLES: Modern minimal */
+  .canvas-table-header {
+    @apply bg-gray-50/50 border-b border-[#E5EAF2] text-[10px] uppercase tracking-widest font-black text-gray-400 px-6 py-4;
+  }
+
+  .canvas-table-row {
+    @apply hover:bg-gray-50/50 border-b border-[#F0F2F5] transition-colors;
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-200 rounded-full hover:bg-gray-300 transition-colors;
+}

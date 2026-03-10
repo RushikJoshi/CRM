@@ -39,16 +39,17 @@ const Layout = ({ children }) => {
                     </div>
                 </main>
 
-                <footer className="h-14 flex-none border-t border-gray-100 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md text-gray-400 text-[10px] font-black uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span>&copy; {new Date().getFullYear()} CRM PRO • Decentralized Node</span>
+                <footer className="h-14 flex-none border-t border-[#F0F2F5] flex items-center justify-between px-8 bg-white/80 backdrop-blur-md text-[#A0AEC0] text-[10px] font-black uppercase tracking-[0.3em]">
+                    <div className="flex items-center gap-3">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shadow-lg shadow-blue-500/20"></span>
+                        <span>&copy; {new Date().getFullYear()} CANVAS PRO • NODE SYNC ACTIVE</span>
                     </div>
-                    <div className="flex gap-6">
-                        <a href="#" className="hover:text-green-600 transition-colors">Security Protocol</a>
-                        <a href="#" className="hover:text-green-600 transition-colors">Architecture Terms</a>
+                    <div className="flex gap-8">
+                        <a href="#" className="hover:text-blue-600 transition-colors">SECURITY PROTOCOL</a>
+                        <a href="#" className="hover:text-blue-600 transition-colors">OS ARCHITECTURE</a>
                     </div>
                 </footer>
+
             </div>
         </div>
     );

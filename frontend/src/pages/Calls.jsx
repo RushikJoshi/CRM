@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiPhone, FiClock, FiCheckCircle, FiEdit2, FiTrash2, FiUser } from "react-icons/fi";
+import { FiPlus, FiPhone, FiClock, FiEdit2, FiX } from "react-icons/fi";
 import API from "../services/api";
 
 const CallsPage = () => {
@@ -108,7 +108,6 @@ const CallsPage = () => {
                                 <td className="px-6 py-5 text-right space-x-1">
                                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button onClick={() => { setEditingId(item._id); setFormData({ title: item.title, description: item.description, status: item.status, time: item.time ? new Date(item.time).toISOString().slice(0, 16) : "" }); setShowModal(true); }} className="p-2.5 bg-white border border-gray-100 text-gray-400 hover:text-green-600 hover:border-green-100 hover:bg-green-50 rounded-xl transition-all shadow-sm"><FiEdit2 size={16} /></button>
-                                        <button onClick={async () => { if (window.confirm("Are you sure you want to delete this call log?")) { await API.delete(`/crm/calls/${item._id}`); fetchData(); } }} className="p-2.5 bg-white border border-gray-100 text-gray-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50 rounded-xl transition-all shadow-sm"><FiTrash2 size={16} /></button>
                                     </div>
                                 </td>
                             </tr>
@@ -129,7 +128,7 @@ const CallsPage = () => {
                     <div className="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                             <h3 className="text-xl font-black text-gray-900">{editingId ? "Edit Call" : "Add Call"}</h3>
-                            <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-xl transition-colors"><FiUser size={20} /></button>
+                            <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-xl transition-colors"><FiX size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-8 space-y-6">
                             <div className="space-y-2.5">

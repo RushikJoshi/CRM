@@ -144,13 +144,15 @@ const LoginForm = () => {
                 </button>
             </form>
 
-            {/* Footer */}
-            <div className="mt-10 pt-8 border-t border-gray-100">
-                <p className="text-center text-xs text-gray-400 font-medium">
-                    Your data is safe.
+
+            {/* Footer Matrix */}
+            <div className="mt-12 pt-10 border-t border-[#F0F2F5]">
+                <p className="text-center text-[10px] text-[#A0AEC0] font-black uppercase tracking-[0.3em] opacity-60">
+                    Secured by Gitakshmi Encryption Protocols core-v4.2
                 </p>
             </div>
         </div>
+
     );
 };
 

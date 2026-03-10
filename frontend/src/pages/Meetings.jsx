@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiCalendar, FiMapPin, FiClock, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiPlus, FiCalendar, FiMapPin, FiClock, FiEdit2, FiX } from "react-icons/fi";
 import API from "../services/api";
 
 const MeetingsPage = () => {
@@ -55,7 +55,7 @@ const MeetingsPage = () => {
         <div className="space-y-8 animate-in fade-in duration-700 pb-10">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Meetings</h1>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Team Meetings</h1>
                     <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mt-1 opacity-75">Keep track of your upcoming and past meetings.</p>
                 </div>
                 <button
@@ -72,7 +72,6 @@ const MeetingsPage = () => {
                     <div key={item._id} className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all relative group overflow-hidden flex flex-col h-full">
                         <div className="absolute top-0 right-0 p-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => { setEditingId(item._id); setFormData({ title: item.title, description: item.description, startDate: item.startDate ? new Date(item.startDate).toISOString().slice(0, 16) : "", endDate: item.endDate ? new Date(item.endDate).toISOString().slice(0, 16) : "", location: item.location, status: item.status || "Scheduled" }); setShowModal(true); }} className="p-2.5 bg-white text-gray-400 hover:text-green-600 border border-gray-100 hover:border-green-100 hover:bg-green-50 rounded-xl shadow-sm transition-all"><FiEdit2 size={16} /></button>
-                            <button onClick={async () => { if (window.confirm("Are you sure you want to cancel this meeting?")) { await API.delete(`/crm/meetings/${item._id}`); fetchData(); } }} className="p-2.5 bg-white text-gray-400 hover:text-red-500 border border-gray-100 hover:border-red-100 hover:bg-red-50 rounded-xl shadow-sm transition-all"><FiTrash2 size={16} /></button>
                         </div>
                         <div className="p-3.5 bg-green-50 text-green-600 rounded-[1.25rem] w-fit mb-6 shadow-sm"><FiCalendar size={24} /></div>
                         <h3 className="text-xl font-black text-gray-900 mb-3 truncate pr-16">{item.title}</h3>
@@ -103,7 +102,7 @@ const MeetingsPage = () => {
                     <div className="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                             <h3 className="text-xl font-black text-gray-900">{editingId ? "Edit Meeting" : "Add Meeting"}</h3>
-                            <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-xl transition-colors"><FiUser size={20} /></button>
+                            <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-xl transition-colors"><FiX size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-8 space-y-6">
                             <div className="space-y-2.5">

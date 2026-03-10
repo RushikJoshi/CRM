@@ -7,7 +7,7 @@ import FieldError from "../../components/FieldError";
 import { useToast } from "../../context/ToastContext";
 import { getCurrentUser } from "../../context/AuthContext";
 
-const LEAD_STATUSES = ["New", "Contacted", "Qualified", "Proposal", "Closed"];
+const LEAD_STATUSES = ["New", "Contacted", "Qualified", "Proposal", "Negotiation", "Closed Won", "Closed Lost"];
 
 export default function LeadFormPage() {
     const { id } = useParams();
@@ -25,7 +25,7 @@ export default function LeadFormPage() {
     const [leadSources, setLeadSources] = useState([]);
     const [formData, setFormData] = useState({
         name: "", email: "", phone: "", company: "", source: "Website",
-        sourceId: "", status: "New", assignedTo: "", notes: ""
+        sourceId: "", status: "New", assignedTo: "", notes: "", value: 0
     });
 
     const schema = {
@@ -51,9 +51,16 @@ export default function LeadFormPage() {
 
     // Fetch lead for edit
     useEffect(() => {
-        if (!isEdit) return;
+        if (!isEdit) {
+            setFormData({
+                name: "", email: "", phone: "", company: "", source: "Website",
+                sourceId: "", status: "New", assignedTo: "", notes: "", value: 0
+            });
+            return;
+        }
         (async () => {
             try {
+                const res = await API.get(apiBase);
                 const resData = res.data?.data || res.data;
                 const all = Array.isArray(resData) ? resData : [];
                 const lead = all.find(l => l._id === id);
@@ -67,7 +74,8 @@ export default function LeadFormPage() {
                         sourceId: lead.sourceId?._id || lead.sourceId || "",
                         status: lead.status || "New",
                         assignedTo: lead.assignedTo?._id || lead.assignedTo || "",
-                        notes: lead.notes || ""
+                        notes: lead.notes || "",
+                        value: lead.value || 0
                     });
                 }
             } catch { toast.error("Failed to load lead data"); }
@@ -89,11 +97,17 @@ export default function LeadFormPage() {
         }
         setLoading(true);
         try {
+            const dataToSubmit = {
+                ...formData,
+                sourceId: formData.sourceId === "" ? null : formData.sourceId,
+                assignedTo: formData.assignedTo === "" ? null : formData.assignedTo
+            };
+
             if (isEdit) {
-                await API.put(`/leads/${id}`, formData);
+                await API.put(`/leads/${id}`, dataToSubmit);
                 toast.success("Lead updated successfully!");
             } else {
-                await API.post("/leads", formData);
+                await API.post("/leads", dataToSubmit);
                 toast.success("Lead created successfully!");
             }
             navigate(-1);
@@ -105,151 +119,182 @@ export default function LeadFormPage() {
     };
 
     const inputCls = (field) =>
-        `w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl outline-none font-bold text-gray-700 text-sm transition-all
-     focus:bg-white focus:ring-4 focus:ring-green-500/10 shadow-sm
-     ${errors[field] ? "border-red-300 focus:border-red-400" : "border-transparent focus:border-green-400"}`;
+        `w-full pl-14 pr-6 py-5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none font-black text-[#1A202C] text-sm transition-all
+     focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 shadow-sm placeholder-[#CBD5E0]
+     ${errors[field] ? "border-red-200 focus:border-red-300 focus:ring-red-500/5" : ""}`;
 
     if (fetching) {
         return (
-            <div className="flex items-center justify-center h-[60vh]">
-                <div className="w-12 h-12 border-4 border-green-100 border-t-green-500 rounded-full animate-spin" />
+            <div className="flex flex-col items-center justify-center h-[60vh] space-y-6">
+                <div className="w-16 h-16 border-[6px] border-blue-50 border-t-blue-500 rounded-full animate-spin shadow-lg" />
+                <p className="text-[#A0AEC0] font-black uppercase tracking-[0.3em] text-[11px]">Syncing Record Intel...</p>
             </div>
         );
     }
 
     return (
-        <div className="max-w-2xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
+        <div className="w-full space-y-10 pb-24 animate-in fade-in duration-1000">
             {/* Header */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+            <div className="bg-white rounded-[32px] border border-[#E5EAF2] shadow-sm p-10 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
                 <button onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-sm font-black text-gray-400 hover:text-green-600 transition-colors mb-6 group">
-                    <FiArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                    Back to Leads
+                    className="flex items-center gap-3 text-[11px] font-black text-[#A0AEC0] hover:text-blue-600 transition-all mb-8 group uppercase tracking-widest relative z-10">
+                    <FiArrowLeft size={16} strokeWidth={3} className="group-hover:-translate-x-1 transition-transform" />
+                    Terminate & Return
                 </button>
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">
-                        <FiTarget size={24} />
+                <div className="flex items-center gap-6 relative z-10">
+                    <div className="w-16 h-16 bg-blue-600 text-white rounded-[24px] flex items-center justify-center shadow-xl shadow-blue-500/20 group-hover:rotate-6 transition-transform">
+                        <FiTarget size={30} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-                            {isEdit ? "Edit Lead" : "Create Lead"}
+                        <h1 className="text-4xl font-black text-[#1A202C] tracking-tighter leading-none mb-2">
+                            {isEdit ? "Refine Lead" : "Architect Lead"}
                         </h1>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                            {isEdit ? "Update lead information" : "Add a new prospect to the pipeline"}
+                        <p className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.25em] opacity-80">
+                            {isEdit ? "Update prospect intelligence parameters" : "Initialize new prospect telemetry in pipeline"}
                         </p>
                     </div>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-6">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-6">
-                    <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.25em] flex items-center gap-2">
-                        <FiTarget size={12} /> Lead Details
+            <form onSubmit={handleSubmit} noValidate className="space-y-8 max-w-5xl mx-auto">
+                <div className="bg-white rounded-[40px] border border-[#E5EAF2] shadow-sm p-12 space-y-10 relative overflow-hidden">
+                    <h2 className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.35em] flex items-center gap-3 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" /> Lead Core Data
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Name */}
-                        <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                                Lead Name <span className="text-red-500">*</span>
+                        <div className="space-y-3 md:col-span-2">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">
+                                Identification <span className="text-red-500 opacity-50">*</span>
                             </label>
                             <div className="relative group">
-                                <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <input name="name" type="text" placeholder="Rajesh Kumar"
+                                <FiUser size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <input name="name" type="text" placeholder="Full Legal Name"
                                     className={inputCls("name")} value={formData.name} onChange={handleChange} />
                             </div>
                             <FieldError error={errors.name} />
                         </div>
 
                         {/* Email */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Email</label>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Communication Link (Email)</label>
                             <div className="relative group">
-                                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <input name="email" type="email" placeholder="rajesh@client.com"
+                                <FiMail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <input name="email" type="email" placeholder="contact@domain.com"
                                     className={inputCls("email")} value={formData.email} onChange={handleChange} />
                             </div>
                             <FieldError error={errors.email} />
                         </div>
 
                         {/* Phone */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Phone</label>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Direct Terminal (Phone)</label>
                             <div className="relative group">
-                                <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <input name="phone" type="tel" placeholder="9876543210"
+                                <FiPhone size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <input name="phone" type="tel" placeholder="+91"
                                     className={inputCls("phone")} value={formData.phone} onChange={handleChange} />
                             </div>
                             <FieldError error={errors.phone} />
                         </div>
 
                         {/* Company */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Company</label>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Entity Context</label>
                             <div className="relative group">
-                                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <input name="company" type="text" placeholder="Client Company Ltd."
+                                <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <input name="company" type="text" placeholder="Organization Name"
                                     className={inputCls("company")} value={formData.company} onChange={handleChange} />
                             </div>
                         </div>
 
                         {/* Source */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Source</label>
-                            <select name="sourceId" className={inputCls("sourceId").replace("pl-12", "pl-4")}
-                                value={formData.sourceId} onChange={handleChange}>
-                                <option value="">Select Source</option>
-                                {leadSources.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                            </select>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Acquisition Oracle</label>
+                            <div className="relative group">
+                                <select name="sourceId" className={inputCls("sourceId").replace("pl-14", "pl-6 appearance-none")}
+                                    value={formData.sourceId} onChange={handleChange}>
+                                    <option value="">Select Origin...</option>
+                                    {leadSources.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                </select>
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[#CBD5E0]">
+                                    <FiArrowLeft className="-rotate-90" size={16} />
+                                </div>
+                            </div>
                         </div>
 
                         {/* Status */}
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Status</label>
-                            <select name="status" className={inputCls("status").replace("pl-12", "pl-4")}
-                                value={formData.status} onChange={handleChange}>
-                                {LEAD_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                            </select>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Pipeline Phase</label>
+                            <div className="relative group">
+                                <select name="status" className={inputCls("status").replace("pl-14", "pl-6 appearance-none")}
+                                    value={formData.status} onChange={handleChange}>
+                                    {LEAD_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[#CBD5E0]">
+                                    <FiArrowLeft className="-rotate-90" size={16} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Amount / Value */}
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2 flex items-center gap-1.5">
+                                Estimated Revenue Value
+                            </label>
+                            <div className="relative group">
+                                <div className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-blue-600 flex items-center gap-1">
+                                    <span className="text-[12px] opacity-40">₹</span>
+                                </div>
+                                <input name="value" type="number" placeholder="0"
+                                    className={inputCls("value").replace("pl-14", "pl-14")} value={formData.value} onChange={handleChange} />
+                            </div>
                         </div>
 
                         {/* Assigned To */}
                         {users.length > 0 && (
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Assign To</label>
-                                <select name="assignedTo" className={inputCls("assignedTo").replace("pl-12", "pl-4")}
-                                    value={formData.assignedTo} onChange={handleChange}>
-                                    <option value="">Auto-assign</option>
-                                    {users.map(u => <option key={u._id} value={u._id}>{u.name} ({u.role})</option>)}
-                                </select>
+                            <div className="space-y-3">
+                                <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Task Allocation</label>
+                                <div className="relative group">
+                                    <select name="assignedTo" className={inputCls("assignedTo").replace("pl-14", "pl-6 appearance-none")}
+                                        value={formData.assignedTo} onChange={handleChange}>
+                                        <option value="">Automated Intelligence</option>
+                                        {users.map(u => <option key={u._id} value={u._id}>{u.name} ({u.role.replace('_', ' ')})</option>)}
+                                    </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[#CBD5E0]">
+                                        <FiArrowLeft className="-rotate-90" size={16} />
+                                    </div>
+                                </div>
                             </div>
                         )}
 
                         {/* Notes */}
-                        <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Notes</label>
-                            <textarea name="notes" rows={3} placeholder="Additional context about this lead..."
-                                className={inputCls("notes").replace("pl-12", "pl-4") + " resize-none"}
+                        <div className="space-y-3 md:col-span-2">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Contextual Intelligence</label>
+                            <textarea name="notes" rows={4} placeholder="Append supplemental leads context..."
+                                className={inputCls("notes").replace("pl-14", "pl-6") + " resize-none"}
                                 value={formData.notes} onChange={handleChange} />
                         </div>
                     </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex flex-col sm:flex-row gap-6 pt-4">
                     <button type="button" onClick={() => navigate(-1)}
-                        className="flex-1 py-4 bg-gray-100 text-gray-600 font-black rounded-2xl hover:bg-gray-200 transition-all text-sm uppercase tracking-widest">
-                        Cancel
+                        className="flex-1 py-5 bg-[#F4F7FB] text-[#A0AEC0] font-black rounded-[24px] border border-[#E5EAF2] hover:bg-slate-100 hover:text-[#718096] transition-all text-[11px] uppercase tracking-[0.25em]">
+                        Abort Changes
                     </button>
                     <button type="submit" disabled={loading}
-                        className="flex-[2] flex items-center justify-center gap-3 py-4 bg-green-600 text-white font-black rounded-2xl hover:bg-green-700 active:scale-95 transition-all text-sm uppercase tracking-widest shadow-xl shadow-green-500/20 disabled:opacity-50">
+                        className="flex-[2] flex items-center justify-center gap-4 py-5 bg-blue-600 text-white font-black rounded-[24px] hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-blue-600/20 disabled:opacity-50 duration-300">
                         {loading ? (
-                            <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                            <div className="w-5 h-5 border-[3px] border-white/40 border-t-white rounded-full animate-spin" />
                         ) : (
-                            <><FiSave size={18} /> {isEdit ? "Save Changes" : "Create Lead"}</>
+                            <><FiSave size={20} strokeWidth={3} /> {isEdit ? "Commit Intelligence" : "Broadcast Record"}</>
                         )}
                     </button>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 }

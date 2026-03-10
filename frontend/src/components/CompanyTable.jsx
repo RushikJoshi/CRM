@@ -1,7 +1,9 @@
 import React from "react";
-import { FiEdit2, FiTrash2, FiMail, FiPhone, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { FiEdit2, FiMail, FiPhone, FiCheckCircle, FiXCircle, FiExternalLink } from "react-icons/fi";
 
 const CompanyTable = ({ companies, onEdit, onDelete, onStatusChange }) => {
+    const navigate = useNavigate();
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto min-h-[400px]">
@@ -22,13 +24,19 @@ const CompanyTable = ({ companies, onEdit, onDelete, onStatusChange }) => {
                                     className="hover:bg-green-50/30 transition-all group animate-in fade-in duration-500"
                                 >
                                     <td className="px-8 py-5">
-                                        <div className="flex items-center">
+                                        <div
+                                            className="flex items-center cursor-pointer"
+                                            onClick={() => navigate(`/superadmin/companies/${company._id}`)}
+                                        >
                                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-green-50 to-green-100/50 flex items-center justify-center text-green-600 font-black mr-4 group-hover:scale-110 group-hover:bg-green-600 group-hover:text-white transition-all shadow-sm">
                                                 {company.name.charAt(0)}
                                             </div>
                                             <div>
-                                                <span className="font-black text-gray-900 tracking-tight">{company.name}</span>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase mt-1 tracking-widest">Company</p>
+                                                <span className="font-black text-gray-900 tracking-tight group-hover:text-green-600 flex items-center gap-1.5 transition-colors">
+                                                    {company.name}
+                                                    <FiExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity text-green-500" />
+                                                </span>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase mt-1 tracking-widest">Click to view details</p>
                                             </div>
                                         </div>
                                     </td>
@@ -59,13 +67,6 @@ const CompanyTable = ({ companies, onEdit, onDelete, onStatusChange }) => {
                                                 title="Edit"
                                             >
                                                 <FiEdit2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => onDelete(company._id)}
-                                                className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm bg-white border border-transparent hover:border-red-100"
-                                                title="Delete"
-                                            >
-                                                <FiTrash2 size={16} />
                                             </button>
                                         </div>
                                     </td>

@@ -54,7 +54,8 @@ export default function DealFormPage() {
                 API.get("/super-admin/companies"),
                 API.get("/master?type=deal_stage")
             ]);
-            setCompanies(compRes.data?.companies || []);
+            const compData = compRes.data?.data || compRes.data;
+            setCompanies(Array.isArray(compData) ? compData : []);
             setMasterStages(masterRes.data?.data || []);
         } catch (err) { console.error(err); }
     };
@@ -80,7 +81,13 @@ export default function DealFormPage() {
     };
 
     useEffect(() => {
-        if (!isEdit) return;
+        if (!isEdit) {
+            setFormData({
+                title: "", value: 0, stage: "New", lostReason: "",
+                leadId: "", companyId: "", assignedTo: ""
+            });
+            return;
+        }
         (async () => {
             try {
                 const res = await API.get(apiBase);
@@ -133,96 +140,110 @@ export default function DealFormPage() {
     };
 
     const inputCls = (field) =>
-        `w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-2xl outline-none font-bold text-gray-700 text-sm transition-all
-     focus:bg-white focus:ring-4 focus:ring-green-500/10 shadow-sm
-     ${errors[field] ? "border-red-300 focus:border-red-400" : "border-transparent focus:border-green-400"}`;
+        `w-full pl-14 pr-6 py-5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none font-black text-[#1A202C] text-sm transition-all
+     focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 shadow-sm placeholder-[#CBD5E0]
+     ${errors[field] ? "border-red-200 focus:border-red-300 focus:ring-red-500/5" : ""}`;
 
     if (fetching) {
         return (
-            <div className="flex items-center justify-center h-[60vh]">
-                <div className="w-12 h-12 border-4 border-green-100 border-t-green-500 rounded-full animate-spin" />
+            <div className="flex flex-col items-center justify-center h-[60vh] space-y-6">
+                <div className="w-16 h-16 border-[6px] border-blue-50 border-t-blue-500 rounded-full animate-spin shadow-lg" />
+                <p className="text-[#A0AEC0] font-black uppercase tracking-[0.3em] text-[11px]">Syncing Capital Yield Specs...</p>
             </div>
         );
     }
 
     return (
-        <div className="max-w-3xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+        <div className="w-full space-y-10 pb-24 animate-in fade-in duration-1000">
+            {/* Header */}
+            <div className="bg-white rounded-[32px] border border-[#E5EAF2] shadow-sm p-10 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
                 <button onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-sm font-black text-gray-400 hover:text-green-600 transition-colors mb-6 group">
-                    <FiArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                    Back to Pipeline
+                    className="flex items-center gap-3 text-[11px] font-black text-[#A0AEC0] hover:text-blue-600 transition-all mb-8 group uppercase tracking-widest relative z-10">
+                    <FiArrowLeft size={16} strokeWidth={3} className="group-hover:-translate-x-1 transition-transform" />
+                    Abort Mission
                 </button>
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">
-                        <FiTrendingUp size={24} />
+                <div className="flex items-center gap-6 relative z-10">
+                    <div className="w-16 h-16 bg-blue-600 text-white rounded-[24px] flex items-center justify-center shadow-xl shadow-blue-500/20 group-hover:rotate-6 transition-transform">
+                        <FiTrendingUp size={30} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-                            {isEdit ? "Edit Deal" : "Initialize Deal"}
+                        <h1 className="text-4xl font-black text-[#1A202C] tracking-tighter leading-none mb-2">
+                            {isEdit ? "Refine Deal" : "Architect Deal"}
                         </h1>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                            Capital Yield Management Node
+                        <p className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.25em] opacity-80">
+                            Capital Yield Management Node & Optimization
                         </p>
                     </div>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
                 {/* Deal Intelligence */}
-                <div className="md:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-6">
-                    <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.25em] flex items-center gap-2">
-                        Intelligence Matrix
+                <div className="md:col-span-2 bg-white rounded-[40px] border border-[#E5EAF2] shadow-sm p-12 space-y-10 relative overflow-hidden">
+                    <h2 className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.35em] flex items-center gap-3 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" /> Intelligence Matrix
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Deal Title *</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3 md:col-span-2">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Objective Title *</label>
                             <div className="relative group">
-                                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <input name="title" className={inputCls("title")} placeholder="Project Alpha Acquisition..."
+                                <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <input name="title" className={inputCls("title")} placeholder="Deal Specification Name..."
                                     value={formData.title} onChange={handleChange} />
                             </div>
                             <FieldError error={errors.title} />
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Value (INR) *</label>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Economic Value (Capital) *</label>
                             <div className="relative group">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 font-black">₹</span>
-                                <input name="value" type="number" className={inputCls("value")} placeholder="Value..."
+                                <div className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-blue-600 flex items-center gap-1">
+                                    <span className="text-[12px] opacity-40">₹</span>
+                                </div>
+                                <input name="value" type="number" className={inputCls("value").replace("pl-14", "pl-14")} placeholder="Value Metrics..."
                                     value={formData.value} onChange={handleChange} />
                             </div>
                             <FieldError error={errors.value} />
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Current Stage *</label>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Pipeline Phase *</label>
                             <div className="relative group">
-                                <FiTarget className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <select name="stage" className={inputCls("stage")} value={formData.stage} onChange={handleChange}>
-                                    <option value="New">New Opportunity</option>
-                                    {masterStages.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
-                                    <option value="Closed Won">Closed Won</option>
-                                    <option value="Closed Lost">Closed Lost</option>
+                                <FiTarget size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <select name="stage" className={inputCls("stage").replace("pl-14", "pl-14 py-5 appearance-none")} value={formData.stage} onChange={handleChange}>
+                                    <option value="New">Initial Opportunity</option>
+                                    <option value="Qualified">Qualified Intel</option>
+                                    <option value="Proposal">Capital Proposal</option>
+                                    <option value="Negotiation">Strategic Negotiation</option>
+                                    {masterStages.map(s => <option key={s._id} value={s.name}>{s.name} (Custom)</option>)}
+                                    <option value="Closed Won">Mission Success (Won)</option>
+                                    <option value="Closed Lost">Mission Terminated (Lost)</option>
                                 </select>
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[#CBD5E0]">
+                                    <FiArrowLeft className="-rotate-90" size={16} />
+                                </div>
                             </div>
                             <FieldError error={errors.stage} />
                         </div>
 
                         {formData.stage === "Closed Lost" && (
-                            <div className="space-y-1.5 md:col-span-2 animate-in slide-in-from-top-2">
-                                <label className="text-[10px] font-black text-red-400 uppercase tracking-widest">Reason for Loss *</label>
+                            <div className="space-y-3 md:col-span-2 animate-in slide-in-from-top-4 duration-500">
+                                <label className="text-[11px] font-black text-red-500 uppercase tracking-[0.2em] ml-2">Termination Analysis (Lost Reason) *</label>
                                 <div className="relative group">
-                                    <FiX className="absolute left-4 top-1/2 -translate-y-1/2 text-red-300 group-focus-within:text-red-500 transition-colors" />
-                                    <select name="lostReason" className={inputCls("lostReason").replace("bg-gray-50", "bg-red-50/30")}
+                                    <FiX size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-red-300 group-focus-within:text-red-500 transition-colors" />
+                                    <select name="lostReason" className={inputCls("lostReason").replace("bg-[#F4F7FB]", "bg-red-50/20 border-red-100").replace("pl-14", "pl-14 appearance-none")}
                                         value={formData.lostReason} onChange={handleChange}>
-                                        <option value="">Select Reason...</option>
-                                        <option value="Price too high">Price too high</option>
-                                        <option value="Competitor selected">Competitor selected</option>
-                                        <option value="Budget issue">Budget issue</option>
-                                        <option value="No response">No response</option>
-                                        <option value="Other">Other</option>
+                                        <option value="">Select Reason for Attrition...</option>
+                                        <option value="Price too high">Economic Variance (Price)</option>
+                                        <option value="Competitor selected">Competitor Interference</option>
+                                        <option value="Budget issue">Budget Deployment Issue</option>
+                                        <option value="No response">Signal Loss (No response)</option>
+                                        <option value="Other">Miscellaneous Attrition</option>
                                     </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-red-300">
+                                        <FiArrowLeft className="-rotate-90" size={16} />
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -230,42 +251,42 @@ export default function DealFormPage() {
                 </div>
 
                 {/* Association Matrix */}
-                <div className="md:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-6">
-                    <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.25em] flex items-center gap-2">
-                        Association Matrix
+                <div className="md:col-span-2 bg-white rounded-[40px] border border-[#E5EAF2] shadow-sm p-12 space-y-10 relative overflow-hidden">
+                    <h2 className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.35em] flex items-center gap-3 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" /> Operational Matrix
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Target Company *</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Entity Target *</label>
                             <div className="relative group">
-                                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <select name="companyId" className={inputCls("companyId")} value={formData.companyId} onChange={handleChange}>
-                                    <option value="">Select Company...</option>
+                                <FiBriefcase size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <select name="companyId" className={inputCls("companyId").replace("pl-14", "pl-12 py-5 appearance-none")} value={formData.companyId} onChange={handleChange}>
+                                    <option value="">Select Target...</option>
                                     {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                                 </select>
                             </div>
                             <FieldError error={errors.companyId} />
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Linked Lead *</label>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Lead Prospect *</label>
                             <div className="relative group">
-                                <FiFlag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <select name="leadId" className={inputCls("leadId")} value={formData.leadId} onChange={handleChange} disabled={!formData.companyId}>
-                                    <option value="">Select Lead...</option>
+                                <FiFlag size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <select name="leadId" className={inputCls("leadId").replace("pl-14", "pl-12 py-5 appearance-none")} value={formData.leadId} onChange={handleChange} disabled={!formData.companyId}>
+                                    <option value="">Select Objective...</option>
                                     {leads.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
                                 </select>
                             </div>
                             <FieldError error={errors.leadId} />
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Assigned Overseer *</label>
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Allocated Overseer *</label>
                             <div className="relative group">
-                                <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <select name="assignedTo" className={inputCls("assignedTo")} value={formData.assignedTo} onChange={handleChange} disabled={!formData.companyId}>
-                                    <option value="">Select Officer...</option>
-                                    {users.map(u => <option key={u._id} value={u._id}>{u.name} ({u.role})</option>)}
+                                <FiUser size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <select name="assignedTo" className={inputCls("assignedTo").replace("pl-14", "pl-12 py-5 appearance-none")} value={formData.assignedTo} onChange={handleChange} disabled={!formData.companyId}>
+                                    <option value="">Select Command...</option>
+                                    {users.map(u => <option key={u._id} value={u._id}>{u.name} ({u.role.replace('_', ' ')})</option>)}
                                 </select>
                             </div>
                             <FieldError error={errors.assignedTo} />
@@ -273,17 +294,17 @@ export default function DealFormPage() {
                     </div>
                 </div>
 
-                <div className="md:col-span-2 flex flex-col sm:flex-row gap-4 pt-4">
+                <div className="md:col-span-2 flex flex-col sm:flex-row gap-6 pt-6">
                     <button type="button" onClick={() => navigate(-1)}
-                        className="flex-1 py-4 bg-gray-100 text-gray-600 font-black rounded-2xl hover:bg-gray-200 transition-all text-sm uppercase tracking-widest">
-                        Abort
+                        className="flex-1 py-5 bg-[#F4F7FB] text-[#A0AEC0] font-black rounded-[24px] border border-[#E5EAF2] hover:bg-slate-100 hover:text-[#718096] transition-all text-[11px] uppercase tracking-[0.25em]">
+                        Abort Deployment
                     </button>
                     <button type="submit" disabled={loading}
-                        className="flex-[2] flex items-center justify-center gap-3 py-4 bg-green-600 text-white font-black rounded-2xl hover:bg-green-700 active:scale-95 transition-all text-sm uppercase tracking-widest shadow-xl shadow-green-500/20 disabled:opacity-50">
+                        className="flex-[2] flex items-center justify-center gap-4 py-5 bg-blue-600 text-white font-black rounded-[24px] hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-blue-600/20 disabled:opacity-50 duration-300">
                         {loading ? (
-                            <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                            <div className="w-5 h-5 border-[3px] border-white/40 border-t-white rounded-full animate-spin" />
                         ) : (
-                            <><FiSave size={18} /> Synchronize Deal</>
+                            <><FiSave size={20} strokeWidth={3} /> {isEdit ? "Refine Deal Matrix" : "Deploy Deal Intel"}</>
                         )}
                     </button>
                 </div>

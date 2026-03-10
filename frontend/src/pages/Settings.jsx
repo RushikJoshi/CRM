@@ -1,187 +1,391 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { getCurrentUser } from "../context/AuthContext";
 import API from "../services/api";
-import { FiUser, FiLock, FiBell, FiShield, FiSave, FiX, FiCheckCircle, FiActivity } from "react-icons/fi";
+import {
+    FiUser, FiLock, FiBell, FiShield, FiSave, FiX,
+    FiCheckCircle, FiActivity, FiEye, FiEyeOff, FiRefreshCw,
+    FiAlertTriangle, FiMoon
+} from "react-icons/fi";
 
-const Settings = () => {
-    const { user, login } = useContext(AuthContext); // Can use this to update user if needed
-    const [profile, setProfile] = useState({
-        name: user?.name || "",
-        email: user?.email || ""
-    });
-    const [passwords, setPasswords] = useState({
-        current: "",
-        new: "",
-        confirm: ""
-    });
-    const [loading, setLoading] = useState(false);
-    const [msg, setMsg] = useState({ text: "", type: "" });
+// ─── Message Banner ─────────────────────────────────────────────────────────
+const MsgBanner = ({ msg, onClose }) => {
+    if (!msg.text) return null;
+    const isSuccess = msg.type === "success";
+    return (
+        <div className={`flex items-center justify-between p-4 rounded-xl border animate-in slide-in-from-top-2 duration-300 ${isSuccess ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}>
+            <div className="flex items-center gap-3">
+                <div className={`p-1.5 rounded-lg ${isSuccess ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
+                    {isSuccess ? <FiCheckCircle size={16} /> : <FiAlertTriangle size={16} />}
+                </div>
+                <span className="font-bold text-sm">{msg.text}</span>
+            </div>
+            <button onClick={onClose} className="p-1.5 hover:bg-black/5 rounded-lg transition-colors">
+                <FiX size={16} />
+            </button>
+        </div>
+    );
+};
 
-    const handleProfileUpdate = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const res = await API.put(`/super-admin/users/${user.id}`, { name: profile.name, email: profile.email });
-            setMsg({ text: "Profile updated.", type: "success" });
-            // Optionally update context here if login function supports it or re-fetch
-        } catch (err) {
-            setMsg({ text: "Error updating profile: " + err.response?.data?.message, type: "error" });
-        } finally {
-            setLoading(false);
-        }
-    };
+// ─── Password Input ──────────────────────────────────────────────────────────
+const PasswordInput = ({ value, onChange, placeholder, className = "" }) => {
+    const [show, setShow] = useState(false);
+    return (
+        <div className="relative">
+            <input
+                type={show ? "text" : "password"}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                className={`w-full pr-12 ${className}`}
+            />
+            <button
+                type="button"
+                onClick={() => setShow(s => !s)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+            >
+                {show ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+            </button>
+        </div>
+    );
+};
 
-    const handlePasswordUpdate = async (e) => {
-        e.preventDefault();
-        if (passwords.new !== passwords.confirm) {
-            setMsg({ text: "Passwords do not match.", type: "error" });
-            return;
-        }
-        setLoading(true);
-        try {
-            await API.put(`/super-admin/users/${user.id}`, { password: passwords.new });
-            setMsg({ text: "Password changed.", type: "success" });
-            setPasswords({ current: "", new: "", confirm: "" });
-        } catch (err) {
-            setMsg({ text: err.response?.data?.message || "Error changing password.", type: "error" });
-        } finally {
-            setLoading(false);
-        }
-    };
+// ─── Password Strength ───────────────────────────────────────────────────────
+const PasswordStrength = ({ password }) => {
+    if (!password) return null;
+    const checks = [
+        { label: "6+ characters", pass: password.length >= 6 },
+        { label: "Uppercase letter", pass: /[A-Z]/.test(password) },
+        { label: "Number", pass: /\d/.test(password) },
+        { label: "Special character", pass: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
+    ];
+    const score = checks.filter(c => c.pass).length;
+    const labels = ["", "Weak", "Fair", "Good", "Strong"];
+    const colors = ["", "bg-red-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
+    const textColors = ["", "text-red-600", "text-yellow-600", "text-blue-600", "text-green-600"];
 
     return (
-        <div className="space-y-12 pb-20 animate-in fade-in duration-700">
-            {/* Dynamic Header Block */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-green-50/30 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                <div className="relative z-10">
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">Settings</h1>
-                    <p className="text-gray-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 opacity-60">Manage your account and security settings.</p>
+        <div className="mt-3 space-y-2">
+            <div className="flex gap-1.5">
+                {[1, 2, 3, 4].map(i => (
+                    <div key={i} className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${i <= score ? colors[score] : "bg-gray-200"}`} />
+                ))}
+            </div>
+            <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                    {checks.map((c, i) => (
+                        <span key={i} className={`text-[10px] font-bold flex items-center gap-1 ${c.pass ? "text-green-600" : "text-gray-400"}`}>
+                            <span>{c.pass ? "✓" : "○"}</span> {c.label}
+                        </span>
+                    ))}
+                </div>
+                {score > 0 && <span className={`text-[11px] font-black uppercase tracking-widest ${textColors[score]}`}>{labels[score]}</span>}
+            </div>
+        </div>
+    );
+};
+
+// ─── Main Settings Component ─────────────────────────────────────────────────
+const Settings = () => {
+    const { login } = useContext(AuthContext);
+    const user = getCurrentUser();
+
+    const [profile, setProfile] = useState({ name: user?.name || "", email: user?.email || "" });
+    const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [pwLoading, setPwLoading] = useState(false);
+    const [profileMsg, setProfileMsg] = useState({ text: "", type: "" });
+    const [pwMsg, setPwMsg] = useState({ text: "", type: "" });
+    const [fetchingProfile, setFetchingProfile] = useState(true);
+
+    // On mount, fetch fresh profile from backend
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const res = await API.get("/auth/me");
+                const freshUser = res.data?.data;
+                if (freshUser) {
+                    setProfile({ name: freshUser.name || "", email: freshUser.email || "" });
+                }
+            } catch (err) {
+                console.error("Could not load profile:", err);
+            } finally {
+                setFetchingProfile(false);
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    // ── Profile Update ─────────────────────────────────────────────────────
+    const handleProfileUpdate = async (e) => {
+        e.preventDefault();
+        if (!profile.name.trim()) {
+            setProfileMsg({ text: "Name cannot be empty.", type: "error" });
+            return;
+        }
+        if (!profile.email.trim() || !profile.email.includes("@")) {
+            setProfileMsg({ text: "Please enter a valid email address.", type: "error" });
+            return;
+        }
+
+        setProfileLoading(true);
+        setProfileMsg({ text: "", type: "" });
+        try {
+            const res = await API.put("/auth/me/profile", {
+                name: profile.name.trim(),
+                email: profile.email.trim().toLowerCase()
+            });
+            setProfileMsg({ text: res.data?.message || "Profile updated successfully.", type: "success" });
+
+            // Update local storage with new user data so context stays in sync
+            const updatedUser = res.data?.data;
+            if (updatedUser && user?.role) {
+                const { USER_DATA_KEYS } = await import("../context/AuthContext");
+                const key = USER_DATA_KEYS[user.role];
+                if (key) {
+                    const current = JSON.parse(localStorage.getItem(key) || "{}");
+                    localStorage.setItem(key, JSON.stringify({ ...current, name: updatedUser.name, email: updatedUser.email }));
+                }
+            }
+        } catch (err) {
+            setProfileMsg({ text: err.response?.data?.message || "Failed to update profile.", type: "error" });
+        } finally {
+            setProfileLoading(false);
+        }
+    };
+
+    // ── Password Change ────────────────────────────────────────────────────
+    const handlePasswordUpdate = async (e) => {
+        e.preventDefault();
+        setPwMsg({ text: "", type: "" });
+
+        if (!passwords.current) {
+            setPwMsg({ text: "Please enter your current password.", type: "error" });
+            return;
+        }
+        if (!passwords.new) {
+            setPwMsg({ text: "New password cannot be empty.", type: "error" });
+            return;
+        }
+        if (passwords.new.length < 6) {
+            setPwMsg({ text: "Password must be at least 6 characters long.", type: "error" });
+            return;
+        }
+        if (passwords.new !== passwords.confirm) {
+            setPwMsg({ text: "Passwords do not match. Please try again.", type: "error" });
+            return;
+        }
+
+        setPwLoading(true);
+        try {
+            const payload = {
+                currentPassword: passwords.current,
+                newPassword: passwords.new
+            };
+
+            const res = await API.put("/auth/me/password", payload);
+            setPwMsg({ text: res.data?.message || "Password changed successfully.", type: "success" });
+            setPasswords({ current: "", new: "", confirm: "" });
+        } catch (err) {
+            setPwMsg({
+                text: err.response?.data?.message || "Failed to change password. Please try again.",
+                type: "error"
+            });
+        } finally {
+            setPwLoading(false);
+        }
+    };
+
+    const inputClass = "w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400 focus:bg-white transition-all font-semibold text-gray-800 text-sm placeholder:text-gray-400 placeholder:font-normal";
+    const darkInputClass = "w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-all font-semibold text-white text-sm placeholder:text-gray-500 placeholder:font-normal";
+
+    return (
+        <div className="space-y-6 pb-16 animate-in fade-in duration-500">
+            {/* ─── Header ─────────────────────────────────────────────── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-green-500/5 rounded-full blur-2xl pointer-events-none" />
+                <div>
+                    <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Settings</h1>
+                    <p className="text-gray-500 font-medium text-sm mt-1">Manage your account and security settings.</p>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-gray-50 border border-gray-100 px-4 py-2 rounded-xl">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    {user?.role?.replace(/_/g, ' ')?.toUpperCase() || 'USER'}
                 </div>
             </div>
 
-            {/* Notification Banner */}
-            {msg.text && (
-                <div className={`p-6 rounded-[2rem] flex items-center justify-between animate-in slide-in-from-top-4 duration-300 border shadow-sm ${msg.type === 'success' ? 'bg-green-50 border-green-100 text-green-800' : 'bg-red-50 border-red-100 text-red-800'
-                    }`}>
-                    <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-xl ${msg.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-                            {msg.type === 'success' ? <FiCheckCircle size={20} /> : <FiX size={20} />}
-                        </div>
-                        <span className="font-black text-sm tracking-tight">{msg.text}</span>
-                    </div>
-                    <button onClick={() => setMsg({ text: "", type: "" })} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><FiX size={20} /></button>
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                {/* Profile Matrix Node */}
-                <div className="bg-white p-10 rounded-[3.5rem] border border-gray-100 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-green-500/5 rounded-bl-[5rem] translate-x-12 -translate-y-12 group-hover:scale-110 transition-transform"></div>
-                    <div className="flex items-center gap-4 mb-12 relative">
-                        <div className="p-4 bg-green-50 text-green-600 rounded-[1.25rem] shadow-sm"><FiUser size={28} /></div>
-                        <div>
-                            <h3 className="text-2xl font-black text-gray-800 tracking-tight">My Profile</h3>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Your information</p>
-                        </div>
-                    </div>
-                    <form onSubmit={handleProfileUpdate} className="space-y-8 relative">
-                        <div className="space-y-2.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Your Name</label>
-                            <input
-                                value={profile.name}
-                                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                                className="w-full px-7 py-5 bg-gray-50 border border-transparent rounded-[1.5rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-black text-gray-800 text-sm shadow-sm"
-                                placeholder="Enter your name..."
-                            />
-                        </div>
-                        <div className="space-y-2.5">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Your Email</label>
-                            <input
-                                value={profile.email}
-                                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                                className="w-full px-7 py-5 bg-gray-50 border border-transparent rounded-[1.5rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-black text-gray-800 text-sm shadow-sm"
-                                placeholder="Enter your email..."
-                            />
-                        </div>
-                        <button
-                            disabled={loading}
-                            className="w-full py-5 bg-green-500 text-white font-black rounded-2xl shadow-2xl shadow-green-500/20 hover:bg-green-600 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.2em] mt-2"
-                        >
-                            Save Changes
-                        </button>
-                    </form>
-                </div>
-
-                {/* Security Protocol Node */}
-                <div className="bg-gray-900 p-10 rounded-[3.5rem] shadow-2xl text-white group overflow-hidden relative border border-white/5">
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-tr-[5rem] -translate-x-12 translate-y-12 group-hover:scale-110 transition-transform"></div>
-                    <div className="flex items-center gap-4 mb-12 relative z-10">
-                        <div className="p-4 bg-white/10 text-white rounded-[1.25rem] backdrop-blur-xl border border-white/10 shadow-xl"><FiLock size={28} /></div>
-                        <div>
-                            <h3 className="text-2xl font-black tracking-tight">Change Password</h3>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-0.5 whitespace-nowrap">Manage your password</p>
-                        </div>
-                    </div>
-                    <form onSubmit={handlePasswordUpdate} className="space-y-8 relative z-10">
-                        <div className="space-y-2.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] px-1">New Password</label>
-                            <input
-                                type="password"
-                                value={passwords.new}
-                                onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-                                placeholder="Enter new password..."
-                                className="w-full px-7 py-5 bg-white/5 border border-white/10 rounded-[1.5rem] outline-none focus:ring-4 focus:ring-white/10 focus:border-white/20 transition-all font-black text-white text-sm shadow-lg"
-                            />
-                        </div>
-                        <div className="space-y-2.5">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] px-1">Confirm Password</label>
-                            <input
-                                type="password"
-                                value={passwords.confirm}
-                                onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                                placeholder="Confirm new password..."
-                                className="w-full px-7 py-5 bg-white/5 border border-white/10 rounded-[1.5rem] outline-none focus:ring-4 focus:ring-white/10 focus:border-white/20 transition-all font-black text-white text-sm shadow-lg"
-                            />
-                        </div>
-                        <button
-                            disabled={loading}
-                            className="w-full py-5 bg-white text-gray-900 font-black rounded-2xl shadow-2xl hover:bg-gray-100 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.2em] mt-2"
-                        >
-                            Update Password
-                        </button>
-                    </form>
-                </div>
-
-                {/* Grid of Toggles */}
-                <div className="bg-white p-12 rounded-[4rem] border border-gray-100 shadow-sm xl:col-span-2 overflow-hidden relative">
-                    <div className="flex items-center justify-between mb-12">
-                        <div className="flex items-center gap-4">
-                            <div className="p-4 bg-gray-900 text-white rounded-[1.25rem] shadow-lg"><FiActivity size={28} /></div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {/* ─── My Profile ───────────────────────────────────────── */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="px-6 py-5 border-b border-gray-50">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-green-50 text-green-600 rounded-xl"><FiUser size={20} /></div>
                             <div>
-                                <h3 className="text-2xl font-black text-gray-800 tracking-tight">Display Settings</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Change how things look</p>
+                                <h3 className="text-lg font-black text-gray-900">My Profile</h3>
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Your personal information</p>
                             </div>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[
-                            { icon: FiBell, label: "Notifications", active: true },
-                            { icon: FiShield, label: "Extra Security (2FA)", active: false },
-                            { icon: FiActivity, label: "Dark Mode", active: false }
-                        ].map((node, i) => (
-                            <div key={i} className="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100 flex items-center justify-between hover:bg-gray-100 transition-all cursor-pointer group shadow-sm hover:shadow-md">
-                                <div className="flex items-center gap-5">
-                                    <div className={`p-2.5 rounded-xl transition-all ${node.active ? 'bg-green-100 text-green-600' : 'bg-white text-gray-300'}`}>
-                                        <node.icon size={18} />
-                                    </div>
-                                    <span className="text-sm font-black text-gray-700 tracking-tight">{node.label}</span>
-                                </div>
-                                <div className={`w-12 h-6 rounded-full flex items-center px-1.5 transition-colors ${node.active ? 'bg-green-500' : 'bg-gray-200'}`}>
-                                    <div className={`w-3.5 h-3.5 bg-white rounded-full transition-transform duration-300 ${node.active ? 'translate-x-6' : 'translate-x-0'}`} />
-                                </div>
+                    <div className="p-6">
+                        <MsgBanner msg={profileMsg} onClose={() => setProfileMsg({ text: "", type: "" })} />
+                        {fetchingProfile ? (
+                            <div className="flex items-center justify-center py-10">
+                                <div className="w-8 h-8 border-3 border-green-100 border-t-green-500 rounded-full animate-spin" />
                             </div>
-                        ))}
+                        ) : (
+                            <form onSubmit={handleProfileUpdate} className="mt-4 space-y-5">
+                                {/* Avatar initials */}
+                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-green-500/20 flex-shrink-0">
+                                        {profile.name?.charAt(0)?.toUpperCase() || "U"}
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-gray-900">{profile.name || "Your Name"}</p>
+                                        <p className="text-xs text-gray-400 font-medium">{profile.email}</p>
+                                        <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-0.5">{user?.role?.replace(/_/g, ' ')}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest">Your Name</label>
+                                    <input
+                                        value={profile.name}
+                                        onChange={(e) => setProfile(p => ({ ...p, name: e.target.value }))}
+                                        className={inputClass}
+                                        placeholder="Enter your full name..."
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest">Email Address</label>
+                                    <input
+                                        type="email"
+                                        value={profile.email}
+                                        onChange={(e) => setProfile(p => ({ ...p, email: e.target.value }))}
+                                        className={inputClass}
+                                        placeholder="Enter your email..."
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={profileLoading}
+                                    className={`w-full py-3.5 bg-green-500 text-white font-black rounded-xl shadow-lg shadow-green-500/20 hover:bg-green-600 active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2 ${profileLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+                                >
+                                    {profileLoading
+                                        ? <><FiRefreshCw size={15} className="animate-spin" /> Saving...</>
+                                        : <><FiSave size={15} /> Save Changes</>
+                                    }
+                                </button>
+                            </form>
+                        )}
+                    </div>
+                </div>
+
+                {/* ─── Change Password ────────────────────────────────────── */}
+                <div className="bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-white/5">
+                    <div className="px-6 py-5 border-b border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-white/10 text-white rounded-xl border border-white/10"><FiLock size={20} /></div>
+                            <div>
+                                <h3 className="text-lg font-black text-white">Change Password</h3>
+                                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">Update your security credentials</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-6">
+                        <MsgBanner msg={pwMsg} onClose={() => setPwMsg({ text: "", type: "" })} />
+                        <form onSubmit={handlePasswordUpdate} className="mt-4 space-y-5">
+                            <div className="space-y-1.5">
+                                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest">Current Password <span className="text-gray-600 normal-case tracking-normal font-medium">(optional but recommended)</span></label>
+                                <PasswordInput
+                                    value={passwords.current}
+                                    onChange={(e) => setPasswords(p => ({ ...p, current: e.target.value }))}
+                                    placeholder="Enter current password..."
+                                    className={darkInputClass}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest">New Password *</label>
+                                <PasswordInput
+                                    value={passwords.new}
+                                    onChange={(e) => setPasswords(p => ({ ...p, new: e.target.value }))}
+                                    placeholder="Enter new password..."
+                                    className={darkInputClass}
+                                />
+                                <PasswordStrength password={passwords.new} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest">Confirm New Password *</label>
+                                <PasswordInput
+                                    value={passwords.confirm}
+                                    onChange={(e) => setPasswords(p => ({ ...p, confirm: e.target.value }))}
+                                    placeholder="Re-enter new password..."
+                                    className={darkInputClass}
+                                />
+                                {passwords.confirm && passwords.new !== passwords.confirm && (
+                                    <p className="text-red-400 text-xs font-bold mt-1 flex items-center gap-1">
+                                        <FiX size={12} /> Passwords do not match
+                                    </p>
+                                )}
+                                {passwords.confirm && passwords.new === passwords.confirm && passwords.new && (
+                                    <p className="text-green-400 text-xs font-bold mt-1 flex items-center gap-1">
+                                        <FiCheckCircle size={12} /> Passwords match
+                                    </p>
+                                )}
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={pwLoading}
+                                className={`w-full py-3.5 bg-white text-gray-900 font-black rounded-xl shadow-lg hover:bg-gray-100 active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2 ${pwLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+                            >
+                                {pwLoading
+                                    ? <><FiRefreshCw size={15} className="animate-spin" /> Updating...</>
+                                    : <><FiLock size={15} /> Update Password</>
+                                }
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                {/* ─── Display Preferences ────────────────────────────────── */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm xl:col-span-2 overflow-hidden">
+                    <div className="px-6 py-5 border-b border-gray-50">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-gray-900 text-white rounded-xl"><FiActivity size={20} /></div>
+                            <div>
+                                <h3 className="text-lg font-black text-gray-900">Display Settings</h3>
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Customize your experience</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {[
+                                { Icon: FiBell, label: "Notifications", description: "Receive in-app alerts", active: true, color: "text-green-600", bg: "bg-green-50" },
+                                { Icon: FiShield, label: "Extra Security (2FA)", description: "Two-factor authentication", active: false, color: "text-blue-600", bg: "bg-blue-50" },
+                                { Icon: FiMoon, label: "Dark Mode", description: "Switch to dark theme", active: false, color: "text-purple-600", bg: "bg-purple-50" },
+                            ].map((item, i) => (
+                                <div
+                                    key={i}
+                                    className={`p-5 rounded-xl border cursor-pointer transition-all hover:shadow-md ${item.active ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-100 hover:border-gray-200"}`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-xl ${item.active ? item.bg : "bg-white"}`}>
+                                                <item.Icon size={16} className={item.active ? item.color : "text-gray-400"} />
+                                            </div>
+                                            <div>
+                                                <p className={`text-sm font-black ${item.active ? "text-gray-900" : "text-gray-600"}`}>{item.label}</p>
+                                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">{item.description}</p>
+                                            </div>
+                                        </div>
+                                        {/* Toggle */}
+                                        <div className={`w-11 h-6 rounded-full flex items-center px-1 transition-colors ${item.active ? "bg-green-500" : "bg-gray-300"}`}>
+                                            <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300 ${item.active ? "translate-x-5" : "translate-x-0"}`} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

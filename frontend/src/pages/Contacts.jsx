@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiUser, FiBriefcase, FiMail, FiPhone } from "react-icons/fi";
+import { FiPlus, FiSearch, FiEdit2, FiUser, FiBriefcase, FiMail, FiPhone } from "react-icons/fi";
 import API from "../services/api";
 import { useToast } from "../context/ToastContext";
 import { getCurrentUser } from "../context/AuthContext";
@@ -123,13 +123,7 @@ const ContactsPage = () => {
                                             >
                                                 <FiEdit2 size={16} />
                                             </button>
-                                            <button
-                                                onClick={() => handleDelete(item._id)}
-                                                className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all hover:scale-110 active:scale-95"
-                                                title="Delete"
-                                            >
-                                                <FiTrash2 size={16} />
-                                            </button>
+
                                         </div>
                                     </td>
                                 </tr>

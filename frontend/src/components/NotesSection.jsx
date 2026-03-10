@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import API from "../services/api";
-import { FiPlus, FiTrash2, FiFileText } from "react-icons/fi";
+import { FiPlus, FiFileText } from "react-icons/fi";
 
 const NotesSection = ({ leadId, customerId, dealId, contactId }) => {
     const [notes, setNotes] = useState([]);
@@ -94,11 +94,7 @@ const NotesSection = ({ leadId, customerId, dealId, contactId }) => {
             <div className="space-y-4">
                 {Array.isArray(notes) && notes.map((note) => (
                     <div key={note._id} className="p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm relative group overflow-hidden hover:shadow-xl transition-all">
-                        <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleDeleteNote(note._id)} className="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm bg-white border border-gray-50">
-                                <FiTrash2 size={16} />
-                            </button>
-                        </div>
+
                         <div className="flex items-center gap-2 mb-4">
                             <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                             <h4 className="font-black text-gray-900 tracking-tight pr-10 text-lg uppercase">{note.title}</h4>

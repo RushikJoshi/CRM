@@ -5,7 +5,7 @@ import logo from "../../assets/tech logo white.png";
 
 const LeftSection = () => {
     return (
-        <div className="w-full h-full flex flex-col justify-center px-16 xl:px-24 text-white relative overflow-hidden bg-gradient-to-br from-green-700 via-emerald-700 to-teal-800">
+        <div className="w-full h-full flex flex-col items-center justify-center px-16 xl:px-24 text-white text-center relative overflow-hidden bg-gradient-to-br from-green-700 via-emerald-700 to-teal-800">
             {/* Background Layers */}
             <div className="absolute inset-0 opacity-20">
                 {/* Decorative grid */}
@@ -23,27 +23,28 @@ const LeftSection = () => {
             <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-400 rounded-full opacity-10 blur-3xl" />
 
             {/* Content Container */}
-            <div className="relative z-10 w-full max-w-xl">
+            <div className="relative z-10 w-full max-w-xl flex flex-col items-center">
                 {/* Logo mark */}
-                <div className="mb-12 inline-block">
+                <div className="mb-12 flex justify-center">
                     <img src={logo} alt="Gitakshmi Technologies" className="w-64 lg:w-72 h-auto object-contain" />
                 </div>
 
                 {/* Hero Text */}
-                <div className="space-y-8">
+                <div className="space-y-8 w-full">
                     <div>
                         <h1 className="text-5xl xl:text-6xl font-black text-white tracking-tighter leading-[1.05]">
                             Smart CRM <br />
                         </h1>
-                        <p className="mt-8 text-green-50/70 text-lg font-medium leading-relaxed">
+                        <p className="mt-8 text-green-50/70 text-lg font-medium leading-relaxed mx-auto max-w-md">
                             Manage your business easily with our simple CRM. Track your leads, deals, and customers all in one place.
                         </p>
                     </div>
-
-
                 </div>
             </div>
         </div>
+
+
+
     );
 };
 

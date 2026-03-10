@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-    FiInbox, FiRefreshCw, FiArrowRight, FiTrash2,
+    FiInbox, FiRefreshCw, FiArrowRight,
     FiSearch, FiClock, FiMail, FiPhone, FiGlobe, FiFilter,
-    FiPlus, FiEyeOff, FiRotateCcw
+    FiPlus, FiEyeOff, FiRotateCcw, FiEye
 } from "react-icons/fi";
 import API from "../services/api";
 import { useToast } from "../context/ToastContext";
 import { getCurrentUser } from "../context/AuthContext";
+import InquiryDetailsModal from "../components/InquiryDetailsModal";
 
 const STATUS_COLORS = {
     Open: "bg-orange-50 text-orange-600 border-orange-100",
-    Converted: "bg-green-50 text-green-600 border-green-100",
-    Ignored: "bg-gray-50 text-gray-400 border-gray-100"
+    Converted: "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20",
+    Ignored: "bg-[#F4F7FB] text-[#718096] border-[#E5EAF2]"
 };
 
 const InquiriesPage = () => {
@@ -23,6 +24,7 @@ const InquiriesPage = () => {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [websiteFilter, setWebsiteFilter] = useState("all");
+    const [selectedInquiry, setSelectedInquiry] = useState(null);
 
     const currentUser = getCurrentUser();
     const role = currentUser?.role;
@@ -70,17 +72,6 @@ const InquiriesPage = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this inquiry?")) return;
-        try {
-            await API.delete(`/inquiries/${id}`);
-            toast.success("Inquiry archived.");
-            fetchInquiries();
-        } catch (err) {
-            toast.error("Deletion failed.");
-        }
-    };
-
     const filtered = inquiries.filter(item => {
         const q = search.toLowerCase();
         const matchesSearch =
@@ -101,177 +92,226 @@ const InquiriesPage = () => {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700 pb-10">
-            {/* Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm transition-all hover:shadow-xl hover:shadow-green-500/5">
-                <div>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tighter">New Inquiries</h1>
-                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">
-                        From {stats.websites.length || "0"} sites
+        <div className="space-y-8 animate-in fade-in duration-700 pb-20">
+            {/* Simple & Clean Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 pointer-events-none" />
+                <div className="relative z-10">
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-1">Inquiry List</h1>
+                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest opacity-70 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                        Track and manage your incoming inquiries
                     </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-4 relative z-10 w-full lg:w-auto">
                     <button
                         onClick={() => navigate(getFormPath())}
-                        className="flex items-center gap-3 px-6 py-4 bg-green-500 text-white font-black rounded-2xl shadow-xl shadow-green-500/20 hover:bg-green-600 hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest"
+                        className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-8 py-3.5 bg-sky-500 text-white font-black rounded-2xl shadow-lg shadow-sky-500/20 hover:bg-sky-600 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest min-w-[180px]"
                     >
-                        <FiPlus size={20} />
-                        Add Inquiry
+                        <FiPlus size={20} strokeWidth={3} />
+                        Add New Inquiry
                     </button>
                     <button
                         onClick={fetchInquiries}
-                        className="p-4 bg-gray-50 text-gray-500 rounded-2xl hover:bg-green-100 hover:text-green-600 transition-all border border-transparent hover:border-green-100 group"
+                        className="p-3.5 bg-gray-50 text-gray-400 border border-transparent rounded-2xl hover:bg-white hover:text-sky-500 hover:border-sky-200 transition-all shadow-sm"
                     >
-                        <FiRefreshCw size={20} className={loading ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"} />
+                        <FiRefreshCw size={20} className={loading ? "animate-spin text-sky-500" : ""} />
                     </button>
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: "Total", val: stats.total, color: "text-gray-900", icon: <FiInbox /> },
-                    { label: "Open", val: stats.open, color: "text-orange-500", icon: <FiClock /> },
-                    { label: "Converted", val: stats.converted, color: "text-green-600", icon: <FiArrowRight /> },
-                    { label: "Ignored", val: stats.ignored, color: "text-gray-400", icon: <FiEyeOff /> }
+                    { label: "Total Inquiries", val: stats.total, color: "text-gray-900", icon: <FiInbox />, bg: "bg-gray-50 text-gray-400" },
+                    { label: "New Queue", val: stats.open, color: "text-sky-500", icon: <FiClock />, bg: "bg-sky-50 text-sky-500" },
+                    { label: "Converted", val: stats.converted, color: "text-emerald-500", icon: <FiArrowRight />, bg: "bg-emerald-50 text-emerald-500" },
+                    { label: "Archived", val: stats.ignored, color: "text-gray-400", icon: <FiEyeOff />, bg: "bg-gray-50 text-gray-400" }
                 ].map(s => (
-                    <div key={s.label} className="bg-white p-6 rounded-[1.8rem] border border-gray-100 shadow-sm group hover:scale-[1.02] transition-all duration-300">
-                        <div className="flex items-center justify-between">
+                    <div key={s.label} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm group hover:border-sky-200 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-6">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{s.label}</span>
-                            <span className={`text-xl ${s.color} opacity-20 group-hover:opacity-100 transition-opacity`}>{s.icon}</span>
+                            <div className={`w-12 h-12 rounded-2xl ${s.bg} flex items-center justify-center text-xl transition-all group-hover:scale-110 shadow-sm border border-transparent`}>
+                                {s.icon}
+                            </div>
                         </div>
-                        <h2 className={`text-3xl font-black mt-2 tracking-tighter ${s.color}`}>{s.val}</h2>
+                        <h2 className={`text-4xl font-black tracking-tight ${s.color}`}>{s.val}</h2>
                     </div>
                 ))}
             </div>
 
-            {/* Inquiries List & Filters */}
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden">
-                {/* Global Search & Filters */}
-                <div className="p-6 border-b border-gray-50 bg-gray-50/20 flex flex-wrap items-center gap-4">
-                    <div className="flex-1 min-w-[300px] relative group">
-                        <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search by name, email, or message..."
-                            className="w-full pl-12 pr-6 py-4 bg-white border border-gray-200 rounded-[1.2rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 transition-all font-bold text-gray-700 placeholder-gray-400"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
+
+            {/* Search & Filter Bar */}
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-4">
+                <div className="flex-1 min-w-[300px] relative group">
+                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-sky-500 transition-colors" size={20} />
+                    <input
+                        type="text"
+                        placeholder="Search inquiries..."
+                        className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 placeholder-gray-300 shadow-sm text-sm"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
                 </div>
 
+                <div className="flex items-center gap-4 w-full lg:w-auto">
+                    <div className="relative group flex-1 lg:w-44">
+                        <FiFilter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-sky-500 transition-colors z-10" />
+                        <select
+                            className="w-full pl-11 pr-10 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 text-xs uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            <option value="all">All Status</option>
+                            <option value="Open">Open</option>
+                            <option value="Converted">Converted</option>
+                            <option value="Ignored">Ignored</option>
+                        </select>
+                    </div>
+
+                    <div className="relative group flex-1 lg:w-44">
+                        <FiGlobe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-sky-500 transition-colors z-10" />
+                        <select
+                            className="w-full pl-11 pr-10 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 text-xs uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                            value={websiteFilter}
+                            onChange={(e) => setWebsiteFilter(e.target.value)}
+                        >
+                            <option value="all">All Channels</option>
+                            {stats.websites.map(w => <option key={w} value={w}>{w}</option>)}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            {/* Inquiries List */}
+            <div className="canvas-card overflow-hidden">
                 {/* Table Header */}
-                <div className="hidden lg:grid grid-cols-12 gap-4 px-8 py-4 bg-gray-50/50 border-b border-gray-50">
-                    <div className="col-span-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">From</div>
-                    <div className="col-span-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Source</div>
-                    <div className="col-span-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Message</div>
-                    <div className="col-span-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</div>
-                    <div className="col-span-1 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Date</div>
-                    <div className="col-span-2 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right px-4">Actions</div>
+                <div className="hidden lg:grid grid-cols-12 gap-6 px-10 py-6 bg-gray-50 border-b border-gray-100 shadow-sm relative z-10">
+                    <div className="col-span-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Customer Name</div>
+                    <div className="col-span-2 text-[11px] font-black text-gray-400 uppercase tracking-widest">Source</div>
+                    <div className="col-span-2 text-[11px] font-black text-gray-400 uppercase tracking-widest">Est. Value</div>
+                    <div className="col-span-2 text-[11px] font-black text-gray-400 uppercase tracking-widest">Message</div>
+                    <div className="col-span-1 text-[11px] font-black text-gray-400 uppercase tracking-widest">Status</div>
+                    <div className="col-span-1 text-[11px] font-black text-gray-400 uppercase tracking-widest text-center">Date</div>
+                    <div className="col-span-1 text-[11px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</div>
                 </div>
 
                 {/* Rows */}
                 {loading ? (
-                    <div className="py-32 flex flex-col items-center gap-4 bg-white/50 animate-pulse">
-                        <div className="w-14 h-14 border-[6px] border-green-50 border-t-green-500 rounded-full animate-spin"></div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Loading...</p>
+                    <div className="py-40 flex flex-col items-center gap-6 bg-white animate-pulse">
+                        <div className="w-16 h-16 border-[6px] border-[#F4F7FB] border-t-blue-500 rounded-full animate-spin shadow-lg"></div>
+                        <p className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.3em]">Synchronizing Intelligence...</p>
                     </div>
                 ) : filtered.length > 0 ? (
-                    <div className="divide-y divide-gray-50">
+                    <div className="divide-y divide-[#F0F2F5]">
                         {filtered.map((item, i) => (
-                            <div key={item._id} className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center px-8 py-6 hover:bg-green-50/30 transition-all duration-300 animate-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: `${i * 30}ms` }}>
+                            <div key={item._id} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center px-10 py-8 hover:bg-slate-50/80 transition-all duration-300 group animate-in slide-in-from-bottom-3 duration-700" style={{ animationDelay: `${i * 30}ms` }}>
                                 {/* Identity */}
-                                <div className="lg:col-span-3 space-y-1.5">
-                                    <h4 className="font-black text-gray-900 group-hover:text-green-600 transition-colors">{item.name}</h4>
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-2 text-gray-400 text-[11px] font-bold">
-                                            <FiMail className="shrink-0" /> {item.email}
+                                <div className="lg:col-span-3">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-14 h-14 rounded-2xl bg-white border border-[#E5EAF2] flex items-center justify-center font-black text-[#1A202C] text-xl shadow-sm group-hover:border-blue-200 group-hover:shadow-lg transition-all group-hover:rotate-3">
+                                            {item.name?.charAt(0)}
                                         </div>
-                                        {item.phone && (
-                                            <div className="flex items-center gap-2 text-gray-400 text-[11px] font-bold">
-                                                <FiPhone className="shrink-0" /> {item.phone}
+                                        <div className="min-w-0">
+                                            <h4 className="font-black text-[#1A202C] group-hover:text-blue-600 transition-colors text-[15px] truncate">{item.name}</h4>
+                                            <div className="flex flex-col gap-1.5 mt-2">
+                                                <div className="flex items-center gap-2 text-[#718096] text-[11px] font-black truncate">
+                                                    <FiMail className="shrink-0 text-[#CBD5E0]" /> {item.email}
+                                                </div>
+                                                {item.phone && (
+                                                    <div className="flex items-center gap-2 text-[#718096] text-[11px] font-black">
+                                                        <FiPhone className="shrink-0 text-[#CBD5E0]" /> {item.phone}
+                                                    </div>
+                                                )}
+                                                {item.companyName && (
+                                                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">{item.companyName}</p>
+                                                )}
                                             </div>
-                                        )}
-                                        {item.companyName && (
-                                            <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">{item.companyName}</p>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Origin */}
-                                <div className="lg:col-span-2 space-y-2">
-                                    <div className="flex items-center gap-2 text-blue-500 text-[11px] font-black">
+                                <div className="lg:col-span-2 space-y-3">
+                                    <div className="flex items-center gap-2 text-indigo-500 text-[11px] font-black">
                                         <FiGlobe className="shrink-0" />
-                                        <span className="truncate max-w-[140px]">{item.website || "No URL"}</span>
+                                        <span className="truncate max-w-[140px] uppercase tracking-wider">{item.website || "DIRECT"}</span>
                                     </div>
-                                    <span className="inline-block px-3 py-1 bg-gray-100/80 text-gray-500 text-[9px] font-black uppercase tracking-widest rounded-lg border border-gray-200">
-                                        {item.source || "Organic"}
+                                    <span className="inline-block px-4 py-1.5 bg-[#F4F7FB] text-[#718096] text-[10px] font-black uppercase tracking-widest rounded-xl border border-[#E5EAF2] shadow-sm">
+                                        {item.source || "ORGANIC"}
                                     </span>
                                 </div>
 
+                                {/* Value */}
+                                <div className="lg:col-span-2">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-[#A0AEC0] uppercase tracking-widest mb-1.5 leading-none">Estimate</span>
+                                        <div className="flex items-center text-blue-600 font-extrabold text-lg tracking-tight">
+                                            <span className="text-[12px] mr-1.5 opacity-60 font-black text-[#A0AEC0]">₹</span>
+                                            {(item.value || 0).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Message */}
-                                <div className="lg:col-span-3">
-                                    <div className="p-3 bg-gray-50/50 border border-gray-100 rounded-xl">
-                                        <p className="text-gray-500 text-xs font-bold italic line-clamp-2 leading-relaxed">
-                                            "{item.message || "No message attached."}"
+                                <div className="lg:col-span-2">
+                                    <div className="p-4 bg-[#F4F7FB]/50 border border-[#E5EAF2] rounded-[18px] shadow-inner group-hover:bg-white transition-colors duration-500 h-[64px]">
+                                        <p className="text-[#718096] text-[12px] font-bold italic line-clamp-2 leading-relaxed">
+                                            "{item.message || "No message data provided."}"
                                         </p>
                                     </div>
                                 </div>
 
                                 {/* Status */}
                                 <div className="lg:col-span-1">
-                                    <span className={`inline-flex px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tighter border ${STATUS_COLORS[item.status]}`}>
+                                    <span className={`inline-flex px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all shadow-sm ${STATUS_COLORS[item.status]?.replace('blue', 'sky').replace('orange', 'sky') || 'bg-gray-50 text-gray-400 border-gray-100'}`}>
                                         {item.status}
                                     </span>
                                 </div>
 
                                 {/* Date */}
                                 <div className="lg:col-span-1 text-center">
-                                    <div className="flex flex-col text-gray-300 font-black">
-                                        <span className="text-xs">{new Date(item.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</span>
-                                        <span className="text-[9px] opacity-70">{new Date(item.createdAt).toLocaleDateString("en-IN", { year: "numeric" })}</span>
+                                    <div className="flex flex-col text-[#CBD5E0] font-black group-hover:text-blue-200 transition-colors">
+                                        <span className="text-sm font-black text-[#1A202C]">{new Date(item.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</span>
+                                        <span className="text-[10px] uppercase tracking-[.2em] mt-1">{new Date(item.createdAt).toLocaleDateString("en-IN", { year: "numeric" })}</span>
                                     </div>
                                 </div>
 
                                 {/* Actions */}
-                                <div className="lg:col-span-2 px-4 space-y-2">
-                                    <div className="flex items-center gap-2 justify-end">
+                                <div className="lg:col-span-1 text-right">
+                                    <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
                                         {item.status === "Open" && (
                                             <>
                                                 <button
                                                     onClick={() => navigate(getFormPath(item._id, 'convert'))}
-                                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white font-black rounded-xl shadow-lg shadow-green-500/20 hover:bg-green-600 hover:scale-105 active:scale-95 transition-all text-[10px] uppercase tracking-widest"
+                                                    title="Convert to Lead"
+                                                    className="w-11 h-11 bg-blue-600 text-white rounded-[14px] flex items-center justify-center hover:bg-blue-700 hover:scale-110 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
                                                 >
-                                                    <FiArrowRight /> Lead
+                                                    <FiArrowRight size={18} strokeWidth={3} />
                                                 </button>
                                                 <button
                                                     onClick={() => updateStatus(item._id, "Ignored")}
-                                                    title="Ignore"
-                                                    className="p-2.5 bg-gray-50 text-gray-400 border border-gray-200 rounded-xl hover:bg-orange-50 hover:text-orange-500 hover:border-orange-200 transition-all"
+                                                    title="Archive/Ignore"
+                                                    className="w-11 h-11 bg-white border border-[#E5EAF2] text-[#718096] rounded-[14px] flex items-center justify-center hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
                                                 >
-                                                    <FiEyeOff size={16} />
+                                                    <FiEyeOff size={18} />
                                                 </button>
                                             </>
                                         )}
                                         {item.status === "Ignored" && (
                                             <button
                                                 onClick={() => updateStatus(item._id, "Open")}
-                                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-50 text-orange-600 font-black rounded-xl border border-orange-100 hover:bg-orange-100 transition-all text-[10px] uppercase tracking-widest"
+                                                title="Restore"
+                                                className="w-11 h-11 bg-orange-50 text-orange-600 rounded-[14px] border border-orange-100 flex items-center justify-center hover:bg-orange-100 hover:scale-110 active:scale-95 transition-all shadow-sm shadow-orange-500/10"
                                             >
-                                                <FiRotateCcw /> Reopen
+                                                <FiRotateCcw size={18} />
                                             </button>
                                         )}
-                                        {item.status === "Converted" && (
-                                            <div className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 text-green-700 font-black rounded-xl border border-green-100 text-[10px] uppercase tracking-widest opacity-60">
-                                                Converted
-                                            </div>
-                                        )}
                                         <button
-                                            onClick={() => handleDelete(item._id)}
-                                            className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                                            onClick={() => setSelectedInquiry(item)}
+                                            className="w-11 h-11 bg-white border border-gray-100 text-gray-300 rounded-[14px] flex items-center justify-center hover:text-sky-500 hover:bg-sky-50 transition-all shadow-sm"
+                                            title="View Details"
                                         >
-                                            <FiTrash2 size={16} />
+                                            <FiEye size={18} />
                                         </button>
                                     </div>
                                 </div>
@@ -279,21 +319,27 @@ const InquiriesPage = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="py-40 flex flex-col items-center gap-4 text-center">
-                        <div className="w-24 h-24 bg-gray-50 rounded-[2.5rem] border border-gray-100 flex items-center justify-center text-gray-200 relative">
-                            <FiInbox size={48} />
-                            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full border border-gray-100 flex items-center justify-center text-gray-300">
-                                <FiFilter size={14} />
+                    <div className="py-48 flex flex-col items-center gap-8 text-center bg-slate-50/20">
+                        <div className="w-28 h-28 bg-white rounded-[40px] border border-[#E5EAF2] shadow-xl flex items-center justify-center text-[#CBD5E0] relative group hover:rotate-6 transition-all duration-700">
+                            <FiInbox size={56} />
+                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 rounded-2xl border-4 border-white flex items-center justify-center text-white shadow-lg animate-bounce">
+                                <FiPlus size={16} strokeWidth={4} />
                             </div>
                         </div>
-                        <div>
-                            <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">No inquiries found</p>
-                            <p className="text-gray-300 text-xs font-bold mt-1">No inquiries match your search.</p>
+                        <div className="space-y-3">
+                            <p className="text-[13px] font-black text-[#1A202C] uppercase tracking-[0.3em]">Queue Terminal</p>
+                            <p className="text-[#A0AEC0] text-sm font-bold max-w-xs mx-auto leading-relaxed">No new inquiry telemetry detected for your current filter criteria.</p>
                         </div>
                     </div>
                 )}
             </div>
-        </div>
+
+            <InquiryDetailsModal
+                isOpen={Boolean(selectedInquiry)}
+                onClose={() => setSelectedInquiry(null)}
+                inquiry={selectedInquiry}
+            />
+        </div >
     );
 };
 

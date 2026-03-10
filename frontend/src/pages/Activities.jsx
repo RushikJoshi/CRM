@@ -29,15 +29,16 @@ function Activities() {
     );
 
     const getActivityColor = (type) => {
-        switch (type) {
-            case "call": return "bg-blue-50 text-blue-600 border-blue-100";
-            case "email": return "bg-purple-50 text-purple-600 border-purple-100";
-            case "meeting": return "bg-emerald-50 text-emerald-600 border-emerald-100";
-            case "note": return "bg-amber-50 text-amber-600 border-amber-100";
-            case "deal": return "bg-indigo-50 text-indigo-600 border-indigo-100";
-            case "lead": return "bg-rose-50 text-rose-600 border-rose-100";
-            default: return "bg-gray-50 text-gray-600 border-gray-100";
-        }
+        const t = String(type).toLowerCase();
+        if (t === "call") return "bg-blue-50 text-blue-600 border-blue-100";
+        if (t === "email") return "bg-purple-50 text-purple-600 border-purple-100";
+        if (t === "meeting") return "bg-emerald-50 text-emerald-600 border-emerald-100";
+        if (t === "note") return "bg-amber-50 text-amber-600 border-amber-100";
+        if (t === "deal") return "bg-indigo-50 text-indigo-600 border-indigo-100";
+        if (t === "lead") return "bg-rose-50 text-rose-600 border-rose-100";
+        if (t === "task") return "bg-orange-50 text-orange-600 border-orange-100";
+        if (t === "system") return "bg-emerald-50 text-emerald-600 border-emerald-100";
+        return "bg-gray-50 text-gray-600 border-gray-100";
     };
 
     return (
@@ -96,8 +97,8 @@ function Activities() {
                                                 {activity.user && <span className="text-gray-300 ml-2 italic">— Logic and execution by {activity.user}</span>}
                                             </p>
                                         </div>
-                                        <Link to={`/company/leads/${activity.id}/edit`} className="flex items-center gap-2 px-6 py-3 bg-gray-50 text-gray-400 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-emerald-50 hover:text-emerald-500 transition-all active:scale-95 group-hover:bg-emerald-50 group-hover:text-emerald-600">
-                                            View Profile <FiArrowRight size={14} />
+                                        <Link to={activity.type === 'deal' ? `/company/deals` : `/company/leads`} className="flex items-center gap-2 px-6 py-3 bg-gray-50 text-gray-400 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-emerald-50 hover:text-emerald-500 transition-all active:scale-95 group-hover:bg-emerald-50 group-hover:text-emerald-600">
+                                            View Details <FiArrowRight size={14} />
                                         </Link>
                                     </div>
                                 </div>

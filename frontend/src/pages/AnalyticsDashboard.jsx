@@ -45,75 +45,88 @@ function AnalyticsDashboard() {
     ];
 
     return (
-        <div className="space-y-8 animate-in zoom-in-95 fade-in duration-1000 pb-20">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-10 rounded-3xl border border-gray-100 shadow-sm overflow-hidden relative group transition-all">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-20 -mr-10 -mt-10 group-hover:scale-110 transition-transform duration-1000" />
+        <div className="space-y-10 animate-in zoom-in-95 fade-in duration-1000 pb-20">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 bg-white p-12 rounded-[32px] border border-[#E5EAF2] shadow-sm overflow-hidden relative group transition-all">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
                 <div className="relative z-10">
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-none mb-2">Performance Analytics</h1>
-                    <p className="text-gray-400 font-black text-[10px] uppercase tracking-[0.2em] opacity-75">
-                        Deep dive into your CRM performance and conversion funnel.
+                    <h1 className="text-4xl lg:text-5xl font-black text-[#1A202C] tracking-tight leading-none mb-3">Revenue Analytics</h1>
+                    <p className="text-[#A0AEC0] font-black text-[11px] uppercase tracking-[0.25em] opacity-80">
+                        Deep-dive intelligence into conversion metrics & pipeline velocity.
                     </p>
+                </div>
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 px-6 py-3 bg-blue-50 border border-blue-100 rounded-2xl text-blue-600 font-black text-[10px] uppercase tracking-widest">
+                        <FiTarget /> Real-time Telemetry
+                    </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {metrics.map((m, idx) => (
-                    <div key={idx} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:translate-y-[-5px] transition-all hover:shadow-xl group">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border ${m.color} group-hover:scale-110 transition-transform`}>
-                            <m.icon size={26} strokeWidth={2.5} />
+                    <div key={idx} className="bg-white p-10 rounded-[28px] border border-[#E5EAF2] shadow-sm hover:translate-y-[-8px] transition-all hover:shadow-2xl group duration-500">
+                        <div className={`w-16 h-16 rounded-[22px] flex items-center justify-center mb-8 border transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${m.color.replace('emerald', 'blue').replace('green', 'indigo')}`}>
+                            <m.icon size={28} strokeWidth={2.5} />
                         </div>
-                        <h3 className="text-gray-400 font-black uppercase tracking-widest text-[9px] mb-1">{m.title}</h3>
-                        <p className="text-3xl font-black text-gray-900 tracking-tight">{m.value}</p>
+                        <h3 className="text-[#A0AEC0] font-black uppercase tracking-widest text-[10px] mb-2">{m.title}</h3>
+                        <p className="text-4xl font-black text-[#1A202C] tracking-tight group-hover:text-blue-600 transition-colors">{m.value}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                    <h2 className="text-2xl font-black text-gray-900 mb-8 tracking-tight">Lead Funnel Summary</h2>
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-end">
-                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">New Leads</span>
-                            <span className="text-lg font-black text-gray-900">{stats?.leads?.newLeads}</span>
-                        </div>
-                        <div className="h-4 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
-                            <div
-                                className="h-full bg-indigo-500 rounded-full shadow-lg shadow-indigo-200 transition-all duration-1000"
-                                style={{ width: `${(stats?.leads?.newLeads / stats?.leads?.totalLeads) * 100}%` }}
-                            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div className="bg-white p-12 rounded-[32px] border border-[#E5EAF2] shadow-sm hover:border-blue-200 transition-colors duration-500">
+                    <h2 className="text-3xl font-black text-[#1A202C] mb-12 tracking-tight flex items-center gap-4">
+                        <FiPieChart className="text-indigo-600" /> Pipeline Efficiency
+                    </h2>
+                    <div className="space-y-10">
+                        <div>
+                            <div className="flex justify-between items-end mb-4">
+                                <span className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.2em]">Acquisition Velocity</span>
+                                <span className="text-xl font-black text-[#1A202C]">{stats?.leads?.newLeads} <span className="text-[11px] text-[#A0AEC0] font-extrabold ml-1">NEW</span></span>
+                            </div>
+                            <div className="h-4 bg-[#F4F7FB] rounded-full overflow-hidden border border-[#E5EAF2] p-1">
+                                <div
+                                    className="h-full bg-blue-600 rounded-full shadow-lg shadow-blue-200 transition-all duration-1000 ease-out"
+                                    style={{ width: `${(stats?.leads?.newLeads / stats?.leads?.totalLeads) * 100}%` }}
+                                />
+                            </div>
                         </div>
 
-                        <div className="flex justify-between items-end mt-12">
-                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Hot Leads (High Priority)</span>
-                            <span className="text-lg font-black text-rose-600">{stats?.leads?.hotLeads}</span>
-                        </div>
-                        <div className="h-4 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
-                            <div
-                                className="h-full bg-rose-500 rounded-full shadow-lg shadow-rose-200 transition-all duration-1000"
-                                style={{ width: `${(stats?.leads?.hotLeads / stats?.leads?.totalLeads) * 100}%` }}
-                            />
+                        <div>
+                            <div className="flex justify-between items-end mb-4">
+                                <span className="text-[11px] font-black text-[#718096] uppercase tracking-[0.2em]">Conversion Potential</span>
+                                <span className="text-xl font-black text-blue-600">{stats?.leads?.hotLeads} <span className="text-[11px] text-[#A0AEC0] font-extrabold ml-1">HIGH SCORE</span></span>
+                            </div>
+                            <div className="h-4 bg-[#F4F7FB] rounded-full overflow-hidden border border-[#E5EAF2] p-1">
+                                <div
+                                    className="h-full bg-indigo-500 rounded-full shadow-lg shadow-indigo-200 transition-all duration-1000 ease-out"
+                                    style={{ width: `${(stats?.leads?.hotLeads / stats?.leads?.totalLeads) * 100}%` }}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group">
-                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-30 -mr-20 -mb-20 transition-all group-hover:scale-125 duration-1000" />
-                    <h2 className="text-2xl font-black text-gray-900 mb-8 tracking-tight">Deal Performance</h2>
+                <div className="bg-white p-12 rounded-[32px] border border-[#E5EAF2] shadow-sm relative overflow-hidden group hover:border-blue-200 transition-all duration-500">
+                    <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl opacity-30 -mr-24 -mb-24 transition-all group-hover:scale-125 duration-1000" />
+                    <h2 className="text-3xl font-black text-[#1A202C] mb-12 tracking-tight flex items-center gap-4">
+                        <FiCheckCircle className="text-blue-600" /> Success Metrics
+                    </h2>
                     <div className="grid grid-cols-2 gap-8">
-                        <div className="p-8 bg-emerald-50 rounded-3xl border border-emerald-100 shadow-sm flex flex-col items-center">
-                            <FiCheckCircle size={32} className="text-emerald-500 mb-4" />
-                            <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Won</h4>
-                            <p className="text-4xl font-black text-emerald-700">{stats?.deals?.dealsWon}</p>
+                        <div className="p-10 bg-blue-50 rounded-[28px] border border-blue-100 shadow-sm flex flex-col items-center group/card transition-all hover:bg-white hover:shadow-xl hover:-translate-y-2">
+                            <FiCheckCircle size={40} className="text-blue-600 mb-6 group-hover/card:scale-110 transition-transform" />
+                            <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-widest mb-2">Deals Secured</h4>
+                            <p className="text-5xl font-black text-blue-700">{stats?.deals?.dealsWon}</p>
                         </div>
-                        <div className="p-8 bg-rose-50 rounded-3xl border border-rose-100 shadow-sm flex flex-col items-center">
-                            <FiXCircle size={32} className="text-rose-500 mb-4" />
-                            <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Lost</h4>
-                            <p className="text-4xl font-black text-rose-700">{stats?.deals?.dealsLost}</p>
+                        <div className="p-10 bg-slate-50 rounded-[28px] border border-[#E5EAF2] shadow-sm flex flex-col items-center group/card transition-all hover:bg-white hover:shadow-xl hover:-translate-y-2">
+                            <FiXCircle size={40} className="text-[#A0AEC0] mb-6 group-hover/card:scale-110 transition-transform" />
+                            <h4 className="text-[11px] font-black text-[#718096] uppercase tracking-widest mb-2">Lost Records</h4>
+                            <p className="text-5xl font-black text-[#1A202C]">{stats?.deals?.dealsLost}</p>
                         </div>
                     </div>
-                    <div className="mt-8 p-10 bg-gray-50/50 rounded-3xl border border-gray-100 border-dashed text-center">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Pipeline Value</p>
-                        <p className="text-4xl font-black text-gray-900 tracking-tight">₹ {stats?.deals?.totalDeals * 1500}+ Est.</p>
+                    <div className="mt-10 p-12 bg-[#F4F7FB]/50 rounded-[28px] border border-[#E5EAF2] border-dashed text-center group-hover:bg-white group-hover:border-blue-200 transition-all duration-500">
+                        <p className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.25em] mb-4">Estimated Pipeline Asset Value</p>
+                        <p className="text-5xl font-black text-[#1A202C] tracking-tight group-hover:text-blue-600 transition-colors">₹ {(stats?.deals?.totalDeals * 1500).toLocaleString()}+</p>
                     </div>
                 </div>
             </div>

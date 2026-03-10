@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiMove } from "react-icons/fi";
+import { FiPlus, FiSearch, FiEdit2, FiMove } from "react-icons/fi";
 import API from "../services/api";
 
 const MasterDataPage = () => {
@@ -140,7 +140,6 @@ const MasterDataPage = () => {
                                             <td className="px-8 py-5 text-right">
                                                 <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity translate-x-1 group-hover:translate-x-0 transition-transform">
                                                     <button onClick={() => { setEditingId(item._id); setFormData({ name: item.name, description: item.description, status: item.status }); setShowModal(true); }} className="p-2.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"><FiEdit2 size={16} /></button>
-                                                    <button onClick={() => handleDelete(item._id)} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><FiTrash2 size={16} /></button>
                                                 </div>
                                             </td>
                                         </tr>

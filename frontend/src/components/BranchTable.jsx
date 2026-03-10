@@ -1,5 +1,5 @@
 import React from "react";
-import { FiEdit2, FiTrash2, FiMapPin, FiPhone, FiCheckCircle, FiXCircle, FiLayers } from "react-icons/fi";
+import { FiEdit2, FiMapPin, FiPhone, FiCheckCircle, FiXCircle, FiLayers } from "react-icons/fi";
 
 const BranchTable = ({ branches, onEdit, onDelete }) => {
     return (
@@ -55,13 +55,7 @@ const BranchTable = ({ branches, onEdit, onDelete }) => {
                                             >
                                                 <FiEdit2 size={16} />
                                             </button>
-                                            <button
-                                                onClick={() => onDelete(branch._id)}
-                                                className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm bg-white border border-transparent hover:border-red-100"
-                                                title="Delete"
-                                            >
-                                                <FiTrash2 size={16} />
-                                            </button>
+
                                         </div>
                                     </td>
                                 </tr>

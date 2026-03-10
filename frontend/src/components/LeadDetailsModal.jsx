@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { FiX, FiInfo, FiClock, FiFileText, FiMessageCircle } from "react-icons/fi";
+import { FiX, FiInfo, FiClock, FiFileText, FiMessageCircle, FiCheckCircle } from "react-icons/fi";
 import ActivityTimeline from "./ActivityTimeline";
 import NotesSection from "./NotesSection";
+import TasksSection from "./TasksSection";
 import SendMessageModal from "./SendMessageModal";
 
 const LeadDetailsModal = ({ isOpen, onClose, lead }) => {
@@ -20,10 +21,37 @@ const LeadDetailsModal = ({ isOpen, onClose, lead }) => {
                     <div>
                         <div className="flex items-center gap-4">
                             <h2 className="text-4xl font-black text-gray-900 tracking-tighter">{lead.name}</h2>
-                            <span className="px-4 py-1.5 bg-green-100 text-green-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">{lead.status}</span>
+                            <span className="px-4 py-1.5 bg-green-100 text-green-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+                                {lead.status?.name || lead.status || "New"}
+                            </span>
                         </div>
                         <p className="text-gray-400 font-black uppercase tracking-[0.3em] text-[10px] mt-2 opacity-80">{lead.companyName || "Individual"}</p>
                     </div>
+
+                    {/* Conversion Journey Indicator */}
+                    <div className="hidden lg:flex items-center gap-3 px-6 py-2.5 bg-white/60 rounded-3xl border border-white shadow-inner mx-4">
+                        <div className="flex items-center gap-2 group/step">
+                            <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            </div>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Inquiry</span>
+                        </div>
+                        <div className="w-10 h-[2px] bg-emerald-100 rounded-full" />
+                        <div className="flex items-center gap-2 group/step">
+                            <div className="w-4 h-4 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)] flex items-center justify-center">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                            </div>
+                            <span className="text-[10px] font-black text-gray-900 uppercase tracking-[0.15em]">Lead</span>
+                        </div>
+                        <div className="w-10 h-[2px] bg-gray-100 rounded-full" />
+                        <div className="flex items-center gap-2 opacity-30 grayscale group/step">
+                            <div className="w-4 h-4 rounded-full bg-gray-300 flex items-center justify-center">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white opacity-0" />
+                            </div>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Deal</span>
+                        </div>
+                    </div>
+
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setShowMsg(true)}
@@ -67,7 +95,11 @@ const LeadDetailsModal = ({ isOpen, onClose, lead }) => {
                             </div>
                             <div className="group">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none group-hover:text-green-500 transition-colors">Created At</p>
-                                <p className="text-sm font-black text-gray-500 mt-3">{new Date(lead.createdAt).toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                <p className="text-sm font-black text-gray-500 mt-3">
+                                    {lead.createdAt
+                                        ? new Date(lead.createdAt).toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })
+                                        : "N/A"}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -90,6 +122,13 @@ const LeadDetailsModal = ({ isOpen, onClose, lead }) => {
                                 <FiFileText size={16} />
                                 Notes
                             </button>
+                            <button
+                                onClick={() => setActiveTab("tasks")}
+                                className={`py-6 font-black uppercase tracking-[0.2em] text-[10px] border-b-2 transition-all flex items-center gap-3 ${activeTab === 'tasks' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <FiCheckCircle size={16} className={activeTab === 'tasks' ? 'text-green-500' : 'text-gray-400'} />
+                                Tasks & Reminders
+                            </button>
                         </div>
 
                         {/* Tab Content */}
@@ -97,8 +136,10 @@ const LeadDetailsModal = ({ isOpen, onClose, lead }) => {
                             <div className="max-w-4xl mx-auto">
                                 {activeTab === "timeline" ? (
                                     <ActivityTimeline leadId={lead._id} />
-                                ) : (
+                                ) : activeTab === "notes" ? (
                                     <NotesSection leadId={lead._id} />
+                                ) : (
+                                    <TasksSection leadId={lead._id} />
                                 )}
                             </div>
                         </div>
