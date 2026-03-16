@@ -4,7 +4,13 @@ const Branch = require("../models/Branch");
 
 exports.publicCreateInquiry = async (req, res) => {
     try {
-        const apiKey = req.headers["x-api-key"] || req.query.apiKey;
+        // Support multiple ways WordPress plugins send keys
+        const apiKey =
+            req.headers["x-api-key"] ||
+            req.headers["X-API-KEY"] ||
+            req.query.apiKey ||
+            req.body?.apiKey ||
+            req.body?.companyId;
 
         if (!apiKey) {
             return res.status(401).json({ success: false, message: "Missing x-api-key." });
@@ -32,16 +38,11 @@ exports.publicCreateInquiry = async (req, res) => {
             isDeleted: false
         });
 
+        let existingLeadId = null;
         if (existingLead) {
-            // Update existing lead
             existingLead.notes = (existingLead.notes || "") + "\n\nNew Inquiry: " + (message || "No message");
             await existingLead.save();
-            return res.status(200).json({
-                success: true,
-                message: "Lead updated with new inquiry details.",
-                leadId: existingLead._id,
-                isUpdate: true
-            });
+            existingLeadId = existingLead._id;
         }
 
         // Try to map the submitted location (eg. "Ahmedabad") to a branch of this company
@@ -62,13 +63,19 @@ exports.publicCreateInquiry = async (req, res) => {
             }
         }
 
+        const inferredWebsite =
+            (website && String(website).trim()) ||
+            (req.headers.origin && String(req.headers.origin).trim()) ||
+            (req.headers.referer && String(req.headers.referer).trim()) ||
+            "";
+
         const inquiry = await Inquiry.create({
             name,
             email,
             phone,
             message: message || "",
             source: source || "External Form",
-            website: website || "",
+            website: inferredWebsite,
             city: city || "",
             address: address || "",
             course: course || "",
@@ -82,7 +89,13 @@ exports.publicCreateInquiry = async (req, res) => {
         // For now, satisfy Step 3 requirements for Stability
         console.log("New Inquiry created:", inquiry._id, "for company:", companyId);
 
-        res.status(201).json({ success: true, message: "Inquiry received successfully.", data: inquiry });
+        res.status(201).json({
+            success: true,
+            message: "Inquiry received successfully.",
+            data: inquiry,
+            leadId: existingLeadId,
+            isUpdate: !!existingLeadId
+        });
     } catch (err) {
         console.error("Public Inquiry Error:", err.message);
         res.status(500).json({ success: false, message: "Server error." });

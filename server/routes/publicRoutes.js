@@ -7,7 +7,7 @@ const { publicCreateInquiry } = require("../controllers/publicInquiryController"
 const publicCors = cors({
     origin: "*",
     methods: ["POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"]
+    allowedHeaders: ["Content-Type", "x-api-key", "X-API-KEY"]
 });
 
 router.options("/inquiry", publicCors);

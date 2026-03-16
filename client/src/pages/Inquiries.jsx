@@ -62,7 +62,7 @@ const InquiriesPage = () => {
             const open = data.filter(i => i.status === "Open").length;
             const converted = data.filter(i => i.status === "Converted").length;
             const ignored = data.filter(i => i.status === "Ignored").length;
-            const external = data.filter(i => !!i.website).length;
+            const external = data.filter(i => !!i.website || String(i.source || "").toLowerCase().includes("external")).length;
             setStats(prev => ({
                 ...prev,
                 total: res.data?.total ?? data.length,
