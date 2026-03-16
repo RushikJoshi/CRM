@@ -1,6 +1,40 @@
+const mongoose = require("mongoose");
 const Inquiry = require("../models/Inquiry");
 const Company = require("../models/Company");
 const Branch = require("../models/Branch");
+
+/** GET /api/public/check?apiKey=xxx — verify API key and that inquiries will show for that company */
+exports.publicCheckApiKey = async (req, res) => {
+    try {
+        const apiKey = req.query.apiKey || req.headers["x-api-key"] || req.headers["X-API-KEY"];
+        if (!apiKey) {
+            return res.status(400).json({ success: false, message: "Provide apiKey in query or x-api-key header." });
+        }
+        if (!mongoose.Types.ObjectId.isValid(apiKey)) {
+            return res.status(400).json({ success: false, message: "Invalid API key format (must be a valid MongoDB ObjectId)." });
+        }
+        const companyIdObj = new mongoose.Types.ObjectId(apiKey);
+        const company = await Company.findOne({ _id: companyIdObj, status: "active" }).select("name status").lean();
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: "Company not found or inactive. Use the exact Company _id from your CRM/MongoDB as x-api-key.",
+                apiKeyUsed: String(apiKey)
+            });
+        }
+        const inquiryCount = await Inquiry.countDocuments({ companyId: companyIdObj });
+        res.json({
+            success: true,
+            message: "API key is valid. Inquiries from this company will appear in the Inquiry List.",
+            companyId: String(companyIdObj),
+            companyName: company.name,
+            totalInquiriesForCompany: inquiryCount
+        });
+    } catch (err) {
+        console.error("Public check error:", err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
 
 exports.publicCreateInquiry = async (req, res) => {
     try {
@@ -27,9 +61,16 @@ exports.publicCreateInquiry = async (req, res) => {
             return res.status(400).json({ success: false, message: "phone is required." });
         }
 
-        // Validate companyId using API key (in this CRM, API Key matches company objectId for simplicity)
-        const companyId = apiKey;
-
+        // Validate companyId using API key (use ObjectId so it matches list query)
+        let companyId;
+        try {
+            companyId = mongoose.Types.ObjectId.isValid(apiKey) ? new mongoose.Types.ObjectId(apiKey) : null;
+        } catch {
+            companyId = null;
+        }
+        if (!companyId) {
+            return res.status(400).json({ success: false, message: "Invalid x-api-key format." });
+        }
         const company = await Company.findOne({ _id: companyId, status: "active" });
         if (!company) {
             console.warn("Public inquiry rejected: Company not found or inactive for apiKey:", companyId);

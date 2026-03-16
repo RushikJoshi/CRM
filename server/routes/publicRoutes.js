@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const cors = require("cors");
-const { publicCreateInquiry } = require("../controllers/publicInquiryController");
+const { publicCreateInquiry, publicCheckApiKey } = require("../controllers/publicInquiryController");
 
 // Allow WordPress/External sites to submit inquiries
 const publicCors = cors({
@@ -9,6 +9,9 @@ const publicCors = cors({
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "x-api-key", "X-API-KEY"]
 });
+
+// Debug: GET /api/public/check?apiKey=YOUR_COMPANY_ID — verify key and company
+router.get("/check", publicCors, publicCheckApiKey);
 
 // Health check: GET /api/public/inquiry → confirms public API is reachable (no auth)
 router.get("/inquiry", publicCors, (req, res) => {

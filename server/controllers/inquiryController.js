@@ -96,9 +96,9 @@ exports.getInquiries = async (req, res) => {
             if (req.user.role === "branch_manager" || req.user.role === "sales") {
                 query.branchId = { $in: [req.user.branchId, null] };
             }
-            // Salesman sees only inquiries assigned to them
+            // Sales sees inquiries assigned to them OR unassigned (null) so external inquiries show
             if (req.user.role === "sales") {
-                query.assignedTo = req.user.id;
+                query.assignedTo = { $in: [req.user.id, null] };
             }
         }
         if (search && String(search).trim()) {
@@ -119,6 +119,9 @@ exports.getInquiries = async (req, res) => {
             baseQuery.companyId = req.user.companyId;
             if (req.user.role === "branch_manager" || req.user.role === "sales") {
                 baseQuery.branchId = { $in: [req.user.branchId, null] };
+            }
+            if (req.user.role === "sales") {
+                baseQuery.assignedTo = { $in: [req.user.id, null] };
             }
         }
 
