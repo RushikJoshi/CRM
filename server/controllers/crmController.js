@@ -372,7 +372,7 @@ exports.getTodos = async (req, res) => {
         if (dealId) query.dealId = dealId;
         if (customerId) query.customerId = customerId;
 
-        const data = await Todo.find(query).sort({ dueDate: 1 });
+        const data = await Todo.find(query).sort({ dueDate: 1 }).populate("assignedTo", "name email");
         res.json({ success: true, data });
     } catch (error) {
         res.status(500).json({ error: error.message });

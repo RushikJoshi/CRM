@@ -21,19 +21,25 @@ exports.publicCreateInquiry = async (req, res) => {
         if (!name || !email || !phone) {
             return res.status(400).json({ success: false, message: "name, email, phone are required." });
         }
+        // Normalize: ensure phone is string (WordPress may send number)
+        const phoneStr = String(phone || "").trim();
+        if (!phoneStr) {
+            return res.status(400).json({ success: false, message: "phone is required." });
+        }
 
         // Validate companyId using API key (in this CRM, API Key matches company objectId for simplicity)
         const companyId = apiKey;
 
         const company = await Company.findOne({ _id: companyId, status: "active" });
         if (!company) {
+            console.warn("Public inquiry rejected: Company not found or inactive for apiKey:", companyId);
             return res.status(404).json({ success: false, message: "Company not found or inactive." });
         }
 
         // STEP 11 — DUPLICATE LEAD DETECTION
         const Lead = require("../models/Lead");
         let existingLead = await Lead.findOne({
-            $or: [{ email }, { phone }],
+            $or: [{ email }, { phone: phoneStr }],
             companyId,
             isDeleted: false
         });
@@ -70,11 +76,11 @@ exports.publicCreateInquiry = async (req, res) => {
             "";
 
         const inquiry = await Inquiry.create({
-            name,
-            email,
-            phone,
+            name: String(name || "").trim(),
+            email: String(email || "").trim(),
+            phone: phoneStr,
             message: message || "",
-            source: source || "External Form",
+            source: source || "Website Form",
             website: inferredWebsite,
             city: city || "",
             address: address || "",
@@ -82,7 +88,8 @@ exports.publicCreateInquiry = async (req, res) => {
             location: location || "",
             companyId,
             branchId,
-            status: "Open"
+            status: "Open",
+            isExternal: true
         });
 
         // Automatically trigger lead creation from inquiry if needed, or just return

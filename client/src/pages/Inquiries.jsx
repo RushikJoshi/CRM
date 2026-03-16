@@ -24,6 +24,7 @@ const InquiriesPage = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [externalFilter, setExternalFilter] = useState("all");
     const [websiteFilter, setWebsiteFilter] = useState("all");
     const [locationFilter, setLocationFilter] = useState("all");
     const [page, setPage] = useState(1);
@@ -51,6 +52,7 @@ const InquiriesPage = () => {
             const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
             if (search) params.set("search", search);
             if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
+            if (externalFilter === "external") params.set("isExternal", "true");
             const res = await API.get(`/inquiries?${params.toString()}`);
             const data = res.data?.data || res.data || [];
             setInquiries(data);
@@ -62,7 +64,7 @@ const InquiriesPage = () => {
             const open = data.filter(i => i.status === "Open").length;
             const converted = data.filter(i => i.status === "Converted").length;
             const ignored = data.filter(i => i.status === "Ignored").length;
-            const external = data.filter(i => !!i.website || String(i.source || "").toLowerCase().includes("external")).length;
+            const external = res.data?.totalExternal ?? data.filter(i => i.isExternal === true || !!i.website || /external|website form/i.test(String(i.source || ""))).length;
             setStats(prev => ({
                 ...prev,
                 total: res.data?.total ?? data.length,
@@ -80,8 +82,8 @@ const InquiriesPage = () => {
         }
     };
 
-    useEffect(() => { setPage(1); }, [search, statusFilter]);
-    useEffect(() => { fetchInquiries(); }, [page, search, statusFilter]);
+    useEffect(() => { setPage(1); }, [search, statusFilter, externalFilter]);
+    useEffect(() => { fetchInquiries(); }, [page, search, statusFilter, externalFilter]);
 
     const updateStatus = async (id, status) => {
         try {
@@ -102,10 +104,11 @@ const InquiriesPage = () => {
             item.message?.toLowerCase().includes(q);
 
         const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+        const matchesExternal = externalFilter === "all" || item.isExternal === true;
         const matchesWebsite = websiteFilter === "all" || item.website === websiteFilter;
         const matchesLocation = locationFilter === "all" || item.location === locationFilter;
 
-        return matchesSearch && matchesStatus && matchesWebsite && matchesLocation;
+        return matchesSearch && matchesStatus && matchesExternal && matchesWebsite && matchesLocation;
     });
 
     const getFormPath = (id, action = 'create') => {
@@ -192,6 +195,16 @@ const InquiriesPage = () => {
                     </div>
 
                     <div className="relative group flex-1 min-w-[160px] lg:w-44">
+                        <select
+                            className="w-full pl-4 pr-10 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 text-xs uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                            value={externalFilter}
+                            onChange={(e) => setExternalFilter(e.target.value)}
+                        >
+                            <option value="all">All Inquiries</option>
+                            <option value="external">External Only</option>
+                        </select>
+                    </div>
+                    <div className="relative group flex-1 min-w-[160px] lg:w-44">
                         <FiGlobe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-sky-500 transition-colors z-10" />
                         <select
                             className="w-full pl-11 pr-10 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 text-xs uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
@@ -266,9 +279,16 @@ const InquiriesPage = () => {
 
                                 {/* Origin */}
                                 <div className="lg:col-span-2 space-y-3">
-                                    <div className="flex items-center gap-2 text-indigo-500 text-[11px] font-black">
-                                        <FiGlobe className="shrink-0" />
-                                        <span className="truncate max-w-[140px] uppercase tracking-wider">{item.website || "DIRECT"}</span>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {item.isExternal && (
+                                            <span className="inline-block px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-wider rounded-lg border border-amber-200">
+                                                External
+                                            </span>
+                                        )}
+                                        <div className="flex items-center gap-2 text-indigo-500 text-[11px] font-black">
+                                            <FiGlobe className="shrink-0" />
+                                            <span className="truncate max-w-[140px] uppercase tracking-wider">{item.website || "DIRECT"}</span>
+                                        </div>
                                     </div>
                                     <span className="inline-block px-4 py-1.5 bg-[#F4F7FB] text-[#718096] text-[10px] font-black uppercase tracking-widest rounded-xl border border-[#E5EAF2] shadow-sm">
                                         {item.source || "ORGANIC"}

@@ -73,30 +73,33 @@ const NotesSection = ({ leadId, customerId, dealId, contactId, pageSize = PAGE_S
             </h3>
 
             {/* Form */}
-            <form onSubmit={handleAddNote} className="space-y-5 bg-gray-50/50 p-6 rounded-[2.5rem] border border-gray-100 shadow-inner">
-                <div className="space-y-3">
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Title</label>
+            <form onSubmit={handleAddNote} className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100 shadow-inner">
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider ml-0.5">Title</label>
                     <input
                         type="text"
                         placeholder="Enter title..."
-                        className="w-full px-5 py-4 bg-white rounded-2xl border border-transparent outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 font-bold text-sm text-gray-700 placeholder:text-gray-300 shadow-sm transition-all"
+                        className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400 text-sm text-gray-700 placeholder:text-gray-400 transition-all"
                         value={newNote.title}
                         required
                         onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                     />
                 </div>
-                <div className="space-y-3">
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Note Content</label>
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider ml-0.5">Note Content</label>
                     <textarea
-                        placeholder="Enter Note..."
-                        className="w-full px-5 py-4 bg-white rounded-[2rem] border border-transparent outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 font-medium text-sm text-gray-600 placeholder:text-gray-300 min-h-[120px] shadow-sm transition-all"
+                        placeholder="Enter note..."
+                        className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400 text-sm text-gray-600 placeholder:text-gray-400 min-h-[88px] resize-y transition-all"
                         value={newNote.content}
                         onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
                     />
                 </div>
-                <button type="submit" className="w-full py-4.5 bg-green-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-green-600 transition-all shadow-xl shadow-green-500/20 active:scale-95">
-                    Add Note
-                </button>
+                <div className="flex justify-end pt-1">
+                    <button type="submit" className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg text-xs font-semibold uppercase tracking-wider hover:bg-green-600 transition-colors shadow-sm active:scale-[0.98]">
+                        <FiPlus size={14} />
+                        Add Note
+                    </button>
+                </div>
             </form>
 
             <div className="space-y-4">

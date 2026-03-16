@@ -6,6 +6,14 @@ const todoSchema = new mongoose.Schema(
             type: String,
             required: true
         },
+        activityType: {
+            type: String,
+            default: "To-Do"
+        },
+        description: {
+            type: String,
+            default: ""
+        },
         status: {
             type: String,
             enum: ["Pending", "In Progress", "Completed", "Cancelled", "Overdue"],

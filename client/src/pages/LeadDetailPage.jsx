@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiInfo, FiMessageCircle, FiClock, FiFileText, FiCheckCircle } from "react-icons/fi";
+import { FiArrowLeft, FiInfo, FiClock, FiFileText, FiCheckCircle } from "react-icons/fi";
 import API from "../services/api";
 import ActivityTimeline from "../components/ActivityTimeline";
 import NotesSection from "../components/NotesSection";
 import TasksSection from "../components/TasksSection";
-import SendMessageModal from "../components/SendMessageModal";
-import ConvertLeadWizard from "../components/ConvertLeadWizard";
 import { useToast } from "../context/ToastContext";
 
 const STAGE_LABELS = {
@@ -29,8 +27,6 @@ export default function LeadDetailPage() {
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("timeline");
-  const [showMsg, setShowMsg] = useState(false);
-  const [showConvert, setShowConvert] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -79,7 +75,7 @@ export default function LeadDetailPage() {
       : null;
   const statusDisplay = stageLabel || lead.status?.name || lead.status || "New";
 
-  const infoRows = [
+  const primaryInfo = [
     { label: "Phone", value: lead.phone },
     { label: "Email", value: lead.email },
     { label: "Company", value: lead.companyName },
@@ -95,6 +91,9 @@ export default function LeadDetailPage() {
     { label: "Course", value: lead.course },
     { label: "Location", value: lead.location },
     { label: "Inquiry Status", value: lead.inquiryStatus },
+  ];
+
+  const additionalInfo = [
     { label: "Assigned To", value: lead.assignedTo?.name },
     { label: "Branch", value: lead.branchId?.name },
     { label: "Created By", value: lead.createdBy?.name },
@@ -106,94 +105,106 @@ export default function LeadDetailPage() {
     { label: "Notes", value: lead.notes },
   ];
 
+  const InfoTable = ({ rows, title }) => (
+    <div className="flex flex-col min-w-0 flex-1">
+      <h3 className="text-[9px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1.5 border-b border-slate-100 bg-slate-50/80">
+        {title}
+      </h3>
+      <table className="w-full border-collapse">
+        <tbody>
+          {rows.map(({ label, value }) => {
+            const v = value ?? "—";
+            return (
+              <tr key={label} className="border-b border-slate-100 hover:bg-slate-50/50">
+                <td className="py-1 px-2 text-[9px] font-medium text-slate-500 uppercase tracking-wider w-[36%] align-top whitespace-nowrap">
+                  {label}
+                </td>
+                <td className="py-1 px-2 text-[11px] font-medium text-slate-800 break-words align-top">
+                  {v}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-[#F8FAFC] overflow-hidden">
-      {/* Compact header: Back + title + status + WhatsApp */}
-      <div className="shrink-0 bg-white border-b border-gray-100 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col bg-slate-50 overflow-hidden">
+      {/* Header */}
+      <div className="shrink-0 bg-white border-b border-slate-200 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4 min-w-0">
           <button
             onClick={() => navigate(-1)}
-            className="shrink-0 flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900"
+            className="shrink-0 flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
           >
             <FiArrowLeft size={18} />
             Back
           </button>
-          <h1 className="text-xl font-black text-gray-900 truncate">{lead.name}</h1>
-          <span className="shrink-0 px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-[10px] font-bold uppercase">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-slate-900 truncate">{lead.name}</h1>
+            <p className="text-xs text-slate-500 mt-0.5 truncate">{lead.companyName || "Individual"}</p>
+          </div>
+          <span className="shrink-0 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">
             {statusDisplay}
           </span>
-          <span className="text-[10px] text-gray-400 uppercase font-bold truncate">{lead.companyName || "Individual"}</span>
-        </div>
-        <div className="shrink-0 flex items-center gap-2">
-          <button
-            onClick={() => setShowConvert(true)}
-            disabled={lead?.isConverted}
-            className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg font-bold text-xs uppercase"
-          >
-            Convert
-          </button>
-          <button
-            onClick={() => setShowMsg(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-100 hover:bg-green-100 text-green-600 rounded-lg font-bold text-xs uppercase"
-          >
-            <FiMessageCircle size={14} /> WhatsApp
-          </button>
         </div>
       </div>
 
-      {/* Main: two columns, full height, no max-width */}
+      {/* Main: Lead Info table (full width) + Activity/Notes/Tasks */}
       <div className="flex-1 flex min-h-0 w-full overflow-hidden">
-        {/* Left: full lead info - dense grid, scrollable */}
-        <div className="w-full lg:w-[380px] xl:w-[420px] shrink-0 flex flex-col border-r border-gray-100 bg-white overflow-hidden">
-          <div className="shrink-0 px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
-            <FiInfo className="text-green-500" size={14} />
-            <h2 className="font-black text-gray-900 uppercase tracking-wider text-[11px]">Lead Info</h2>
+        {/* Left: Lead Info — small compact panel */}
+        <div className="w-full lg:max-w-[380px] xl:max-w-[400px] flex flex-col border-r border-slate-200 bg-white overflow-hidden shadow-sm shrink-0">
+          <div className="shrink-0 px-2 py-2 border-b border-slate-200 bg-slate-50/80 flex items-center gap-1.5">
+            <FiInfo className="text-emerald-500" size={14} />
+            <h2 className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">Lead Info</h2>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-              {infoRows.map(({ label, value }) => {
-                const v = value ?? "—";
-                const isLong = typeof v === "string" && v.length > 40;
-                return (
-                  <div key={label} className={isLong ? "sm:col-span-2" : ""}>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
-                    <p className="text-sm font-semibold text-gray-800 mt-0.5 break-words">{v}</p>
-                  </div>
-                );
-              })}
+          <div className="flex-1 overflow-auto flex flex-col min-h-0">
+            <div className="min-w-0 border-b border-slate-100">
+              <InfoTable rows={primaryInfo} title="Contact & Basic" />
+            </div>
+            <div className="min-w-0">
+              <InfoTable rows={additionalInfo} title="Assignment & Additional" />
             </div>
           </div>
         </div>
 
-        {/* Right: tabs + content */}
-        <div className="flex-1 flex flex-col min-w-0 bg-gray-50/50">
-          <div className="shrink-0 flex border-b border-gray-200 bg-white px-4 gap-4">
+        {/* Right: Activity / Notes / Tasks */}
+        <div className="flex-1 flex flex-col min-w-0 bg-slate-50/50">
+          <div className="shrink-0 flex border-b border-slate-200 bg-white px-6 gap-1">
             <button
               onClick={() => setActiveTab("timeline")}
-              className={`py-3 font-bold text-[10px] uppercase tracking-wider border-b-2 flex items-center gap-2 -mb-px ${
-                activeTab === "timeline" ? "border-green-500 text-green-600" : "border-transparent text-gray-400 hover:text-gray-600"
+              className={`py-3.5 px-4 text-xs font-semibold uppercase tracking-wider border-b-2 -mb-px flex items-center gap-2 transition-colors ${
+                activeTab === "timeline"
+                  ? "border-emerald-500 text-emerald-600 bg-emerald-50/50"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
             >
               <FiClock size={14} /> Activity
             </button>
             <button
               onClick={() => setActiveTab("notes")}
-              className={`py-3 font-bold text-[10px] uppercase tracking-wider border-b-2 flex items-center gap-2 -mb-px ${
-                activeTab === "notes" ? "border-green-500 text-green-600" : "border-transparent text-gray-400 hover:text-gray-600"
+              className={`py-3.5 px-4 text-xs font-semibold uppercase tracking-wider border-b-2 -mb-px flex items-center gap-2 transition-colors ${
+                activeTab === "notes"
+                  ? "border-emerald-500 text-emerald-600 bg-emerald-50/50"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
             >
               <FiFileText size={14} /> Notes
             </button>
             <button
               onClick={() => setActiveTab("tasks")}
-              className={`py-3 font-bold text-[10px] uppercase tracking-wider border-b-2 flex items-center gap-2 -mb-px ${
-                activeTab === "tasks" ? "border-green-500 text-green-600" : "border-transparent text-gray-400 hover:text-gray-600"
+              className={`py-3.5 px-4 text-xs font-semibold uppercase tracking-wider border-b-2 -mb-px flex items-center gap-2 transition-colors ${
+                activeTab === "tasks"
+                  ? "border-emerald-500 text-emerald-600 bg-emerald-50/50"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
             >
-              <FiCheckCircle size={14} className={activeTab === "tasks" ? "text-green-500" : "text-gray-400"} /> Tasks
+              <FiCheckCircle size={14} className={activeTab === "tasks" ? "text-emerald-500" : "text-slate-400"} /> Tasks
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-6">
             {activeTab === "timeline" && <ActivityTimeline leadId={lead._id} pageSize={8} />}
             {activeTab === "notes" && <NotesSection leadId={lead._id} pageSize={8} />}
             {activeTab === "tasks" && <TasksSection leadId={lead._id} pageSize={8} />}
@@ -201,21 +212,6 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {showMsg && (
-        <SendMessageModal
-          isOpen={showMsg}
-          onClose={() => setShowMsg(false)}
-          recipientNumber={lead.phone}
-          leadId={lead._id}
-        />
-      )}
-
-      <ConvertLeadWizard
-        isOpen={showConvert}
-        onClose={() => setShowConvert(false)}
-        lead={lead}
-        onConverted={() => refetchLead()}
-      />
     </div>
   );
 }

@@ -67,6 +67,10 @@ const inquirySchema = new mongoose.Schema(
         branchId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Branch"
+        },
+        isExternal: {
+            type: Boolean,
+            default: false
         }
     },
     { timestamps: true }

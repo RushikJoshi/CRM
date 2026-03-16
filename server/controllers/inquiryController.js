@@ -83,7 +83,7 @@ exports.getInquiries = async (req, res) => {
             return res.status(401).json({ success: false, message: "Unauthorized: Access denied" });
         }
 
-        const { page = 1, limit = 20, search, status } = req.query;
+        const { page = 1, limit = 20, search, status, isExternal } = req.query;
         const pageNum = Math.max(1, parseInt(page, 10));
         const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
         const skip = (pageNum - 1) * limitNum;
@@ -92,8 +92,9 @@ exports.getInquiries = async (req, res) => {
 
         if (req.user.role !== "super_admin") {
             query.companyId = req.user.companyId;
+            // Branch/sales see their branch OR unassigned (null) so external inquiries show
             if (req.user.role === "branch_manager" || req.user.role === "sales") {
-                query.branchId = req.user.branchId;
+                query.branchId = { $in: [req.user.branchId, null] };
             }
         }
         if (search && String(search).trim()) {
@@ -107,8 +108,17 @@ exports.getInquiries = async (req, res) => {
             ];
         }
         if (status && status !== "all") query.status = status;
+        if (isExternal === "true" || isExternal === "1") query.isExternal = true;
 
-        const [total, inquiries] = await Promise.all([
+        const baseQuery = {};
+        if (req.user.role !== "super_admin") {
+            baseQuery.companyId = req.user.companyId;
+            if (req.user.role === "branch_manager" || req.user.role === "sales") {
+                baseQuery.branchId = { $in: [req.user.branchId, null] };
+            }
+        }
+
+        const [total, inquiries, totalExternal] = await Promise.all([
             Inquiry.countDocuments(query),
             Inquiry.find(query)
                 .sort({ createdAt: -1 })
@@ -116,12 +126,15 @@ exports.getInquiries = async (req, res) => {
                 .populate("sourceId")
                 .skip(skip)
                 .limit(limitNum)
+                .lean(),
+            Inquiry.countDocuments({ ...baseQuery, isExternal: true })
         ]);
 
         res.json({
             success: true,
             data: inquiries,
             total,
+            totalExternal,
             page: pageNum,
             limit: limitNum,
             totalPages: Math.ceil(total / limitNum)
