@@ -1,0 +1,22 @@
+{
+  "name": "crm-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "tmp_check_pw.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TechDhruv16/CRM.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TechDhruv16/CRM/issues"
+  },
+  "homepage": "https://github.com/TechDhruv16/CRM#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.4.0"
+  }
+}

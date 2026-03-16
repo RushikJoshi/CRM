@@ -1,0 +1,55 @@
+const mongoose = require("mongoose");
+
+const todoSchema = new mongoose.Schema(
+    {
+        title: {
+            type: String,
+            required: true
+        },
+        status: {
+            type: String,
+            enum: ["Pending", "In Progress", "Completed", "Cancelled", "Overdue"],
+            default: "Pending"
+        },
+        priority: {
+            type: String,
+            enum: ["Low", "Medium", "High"],
+            default: "Medium"
+        },
+        dueDate: { type: Date },
+        leadId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Lead"
+        },
+        customerId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Customer"
+        },
+        dealId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Deal"
+        },
+        companyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Company",
+            required: true
+        },
+        branchId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Branch",
+            default: null
+        },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
+        assignedTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        }
+    },
+    { timestamps: true }
+);
+
+module.exports = mongoose.model("Todo", todoSchema);

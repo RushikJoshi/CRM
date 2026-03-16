@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design system: simple, modern, professional SaaS – light theme */
+@layer base {
+  :root {
+    --crm-bg: #F8FAFC;
+    --crm-surface: #FFFFFF;
+    --crm-border: #E5E7EB;
+    --crm-primary: #2563EB;
+    --crm-success: #22C55E;
+    --crm-warning: #F59E0B;
+    --crm-danger: #EF4444;
+    --crm-text: #111827;
+    --crm-text-muted: #6B7280;
+    --sidebar-width: 240px;
+    --sidebar-collapsed: 80px;
+  }
+
+  body {
+    @apply bg-[#F8FAFC] text-[#111827];
+    font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .crm-card {
+    @apply bg-white border border-[#E5E7EB] rounded-xl shadow-crm-soft transition-shadow duration-200;
+  }
+
+  .crm-card-hover {
+    @apply crm-card hover:shadow-crm-card;
+  }
+
+  .crm-btn-primary {
+    @apply px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-lg font-semibold text-sm transition-colors duration-150 active:scale-[0.98];
+  }
+
+  .crm-btn-secondary {
+    @apply px-4 py-2.5 bg-white border border-[#E5E7EB] text-[#111827] hover:bg-[#F8FAFC] rounded-lg font-semibold text-sm transition-colors duration-150 active:scale-[0.98];
+  }
+
+  .crm-table-header {
+    @apply bg-[#F8FAFC] border-b border-[#E5E7EB] text-[#6B7280] text-xs font-semibold uppercase tracking-wider px-6 py-4;
+  }
+
+  .crm-table-row {
+    @apply border-b border-[#E5E7EB] hover:bg-[#F8FAFC]/80 transition-colors duration-150;
+  }
+}
+
+/* Scrollbar: minimal */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-[#E5E7EB] rounded-full hover:bg-[#D1D5DB] transition-colors;
+}
+
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+}

@@ -1,0 +1,73 @@
+import axios from "axios";
+import { API_BASE_URL } from "../config/api";
+import { tokenManager } from "../utils/tokenManager";
+
+const API = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const isRetryable = (err) => {
+  const status = err.response?.status;
+  if (!status) return true; // network / timeout
+  return status >= 500 && status <= 599;
+};
+
+// ── Prevent Stale Cache (Step 9) ──────────────────────────────────────────────
+API.defaults.headers.common["Cache-Control"] = "no-cache";
+API.defaults.headers.common["Pragma"] = "no-cache";
+API.defaults.headers.common["Expires"] = "0";
+
+// ── Attach JWT from panel-isolated storage ────────────────────────────────────
+API.interceptors.request.use((req) => {
+  const path = window.location.pathname;
+  const token = tokenManager.getTokenByPath(path);
+
+  if (token) {
+    req.headers.Authorization = `Bearer ${token}`;
+  }
+  return req;
+});
+
+// ── Global 401 handler — clears only the current panel's token ──────────────
+API.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    // Simple retry with backoff for transient failures
+    const cfg = err.config || {};
+    const isIdempotent = ["get", "head", "options"].includes((cfg.method || "").toLowerCase());
+    const maxRetries = cfg._retryMax ?? 2;
+    cfg._retryCount = cfg._retryCount ?? 0;
+
+    if (isIdempotent && cfg._retryCount < maxRetries && isRetryable(err)) {
+      cfg._retryCount += 1;
+      const delay = 350 * Math.pow(2, cfg._retryCount - 1);
+      await sleep(delay);
+      return API(cfg);
+    }
+
+    if (err.response?.status === 401) {
+      const isLoginRequest = err.config?.url?.includes("/auth/login");
+      const path = window.location.pathname;
+      const isPublicPath = path === "/" || path === "/login";
+
+      if (!isLoginRequest && !isPublicPath) {
+        // Only redirect if absolutely no token is found in ANY panel
+        const hasAnyToken =
+          localStorage.getItem("superAdminToken") ||
+          localStorage.getItem("companyToken") ||
+          localStorage.getItem("branchToken") ||
+          localStorage.getItem("salesToken");
+
+        if (!hasAnyToken) {
+          tokenManager.clearTokenByPath(path);
+          window.location.replace("/login");
+        }
+      }
+    }
+    return Promise.reject(err);
+  }
+);
+
+export default API;
