@@ -123,7 +123,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
                     <button
                         type="button"
                         onClick={() => setIsCollapsed(true)}
-                        className="mt-4 p-2 rounded-lg text-[#6B7280] hover:bg-[#F8FAFC] hover:text-[#111827] transition-colors"
+                        className="mt-4 p-2 rounded-lg text-[#6B7280] hover:bg-[#EFF6FF] hover:text-[#111827] transition-colors"
                         aria-label="Collapse sidebar"
                     >
                         <FiChevronLeft size={18} />
@@ -133,7 +133,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
                     <button
                         type="button"
                         onClick={() => setIsCollapsed(false)}
-                        className="mt-4 p-2 rounded-lg text-[#6B7280] hover:bg-[#F8FAFC] hover:text-[#111827] transition-colors"
+                        className="mt-4 p-2 rounded-lg text-[#6B7280] hover:bg-[#EFF6FF] hover:text-[#111827] transition-colors"
                         aria-label="Expand sidebar"
                     >
                         <FiChevronRight size={18} />
@@ -151,8 +151,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
                             to={item.path}
                             className={`group flex items-center gap-3 rounded-lg py-2.5 px-3 transition-all duration-150 ${
                                 isActive
-                                    ? "bg-[#EFF6FF] text-[#2563EB] font-semibold"
-                                    : "text-[#6B7280] hover:bg-[#F8FAFC] hover:text-[#111827] font-medium"
+                                    ? "bg-[#EEF2FF] text-[#2563EB] font-semibold"
+                                    : "text-[#6B7280] hover:bg-[#F3F4FF] hover:text-[#111827] font-medium"
                             } ${isCollapsed ? "justify-center" : ""}`}
                         >
                             <span className="shrink-0 text-[1.1rem] opacity-90">{item.icon}</span>

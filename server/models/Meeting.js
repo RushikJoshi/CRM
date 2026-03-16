@@ -9,6 +9,23 @@ const meetingSchema = new mongoose.Schema(
         description: { type: String },
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
+        channel: {
+            type: String,
+            enum: ["online", "phone", "in_person"],
+            default: "online"
+        },
+        onlineUrl: {
+            type: String,
+            default: ""
+        },
+        sendEmailReminder: {
+            type: Boolean,
+            default: false
+        },
+        sendSmsReminder: {
+            type: Boolean,
+            default: false
+        },
         status: {
             type: String,
             enum: ["Scheduled", "In Progress", "Closed"],

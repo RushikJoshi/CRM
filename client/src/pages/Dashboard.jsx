@@ -27,10 +27,10 @@ const MetricWidget = ({ title, value, icon, trend, onClick }) => (
     <button
         type="button"
         onClick={onClick}
-        className="w-full text-left bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-200 group"
+        className="w-full text-left bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md hover:border-[#E0EAFF] transition-all duration-200 group"
     >
         <div className="flex items-start justify-between gap-3">
-            <div className="w-12 h-12 rounded-xl bg-indigo-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20 [&>svg]:w-6 [&>svg]:h-6">
+            <div className="w-12 h-12 rounded-xl bg-[#2563EB] text-white flex items-center justify-center shrink-0 shadow-lg shadow-[#2563EB]/20 [&>svg]:w-6 [&>svg]:h-6">
                 {icon}
             </div>
             {trend != null && (
@@ -39,7 +39,7 @@ const MetricWidget = ({ title, value, icon, trend, onClick }) => (
                 </span>
             )}
         </div>
-        <p className="text-2xl font-bold text-gray-900 mt-4 group-hover:text-indigo-600 transition-colors">{value}</p>
+        <p className="text-2xl font-bold text-gray-900 mt-4 group-hover:text-[#2563EB] transition-colors">{value}</p>
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mt-1">{title}</p>
     </button>
 );
@@ -224,10 +224,10 @@ const Dashboard = () => {
                 <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                         <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <FiTrendingUp className="text-indigo-500" size={20} />
+                            <FiTrendingUp className="text-[#2563EB]" size={20} />
                             Pipeline Performance
                         </h2>
-                        <span className="text-sm font-medium text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl">
+                        <span className="text-sm font-medium text-[#2563EB] bg-[#EEF2FF] px-3 py-1.5 rounded-xl">
                             {stats?.conversionRate ?? 0}% conversion
                         </span>
                     </div>
@@ -244,7 +244,7 @@ const Dashboard = () => {
                                     </div>
                                     <div className="flex-1 h-12 bg-gray-50 rounded-xl border border-gray-100 overflow-hidden">
                                         <div
-                                            className="h-full bg-indigo-500 rounded-xl transition-all duration-500 flex items-center justify-end pr-3"
+                                            className="h-full bg-[#2563EB] rounded-xl transition-all duration-500 flex items-center justify-end pr-3"
                                             style={{ width: `${width}%`, minWidth: stage.count > 0 ? "40px" : 0 }}
                                         >
                                             {i > 0 && stage.count > 0 && (
@@ -309,7 +309,7 @@ const Dashboard = () => {
                     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
                             <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                                <FiCalendar className="text-indigo-500" size={18} />
+                                <FiCalendar className="text-[#2563EB]" size={18} />
                                 Upcoming
                             </h3>
                         </div>
@@ -326,7 +326,7 @@ const Dashboard = () => {
                                                 {item.date && new Date(item.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
                                             </p>
                                         </div>
-                                        <span className="text-xs font-medium text-indigo-600 px-2.5 py-1 rounded-lg bg-indigo-50">
+                                        <span className="text-xs font-medium text-[#2563EB] px-2.5 py-1 rounded-lg bg-[#EEF2FF]">
                                             {item.type}
                                         </span>
                                     </div>
@@ -358,7 +358,7 @@ const Dashboard = () => {
                                                 {act.time && new Date(act.time).toLocaleString()}
                                             </p>
                                         </div>
-                                        <span className="text-xs font-medium text-indigo-600 px-2.5 py-1 rounded-lg bg-indigo-50 shrink-0">{act.type || "Activity"}</span>
+                                        <span className="text-xs font-medium text-[#2563EB] px-2.5 py-1 rounded-lg bg-[#EEF2FF] shrink-0">{act.type || "Activity"}</span>
                                     </div>
                                 ))
                             ) : (
@@ -375,7 +375,7 @@ const Dashboard = () => {
                             <button
                                 type="button"
                                 onClick={() => navigate(`${basePath}/leads`)}
-                                className="text-xs font-medium text-indigo-600 hover:underline"
+                                className="text-xs font-medium text-[#2563EB] hover:underline"
                             >
                                 View all
                             </button>
@@ -389,7 +389,7 @@ const Dashboard = () => {
                                         onClick={() => navigate(`${basePath}/leads`)}
                                         className="w-full px-6 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors text-left"
                                     >
-                                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-sm shrink-0">
+                                        <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] text-[#2563EB] flex items-center justify-center font-semibold text-sm shrink-0">
                                             {(lead.name || "?").charAt(0).toUpperCase()}
                                         </div>
                                         <div className="min-w-0">

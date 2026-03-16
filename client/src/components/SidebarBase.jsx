@@ -30,22 +30,22 @@ const SidebarBase = ({
       <aside
         className={`
           fixed top-0 left-0 z-[70] h-full flex flex-col
-          bg-gradient-to-b from-indigo-900 via-indigo-900 to-indigo-950 border-r border-indigo-800/50
+          bg-[#FFFFFF] border-r border-[#E5E7EB]
           transition-all duration-300 ease-out
           ${isCollapsed ? "w-sidebar-collapsed" : "w-sidebar"}
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
         {/* Brand */}
-        <div className={`shrink-0 border-b border-indigo-800/50 ${isCollapsed ? "px-0 py-5" : "px-4 py-5"}`}>
+        <div className={`shrink-0 border-b border-[#E5E7EB] ${isCollapsed ? "px-0 py-5" : "px-4 py-5"}`}>
           <div className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : ""}`}>
             {logoIcon || (
-              <div className="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-500/20">
+              <div className="w-9 h-9 rounded-lg bg-[#0EA5E9] flex items-center justify-center text-white shrink-0 shadow-lg shadow-[#0EA5E9]/20">
                 <FiGrid size={18} strokeWidth={2.5} />
               </div>
             )}
             {!isCollapsed && (
-              <span className="font-semibold text-white text-sm truncate">
+              <span className="font-semibold text-[#111827] text-sm truncate">
                 {logoLabel}
               </span>
             )}
@@ -63,11 +63,11 @@ const SidebarBase = ({
                 key={item.path}
                 to={item.path}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                  group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                   transition-colors duration-150
                   ${isActive
-                    ? "bg-indigo-500/90 text-white shadow-md shadow-indigo-500/20"
-                    : "text-indigo-100 hover:bg-indigo-800/60 hover:text-white"
+                    ? "bg-[#E0F2FE] text-[#0284C7] font-semibold"
+                    : "text-[#6B7280] hover:bg-[#F1F5F9] hover:text-[#0F172A] font-medium"
                   }
                   ${isCollapsed ? "justify-center" : ""}
                 `}
@@ -82,11 +82,11 @@ const SidebarBase = ({
         </nav>
 
         {/* Collapse (logout moved to profile menu in Navbar) */}
-        <div className="p-3 border-t border-indigo-800/50 shrink-0 space-y-0.5">
+        <div className="p-3 border-t border-[#E5E7EB] shrink-0 space-y-0.5">
           <button
             type="button"
             onClick={onToggleCollapse}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 hover:bg-indigo-800/60 hover:text-white transition-colors text-sm font-medium ${isCollapsed ? "justify-center" : ""}`}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#6B7280] hover:bg-[#E0F2FE] hover:text-[#0F172A] transition-colors text-sm font-medium ${isCollapsed ? "justify-center" : ""}`}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}

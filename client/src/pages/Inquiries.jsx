@@ -25,6 +25,7 @@ const InquiriesPage = () => {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [websiteFilter, setWebsiteFilter] = useState("all");
+    const [locationFilter, setLocationFilter] = useState("all");
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
@@ -39,7 +40,9 @@ const InquiriesPage = () => {
         open: 0,
         converted: 0,
         ignored: 0,
-        websites: []
+        external: 0,
+        websites: [],
+        locations: []
     });
 
     const fetchInquiries = async () => {
@@ -55,10 +58,20 @@ const InquiriesPage = () => {
             setTotal(res.data?.total ?? 0);
 
             const websites = [...new Set(data.map(i => i.website).filter(Boolean))];
+            const locations = [...new Set(data.map(i => i.location).filter(Boolean))];
+            const open = data.filter(i => i.status === "Open").length;
+            const converted = data.filter(i => i.status === "Converted").length;
+            const ignored = data.filter(i => i.status === "Ignored").length;
+            const external = data.filter(i => !!i.website).length;
             setStats(prev => ({
                 ...prev,
                 total: res.data?.total ?? data.length,
-                websites
+                open,
+                converted,
+                ignored,
+                external,
+                websites,
+                locations
             }));
         } catch (err) {
             console.error("Failed to fetch inquiries:", err);
@@ -90,8 +103,9 @@ const InquiriesPage = () => {
 
         const matchesStatus = statusFilter === "all" || item.status === statusFilter;
         const matchesWebsite = websiteFilter === "all" || item.website === websiteFilter;
+        const matchesLocation = locationFilter === "all" || item.location === locationFilter;
 
-        return matchesSearch && matchesStatus && matchesWebsite;
+        return matchesSearch && matchesStatus && matchesWebsite && matchesLocation;
     });
 
     const getFormPath = (id, action = 'create') => {
@@ -132,7 +146,7 @@ const InquiriesPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                     { label: "Total Inquiries", val: stats.total, color: "text-gray-900", icon: <FiInbox />, bg: "bg-gray-50 text-gray-400" },
-                    { label: "New Queue", val: stats.open, color: "text-sky-500", icon: <FiClock />, bg: "bg-sky-50 text-sky-500" },
+                    { label: "External Inquiries", val: stats.external, color: "text-sky-600", icon: <FiGlobe />, bg: "bg-sky-50 text-sky-500" },
                     { label: "Converted", val: stats.converted, color: "text-emerald-500", icon: <FiArrowRight />, bg: "bg-emerald-50 text-emerald-500" },
                     { label: "Archived", val: stats.ignored, color: "text-gray-400", icon: <FiEyeOff />, bg: "bg-gray-50 text-gray-400" }
                 ].map(s => (
@@ -162,8 +176,8 @@ const InquiriesPage = () => {
                     />
                 </div>
 
-                <div className="flex items-center gap-4 w-full lg:w-auto">
-                    <div className="relative group flex-1 lg:w-44">
+                <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+                    <div className="relative group flex-1 min-w-[160px] lg:w-44">
                         <FiFilter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-sky-500 transition-colors z-10" />
                         <select
                             className="w-full pl-11 pr-10 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 text-xs uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
@@ -177,7 +191,7 @@ const InquiriesPage = () => {
                         </select>
                     </div>
 
-                    <div className="relative group flex-1 lg:w-44">
+                    <div className="relative group flex-1 min-w-[160px] lg:w-44">
                         <FiGlobe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-sky-500 transition-colors z-10" />
                         <select
                             className="w-full pl-11 pr-10 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 text-xs uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
@@ -186,6 +200,18 @@ const InquiriesPage = () => {
                         >
                             <option value="all">All Channels</option>
                             {stats.websites.map(w => <option key={w} value={w}>{w}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="relative group flex-1 min-w-[160px] lg:w-44">
+                        <FiGlobe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-sky-500 transition-colors z-10" />
+                        <select
+                            className="w-full pl-11 pr-10 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 text-xs uppercase tracking-widest appearance-none cursor-pointer shadow-sm"
+                            value={locationFilter}
+                            onChange={(e) => setLocationFilter(e.target.value)}
+                        >
+                            <option value="all">All Locations</option>
+                            {stats.locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
                         </select>
                     </div>
                 </div>
@@ -247,6 +273,11 @@ const InquiriesPage = () => {
                                     <span className="inline-block px-4 py-1.5 bg-[#F4F7FB] text-[#718096] text-[10px] font-black uppercase tracking-widest rounded-xl border border-[#E5EAF2] shadow-sm">
                                         {item.source || "ORGANIC"}
                                     </span>
+                                    {item.location && (
+                                        <span className="inline-block px-4 py-1.5 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-emerald-100 shadow-sm">
+                                            {item.location}
+                                        </span>
+                                    )}
                                 </div>
 
                                 {/* Value */}
@@ -286,24 +317,28 @@ const InquiriesPage = () => {
 
                                 {/* Actions */}
                                 <div className="lg:col-span-1 text-right">
-                                    <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+                                    <div className="flex items-center gap-2 justify-end">
+                                        <button
+                                            onClick={() => item.status === "Open" && navigate(getFormPath(item._id, 'convert'))}
+                                            disabled={item.status !== "Open"}
+                                            title={item.status === "Open" ? "Convert inquiry to lead & assign member" : "Already converted"}
+                                            className={`px-4 h-11 rounded-[999px] flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all shadow-lg ${
+                                                item.status === "Open"
+                                                    ? "bg-blue-600 text-white hover:bg-blue-700 hover:scale-[1.03] active:scale-95 shadow-blue-500/20"
+                                                    : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-transparent"
+                                            }`}
+                                        >
+                                            <FiArrowRight size={16} strokeWidth={3} />
+                                            <span>Convert & Assign</span>
+                                        </button>
                                         {item.status === "Open" && (
-                                            <>
-                                                <button
-                                                    onClick={() => navigate(getFormPath(item._id, 'convert'))}
-                                                    title="Convert to Lead"
-                                                    className="w-11 h-11 bg-blue-600 text-white rounded-[14px] flex items-center justify-center hover:bg-blue-700 hover:scale-110 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
-                                                >
-                                                    <FiArrowRight size={18} strokeWidth={3} />
-                                                </button>
-                                                <button
-                                                    onClick={() => updateStatus(item._id, "Ignored")}
-                                                    title="Archive/Ignore"
-                                                    className="w-11 h-11 bg-white border border-[#E5EAF2] text-[#718096] rounded-[14px] flex items-center justify-center hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
-                                                >
-                                                    <FiEyeOff size={18} />
-                                                </button>
-                                            </>
+                                            <button
+                                                onClick={() => updateStatus(item._id, "Ignored")}
+                                                title="Archive/Ignore"
+                                                className="w-11 h-11 bg-white border border-[#E5EAF2] text-[#718096] rounded-[14px] flex items-center justify-center hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
+                                            >
+                                                <FiEyeOff size={18} />
+                                            </button>
                                         )}
                                         {item.status === "Ignored" && (
                                             <button

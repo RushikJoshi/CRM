@@ -1,5 +1,6 @@
 const Inquiry = require("../models/Inquiry");
 const Company = require("../models/Company");
+const Branch = require("../models/Branch");
 
 exports.publicCreateInquiry = async (req, res) => {
     try {
@@ -9,7 +10,7 @@ exports.publicCreateInquiry = async (req, res) => {
             return res.status(401).json({ success: false, message: "Missing x-api-key." });
         }
 
-        const { name, email, phone, message, source, website } = req.body;
+        const { name, email, phone, message, source, website, city, address, course, location } = req.body;
 
         if (!name || !email || !phone) {
             return res.status(400).json({ success: false, message: "name, email, phone are required." });
@@ -43,12 +44,37 @@ exports.publicCreateInquiry = async (req, res) => {
             });
         }
 
+        // Try to map the submitted location (eg. "Ahmedabad") to a branch of this company
+        let branchId = null;
+        if (location) {
+            const normalizedLocation = String(location).trim().toLowerCase();
+            const branch = await Branch.findOne({
+                companyId,
+                isDeleted: false,
+                status: "active",
+                $or: [
+                    { city: new RegExp(`^${normalizedLocation}$`, "i") },
+                    { name: new RegExp(`^${normalizedLocation}$`, "i") }
+                ]
+            }).select("_id");
+            if (branch) {
+                branchId = branch._id;
+            }
+        }
+
         const inquiry = await Inquiry.create({
-            name, email, phone,
+            name,
+            email,
+            phone,
             message: message || "",
             source: source || "External Form",
             website: website || "",
+            city: city || "",
+            address: address || "",
+            course: course || "",
+            location: location || "",
             companyId,
+            branchId,
             status: "Open"
         });
 
