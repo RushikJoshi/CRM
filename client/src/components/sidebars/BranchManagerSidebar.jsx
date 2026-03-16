@@ -10,6 +10,7 @@ import {
   FiActivity,
   FiPieChart,
   FiSettings,
+  FiInbox,
 } from "react-icons/fi";
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import { AuthContext } from "../../context/AuthContext";
@@ -17,6 +18,7 @@ import SidebarBase from "../SidebarBase";
 
 const BRANCH_MANAGER_MENU = [
   { name: "Dashboard", icon: <FiLayout />, path: "/branch/dashboard" },
+  { name: "Branch Inquiries", icon: <FiInbox />, path: "/branch/inquiries" },
   { name: "Branch Leads", icon: <FiTarget />, path: "/branch/leads" },
   { name: "Branch Prospects", icon: <FiTrendingUp />, path: "/branch/prospects" },
   { name: "Branch Deals", icon: <FaIndianRupeeSign />, path: "/branch/deals" },

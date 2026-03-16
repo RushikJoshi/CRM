@@ -53,6 +53,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
         { name: "Subscriptions", icon: <FiCreditCard />, path: "/subscriptions" },
         { name: "Plans", icon: <FiPackage />, path: "/plans" },
         { name: "Platform Users", icon: <FiUsers />, path: "/users" },
+        { name: "All Inquiries", icon: <FiInbox />, path: "/inquiries" },
         { name: "Billing", icon: <FiCreditCard />, path: "/billing" },
         { name: "Usage Analytics", icon: <FiActivity />, path: "/usage-analytics" },
         { name: "System Logs", icon: <FiFileText />, path: "/system-logs" },
@@ -63,7 +64,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
     const fullMenuItems = [
         { name: "Dashboard", icon: <FiLayout />, path: "/dashboard", roles: ["company_admin", "branch_manager", "sales"] },
         { name: "Planner", icon: <FiCalendar />, path: "/planner", roles: ["branch_manager", "sales"] },
-        { name: "Inquiries", icon: <FiInbox />, path: "/inquiries", roles: ["company_admin", "branch_manager", "sales"] },
+        {
+            name: "Inquiries",
+            icon: <FiInbox />,
+            path: "/inquiries",
+            roles: ["company_admin", "branch_manager", "sales"],
+            labelMap: {
+                company_admin: "All Inquiries",
+                branch_manager: "Branch Inquiries",
+                sales: "My Inquiries",
+            },
+        },
         { name: "Master", icon: <FiDatabase />, path: "/master", roles: ["company_admin"] },
         { name: "Branches", icon: <FiGitPullRequest />, path: "/branches", roles: ["company_admin"] },
         { name: "Users", icon: <FiUsers />, path: "/users", roles: ["company_admin", "branch_manager"] },

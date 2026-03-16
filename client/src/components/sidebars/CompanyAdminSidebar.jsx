@@ -13,6 +13,7 @@ import {
   FiPieChart,
   FiZap,
   FiSettings,
+  FiInbox,
 } from "react-icons/fi";
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import { AuthContext } from "../../context/AuthContext";
@@ -22,6 +23,7 @@ const COMPANY_ADMIN_MENU = [
   { name: "Dashboard", icon: <FiLayout />, path: "/company/dashboard" },
   { name: "Branches", icon: <FiGitBranch />, path: "/company/branches" },
   { name: "Users", icon: <FiUsers />, path: "/company/users" },
+  { name: "Inquiries", icon: <FiInbox />, path: "/company/inquiries" },
   { name: "Leads", icon: <FiTarget />, path: "/company/leads" },
   { name: "Prospects", icon: <FiTrendingUp />, path: "/company/prospects" },
   { name: "Deals", icon: <FaIndianRupeeSign />, path: "/company/deals" },

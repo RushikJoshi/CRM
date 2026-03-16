@@ -10,6 +10,7 @@ import {
   FiActivity,
   FiPhone,
   FiCalendar,
+  FiInbox,
 } from "react-icons/fi";
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import { AuthContext } from "../../context/AuthContext";
@@ -17,6 +18,7 @@ import SidebarBase from "../SidebarBase";
 
 const SALES_MENU = [
   { name: "My Dashboard", icon: <FiLayout />, path: "/sales/dashboard" },
+  { name: "My Inquiries", icon: <FiInbox />, path: "/sales/inquiries" },
   { name: "My Leads", icon: <FiTarget />, path: "/sales/leads" },
   { name: "My Prospects", icon: <FiTrendingUp />, path: "/sales/prospects" },
   { name: "My Deals", icon: <FaIndianRupeeSign />, path: "/sales/deals" },
