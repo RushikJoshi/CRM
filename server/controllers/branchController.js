@@ -1,7 +1,7 @@
 const Branch = require("../models/Branch");
 
 const BRANCH_TYPES = ["head_office", "regional_office", "sales_branch", "support_center", "warehouse"];
-const BRANCH_STATUSES = ["active", "inactive", "closed"];
+const BRANCH_STATUSES = ["active", "inactive", "closed", "draft"];
 
 /** Sanitize body: only allow known fields and enums */
 function sanitizeBranchBody(body) {
@@ -121,7 +121,9 @@ exports.getBranches = async (req, res) => {
         ],
       });
     }
+    // By default hide drafts from normal lists unless explicitly requested
     if (status && BRANCH_STATUSES.includes(status)) query.status = status;
+    else query.status = { $ne: "draft" };
 
     const [total, branches] = await Promise.all([
       Branch.countDocuments(query),
@@ -255,6 +257,10 @@ exports.toggleBranchStatus = async (req, res) => {
 
     const branch = await Branch.findOne(query);
     if (!branch) return res.status(404).json({ success: false, message: "Branch not found" });
+
+    if (branch.status === "draft") {
+      return res.status(400).json({ success: false, message: "Draft branches cannot be toggled. Publish by updating status." });
+    }
 
     const nextStatus = branch.status === "active" ? "inactive" : "active";
     branch.status = nextStatus;

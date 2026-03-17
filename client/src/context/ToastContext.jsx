@@ -47,6 +47,62 @@ export const ToastProvider = ({ children }) => {
     toast.warning = (msg, dur) => toast(msg, "warning", dur);
     toast.info = (msg, dur) => toast(msg, "info", dur);
 
+    /**
+     * Confirmation toast with actions (Cancel / Confirm).
+     * Keeps existing container position + styling.
+     */
+    toast.confirm = (options) => {
+        const {
+            message,
+            confirmText = "Confirm",
+            cancelText = "Cancel",
+            onConfirm,
+            onCancel,
+            type = "warning",
+            duration = 120000, // long-lived; user dismisses via buttons
+        } = options || {};
+
+        const id = ++_id;
+        const dismissSelf = () => dismiss(id);
+
+        const content = (
+            <div className="flex flex-col gap-3">
+                <p className="text-sm font-bold leading-snug">{message}</p>
+                <div className="flex items-center justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onCancel?.();
+                            dismissSelf();
+                        }}
+                        className="px-3 py-1.5 rounded-lg border border-black/10 bg-white/60 hover:bg-white transition-colors text-xs font-semibold"
+                    >
+                        {cancelText}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            try {
+                                await onConfirm?.();
+                            } finally {
+                                dismissSelf();
+                            }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors text-xs font-semibold"
+                    >
+                        {confirmText}
+                    </button>
+                </div>
+            </div>
+        );
+
+        setToasts(prev => [...prev, { id, message: content, type }]);
+        if (duration && duration > 0) {
+            setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
+        }
+        return id;
+    };
+
     return (
         <ToastContext.Provider value={toast}>
             {children}
@@ -63,7 +119,13 @@ export const ToastProvider = ({ children }) => {
                         <span className={`mt-0.5 shrink-0 ${ICON_COLORS[t.type]}`}>
                             {ICONS[t.type]}
                         </span>
-                        <p className="text-sm font-bold flex-1 leading-snug">{t.message}</p>
+                        <div className="flex-1 min-w-0">
+                            {typeof t.message === "string" ? (
+                                <p className="text-sm font-bold leading-snug">{t.message}</p>
+                            ) : (
+                                t.message
+                            )}
+                        </div>
                         <button
                             onClick={() => dismiss(t.id)}
                             className="shrink-0 mt-0.5 opacity-50 hover:opacity-100 transition-opacity"

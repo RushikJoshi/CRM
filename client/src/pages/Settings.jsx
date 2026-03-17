@@ -196,20 +196,20 @@ const Settings = () => {
         }
     };
 
-    const inputClass = "w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400 focus:bg-white transition-all font-semibold text-gray-800 text-sm placeholder:text-gray-400 placeholder:font-normal";
+    const inputClass = "w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 focus:bg-white transition-all font-semibold text-gray-800 text-sm placeholder:text-gray-400 placeholder:font-normal";
     const darkInputClass = "w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-xl outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-all font-semibold text-white text-sm placeholder:text-gray-500 placeholder:font-normal";
 
     return (
         <div className="space-y-6 pb-16 animate-in fade-in duration-500">
             {/* ─── Header ─────────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
-                <div className="absolute -right-8 -top-8 w-32 h-32 bg-green-500/5 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-sky-500/5 rounded-full blur-2xl pointer-events-none" />
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Settings</h1>
+                    <h1 className="text-[26px] font-bold text-[#0F172A] tracking-tight">Settings</h1>
                     <p className="text-gray-500 font-medium text-sm mt-1">Manage your account and security settings.</p>
                 </div>
                 <div className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-gray-50 border border-gray-100 px-4 py-2 rounded-xl">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-[#38BDF8] animate-pulse" />
                     {user?.role?.replace(/_/g, ' ')?.toUpperCase() || 'USER'}
                 </div>
             </div>
@@ -219,7 +219,7 @@ const Settings = () => {
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     <div className="px-6 py-5 border-b border-gray-50">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-green-50 text-green-600 rounded-xl"><FiUser size={20} /></div>
+                            <div className="p-2.5 bg-[#F0F9FF] text-[#0EA5E9] rounded-xl"><FiUser size={20} /></div>
                             <div>
                                 <h3 className="text-lg font-black text-gray-900">My Profile</h3>
                                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Your personal information</p>
@@ -230,19 +230,19 @@ const Settings = () => {
                         <MsgBanner msg={profileMsg} onClose={() => setProfileMsg({ text: "", type: "" })} />
                         {fetchingProfile ? (
                             <div className="flex items-center justify-center py-10">
-                                <div className="w-8 h-8 border-3 border-green-100 border-t-green-500 rounded-full animate-spin" />
+                                <div className="w-8 h-8 border-3 border-sky-100 border-t-sky-500 rounded-full animate-spin" />
                             </div>
                         ) : (
                             <form onSubmit={handleProfileUpdate} className="mt-4 space-y-5">
                                 {/* Avatar initials */}
                                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-green-500/20 flex-shrink-0">
+                                    <div className="w-14 h-14 rounded-2xl bg-[#38BDF8] flex items-center justify-center text-white font-black text-xl shadow-md shadow-sky-500/20 flex-shrink-0">
                                         {profile.name?.charAt(0)?.toUpperCase() || "U"}
                                     </div>
                                     <div>
                                         <p className="font-black text-gray-900">{profile.name || "Your Name"}</p>
                                         <p className="text-xs text-gray-400 font-medium">{profile.email}</p>
-                                        <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-0.5">{user?.role?.replace(/_/g, ' ')}</p>
+                                        <p className="text-[10px] font-black text-[#0EA5E9] uppercase tracking-widest mt-0.5">{user?.role?.replace(/_/g, ' ')}</p>
                                     </div>
                                 </div>
 
@@ -268,7 +268,7 @@ const Settings = () => {
                                 <button
                                     type="submit"
                                     disabled={profileLoading}
-                                    className={`w-full py-3.5 bg-green-500 text-white font-black rounded-xl shadow-lg shadow-green-500/20 hover:bg-green-600 active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2 ${profileLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+                                    className={`w-full py-3.5 bg-[#38BDF8] text-white font-semibold rounded-xl shadow-lg shadow-sky-500/20 hover:bg-[#0EA5E9] active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2 ${profileLoading ? "opacity-70 cursor-not-allowed" : ""}`}
                                 >
                                     {profileLoading
                                         ? <><FiRefreshCw size={15} className="animate-spin" /> Saving...</>
@@ -335,7 +335,7 @@ const Settings = () => {
                             <button
                                 type="submit"
                                 disabled={pwLoading}
-                                className={`w-full py-3.5 bg-white text-gray-900 font-black rounded-xl shadow-lg hover:bg-gray-100 active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2 ${pwLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+                                className={`w-full py-3.5 bg-white text-gray-900 font-semibold rounded-xl shadow-lg hover:bg-gray-100 active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-2 ${pwLoading ? "opacity-70 cursor-not-allowed" : ""}`}
                             >
                                 {pwLoading
                                     ? <><FiRefreshCw size={15} className="animate-spin" /> Updating...</>
@@ -343,49 +343,6 @@ const Settings = () => {
                                 }
                             </button>
                         </form>
-                    </div>
-                </div>
-
-                {/* ─── Display Preferences ────────────────────────────────── */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm xl:col-span-2 overflow-hidden">
-                    <div className="px-6 py-5 border-b border-gray-50">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-gray-900 text-white rounded-xl"><FiActivity size={20} /></div>
-                            <div>
-                                <h3 className="text-lg font-black text-gray-900">Display Settings</h3>
-                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Customize your experience</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="p-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {[
-                                { Icon: FiBell, label: "Notifications", description: "Receive in-app alerts", active: true, color: "text-green-600", bg: "bg-green-50" },
-                                { Icon: FiShield, label: "Extra Security (2FA)", description: "Two-factor authentication", active: false, color: "text-blue-600", bg: "bg-blue-50" },
-                                { Icon: FiMoon, label: "Dark Mode", description: "Switch to dark theme", active: false, color: "text-purple-600", bg: "bg-purple-50" },
-                            ].map((item, i) => (
-                                <div
-                                    key={i}
-                                    className={`p-5 rounded-xl border cursor-pointer transition-all hover:shadow-md ${item.active ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-100 hover:border-gray-200"}`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-xl ${item.active ? item.bg : "bg-white"}`}>
-                                                <item.Icon size={16} className={item.active ? item.color : "text-gray-400"} />
-                                            </div>
-                                            <div>
-                                                <p className={`text-sm font-black ${item.active ? "text-gray-900" : "text-gray-600"}`}>{item.label}</p>
-                                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">{item.description}</p>
-                                            </div>
-                                        </div>
-                                        {/* Toggle */}
-                                        <div className={`w-11 h-6 rounded-full flex items-center px-1 transition-colors ${item.active ? "bg-green-500" : "bg-gray-300"}`}>
-                                            <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300 ${item.active ? "translate-x-5" : "translate-x-0"}`} />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 </div>
             </div>

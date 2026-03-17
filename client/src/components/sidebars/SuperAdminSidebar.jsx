@@ -8,7 +8,6 @@ import {
   FiBarChart2,
   FiFileText,
   FiSettings,
-  FiInbox,
 } from "react-icons/fi";
 import { AuthContext } from "../../context/AuthContext";
 import SidebarBase from "../SidebarBase";
@@ -19,7 +18,6 @@ const SUPER_ADMIN_MENU = [
   { name: "Subscriptions", icon: <FiCreditCard />, path: "/superadmin/subscriptions" },
   { name: "Plans", icon: <FiPackage />, path: "/superadmin/plans" },
   { name: "Platform Users", icon: <FiUsers />, path: "/superadmin/users" },
-  { name: "All Inquiries", icon: <FiInbox />, path: "/superadmin/inquiries" },
   { name: "Platform Analytics", icon: <FiBarChart2 />, path: "/superadmin/usage-analytics" },
   { name: "System Logs", icon: <FiFileText />, path: "/superadmin/system-logs" },
   { name: "Settings", icon: <FiSettings />, path: "/superadmin/settings" },

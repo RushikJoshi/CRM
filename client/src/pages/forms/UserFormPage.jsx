@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   FiUser,
   FiMail,
@@ -103,10 +103,23 @@ const defaultForm = (currentUser) => ({
   companyId: currentUser?.companyId || "",
 });
 
+const STEPS = [
+  { key: "personal", label: "Personal Information", icon: <FiUser size={14} className="text-[#2563EB]" /> },
+  { key: "contact", label: "Contact Information", icon: <FiMail size={14} className="text-[#2563EB]" /> },
+  { key: "branch", label: "Branch Assignment", icon: <FiMapPin size={14} className="text-[#2563EB]" /> },
+  { key: "work", label: "Work Information", icon: <FiBriefcase size={14} className="text-[#2563EB]" /> },
+  { key: "crm", label: "CRM Sales Settings", icon: <FiTrendingUp size={14} className="text-[#2563EB]" /> },
+  { key: "login", label: "Login Information", icon: <FiLock size={14} className="text-[#2563EB]" /> },
+  { key: "role", label: "Role & Permissions", icon: <FiShield size={14} className="text-[#2563EB]" /> },
+  { key: "account", label: "Account Settings", icon: <FiSettings size={14} className="text-[#2563EB]" /> },
+];
+
 export default function UserFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isView = searchParams.get("mode") === "view";
   const toast = useToast();
   const currentUser = getCurrentUser();
   const isSuperAdmin = currentUser?.role === "super_admin";
@@ -121,19 +134,48 @@ export default function UserFormPage() {
   const [pipelines, setPipelines] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [formData, setFormData] = useState(() => defaultForm(currentUser));
+  const [step, setStep] = useState(0);
 
-  const schema = {
-    firstName: [rules.required("First name"), rules.minLength(1, "First name")],
-    lastName: [rules.required("Last name"), rules.minLength(1, "Last name")],
-    email: [rules.required("Email"), rules.email()],
-    workEmail: [rules.email()],
-    personalEmail: [rules.email()],
-    ...(!isEdit && { password: [rules.required("Password"), rules.passwordStrength()] }),
-    role: [rules.required("Role")],
-    ...(!isBranchManager && { primaryBranchId: [rules.required("Primary branch")] }),
-    ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
-  };
-  const { errors, validate, clearError } = useFormValidation(schema);
+  const stepSchema = useMemo(() => {
+    const idx = step;
+    // Minimal draft-safe validation is handled separately on Save Draft.
+    const schemas = [
+      // 0 Personal Information
+      {
+        firstName: [rules.required("First name"), rules.minLength(1, "First name")],
+        lastName: [rules.required("Last name"), rules.minLength(1, "Last name")],
+      },
+      // 1 Contact Information
+      {
+        email: [rules.required("Email"), rules.email()],
+        workEmail: [rules.email()],
+        personalEmail: [rules.email()],
+      },
+      // 2 Branch Assignment
+      {
+        ...(!isBranchManager && { primaryBranchId: [rules.required("Primary branch")] }),
+        ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
+      },
+      // 3 Work Information
+      {},
+      // 4 CRM Sales Settings
+      {},
+      // 5 Login Information
+      {
+        email: [rules.required("Email"), rules.email()],
+        ...(!isEdit && { password: [rules.required("Password"), rules.passwordStrength()] }),
+      },
+      // 6 Role & Permissions
+      {
+        role: [rules.required("Role")],
+      },
+      // 7 Account Settings
+      {},
+    ];
+    return schemas[idx] || {};
+  }, [step, isBranchManager, isSuperAdmin, isEdit]);
+
+  const { errors, validate, clearError } = useFormValidation(stepSchema);
 
   const handleChange = useCallback(
     (e) => {
@@ -240,6 +282,7 @@ export default function UserFormPage() {
           timezone: u.timezone || "Asia/Kolkata",
           companyId: u.companyId?._id || u.companyId || currentUser?.companyId || "",
         });
+        setStep(0);
       } catch (_) {
         toast.error("Failed to load user");
       } finally {
@@ -248,39 +291,89 @@ export default function UserFormPage() {
     })();
   }, [id, isEdit, apiBase]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      toast.error("Password and Confirm Password do not match.");
-      return;
+  const buildPayload = (statusOverride) => {
+    const payload = {
+      ...formData,
+      ...(statusOverride ? { status: statusOverride } : null),
+      name: formData.displayName?.trim() || [formData.firstName, formData.lastName].filter(Boolean).join(" ").trim() || formData.email,
+      workEmail: formData.workEmail?.trim() || formData.email?.trim(),
+      primaryBranchId: formData.primaryBranchId || undefined,
+      branchId: formData.primaryBranchId || undefined,
+      additionalBranchIds: (formData.additionalBranchIds || []).filter(Boolean),
+      joiningDate: formData.joiningDate || undefined,
+      dateOfBirth: formData.dateOfBirth || undefined,
+      salesTarget: formData.salesTarget ? Number(formData.salesTarget) : undefined,
+      commissionPercentage: formData.commissionPercentage ? Number(formData.commissionPercentage) : undefined,
+      defaultPipelineId: formData.defaultPipelineId || undefined,
+      reportingManagerId: formData.reportingManagerId || undefined,
+    };
+    delete payload.confirmPassword;
+    if (isEdit && !payload.password) delete payload.password;
+    if (isBranchManager) {
+      delete payload.primaryBranchId;
+      delete payload.branchId;
+      delete payload.additionalBranchIds;
     }
-    if (!validate(formData)) {
-      toast.error("Please fix the errors before saving.");
+    return payload;
+  };
+
+  const canSaveDraft = () => {
+    const email = (formData.email || formData.workEmail || "").trim();
+    if (!email) return false;
+    return true;
+  };
+
+  const handleSaveDraft = async () => {
+    if (isView) return;
+    if (!canSaveDraft()) {
+      toast.error("Please enter Email (login) or Work Email to save a draft.");
       return;
     }
     setLoading(true);
     try {
-      const payload = {
-        ...formData,
-        name: formData.displayName?.trim() || [formData.firstName, formData.lastName].filter(Boolean).join(" ").trim() || formData.email,
-        workEmail: formData.workEmail?.trim() || formData.email?.trim(),
-        primaryBranchId: formData.primaryBranchId || undefined,
-        branchId: formData.primaryBranchId || undefined,
-        additionalBranchIds: (formData.additionalBranchIds || []).filter(Boolean),
-        joiningDate: formData.joiningDate || undefined,
-        dateOfBirth: formData.dateOfBirth || undefined,
-        salesTarget: formData.salesTarget ? Number(formData.salesTarget) : undefined,
-        commissionPercentage: formData.commissionPercentage ? Number(formData.commissionPercentage) : undefined,
-        defaultPipelineId: formData.defaultPipelineId || undefined,
-        reportingManagerId: formData.reportingManagerId || undefined,
-      };
-      delete payload.confirmPassword;
-      if (isEdit && !payload.password) delete payload.password;
-      if (isBranchManager) {
-        delete payload.primaryBranchId;
-        delete payload.branchId;
-        delete payload.additionalBranchIds;
+      const payload = buildPayload("draft");
+      if (isEdit) {
+        await API.put(`${apiBase}/${id}`, payload);
+        toast.success("Draft saved.");
+      } else {
+        await API.post(apiBase, payload);
+        toast.success("Draft saved.");
       }
+      navigate(-1);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save draft.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const goNext = async () => {
+    if (isView) return;
+    if (!validate(formData)) {
+      toast.error("Please fix the errors before continuing.");
+      return;
+    }
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  };
+
+  const goBack = () => setStep((s) => Math.max(0, s - 1));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isView) return;
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      toast.error("Password and Confirm Password do not match.");
+      return;
+    }
+    setLoading(true);
+    try {
+      // On final submit, validate current step first; if user skipped, enforce key required fields.
+      if (!validate(formData)) {
+        toast.error("Please fix the errors before saving.");
+        setLoading(false);
+        return;
+      }
+      const payload = buildPayload();
       if (isEdit) {
         await API.put(`${apiBase}/${id}`, payload);
         toast.success("User updated successfully.");
@@ -317,164 +410,194 @@ export default function UserFormPage() {
               <FiUser size={18} />
             </div>
             <div>
-              <h1 className="text-base font-bold text-[#111827]">{isEdit ? "Edit User" : "Create User"}</h1>
-              <p className="text-[10px] text-[#6B7280]">{isEdit ? "Update user details" : "Add new user"}</p>
+              <h1 className="text-base font-bold text-[#111827]">{isView ? "View User" : (isEdit ? "Edit User" : "Create User")}</h1>
+              <p className="text-[10px] text-[#6B7280]">{isView ? "Read-only details" : (isEdit ? "Update user details" : "Add new user")}</p>
             </div>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="flex-1 min-h-0 overflow-auto pb-4">
-        <div className="p-4 md:p-5 grid grid-cols-1 xl:grid-cols-2 gap-5 xl:gap-6 max-w-[1600px] mx-auto">
-          {/* Left column */}
+        <div className="p-4 md:p-5 max-w-[1200px] mx-auto w-full">
+          <div className="mb-4 bg-white rounded-xl border border-[#E5E7EB] shadow-sm px-3 py-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              {STEPS.map((s, idx) => {
+                const active = idx === step;
+                const done = idx < step;
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => !isView && setStep(idx)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                      active ? "bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]" : done ? "bg-white text-[#111827] border-[#E5E7EB] hover:bg-[#F8FAFC]" : "bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-[#F8FAFC]"
+                    } ${isView ? "cursor-default" : ""}`}
+                    disabled={isView}
+                    title={s.label}
+                  >
+                    {s.icon}
+                    <span className="hidden sm:inline">{idx + 1}. {s.label}</span>
+                    <span className="sm:hidden">{idx + 1}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Single centered form column; fields inside cards remain 2-col where possible */}
           <div className="space-y-4">
-            {/* 1. Personal Information */}
+              {/* 1. Personal Information */}
+              {step === 0 && (
             <div className={cardCls}>
               <div className={sectionTitleCls}>
                 <FiUser className="text-[#2563EB]" size={14} /> Personal Information
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>First Name <span className="text-red-500">*</span></label>
-                  <input name="firstName" value={formData.firstName} onChange={handleChange} className={inputCls(errors, "firstName")} placeholder="First name" />
+                  <input name="firstName" value={formData.firstName} onChange={handleChange} disabled={isView} className={inputCls(errors, "firstName")} placeholder="First name" />
                   <FieldError error={errors.firstName} />
                 </div>
                 <div>
                   <label className={labelCls}>Last Name <span className="text-red-500">*</span></label>
-                  <input name="lastName" value={formData.lastName} onChange={handleChange} className={inputCls(errors, "lastName")} placeholder="Last name" />
+                  <input name="lastName" value={formData.lastName} onChange={handleChange} disabled={isView} className={inputCls(errors, "lastName")} placeholder="Last name" />
                   <FieldError error={errors.lastName} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Display Name</label>
-                  <input name="displayName" value={formData.displayName} onChange={handleChange} className={inputCls(errors, "displayName")} placeholder="Display name" />
+                  <input name="displayName" value={formData.displayName} onChange={handleChange} disabled={isView} className={inputCls(errors, "displayName")} placeholder="Display name" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Profile Photo URL</label>
-                  <input name="profilePhotoUrl" type="url" value={formData.profilePhotoUrl} onChange={handleChange} className={inputCls(errors, "profilePhotoUrl")} placeholder="https://..." />
+                  <input name="profilePhotoUrl" type="url" value={formData.profilePhotoUrl} onChange={handleChange} disabled={isView} className={inputCls(errors, "profilePhotoUrl")} placeholder="https://..." />
                 </div>
                 <div>
                   <label className={labelCls}>Gender</label>
-                  <select name="gender" value={formData.gender} onChange={handleChange} className={inputCls(errors, "gender")}>
+                  <select name="gender" value={formData.gender} onChange={handleChange} disabled={isView} className={inputCls(errors, "gender")}>
                     {GENDERS.map((g) => <option key={g.value || "x"} value={g.value}>{g.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className={labelCls}>Date of Birth</label>
-                  <input name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} className={inputCls(errors, "dateOfBirth")} />
+                  <input name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} disabled={isView} className={inputCls(errors, "dateOfBirth")} />
                 </div>
               </div>
             </div>
+              )}
 
-            {/* 2. Contact Information */}
+              {/* 2. Contact Information */}
+              {step === 1 && (
             <div className={cardCls}>
               <div className={sectionTitleCls}>
                 <FiMail className="text-[#2563EB]" size={14} /> Contact Information
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Work Email <span className="text-red-500">*</span></label>
-                  <input name="workEmail" type="email" value={formData.workEmail} onChange={handleChange} className={inputCls(errors, "workEmail")} placeholder="work@company.com" />
+                  <input name="workEmail" type="email" value={formData.workEmail} onChange={handleChange} disabled={isView} className={inputCls(errors, "workEmail")} placeholder="work@company.com" />
                   <FieldError error={errors.workEmail} />
                 </div>
                 <div>
                   <label className={labelCls}>Personal Email</label>
-                  <input name="personalEmail" type="email" value={formData.personalEmail} onChange={handleChange} className={inputCls(errors, "personalEmail")} placeholder="personal@email.com" />
+                  <input name="personalEmail" type="email" value={formData.personalEmail} onChange={handleChange} disabled={isView} className={inputCls(errors, "personalEmail")} placeholder="personal@email.com" />
                   <FieldError error={errors.personalEmail} />
                 </div>
                 <div>
                   <label className={labelCls}>Phone</label>
-                  <input name="phone" type="tel" value={formData.phone} onChange={handleChange} className={inputCls(errors, "phone")} placeholder="10-digit" />
+                  <input name="phone" type="tel" value={formData.phone} onChange={handleChange} disabled={isView} className={inputCls(errors, "phone")} placeholder="10-digit" />
                 </div>
                 <div>
                   <label className={labelCls}>Alternate Phone</label>
-                  <input name="alternatePhone" type="tel" value={formData.alternatePhone} onChange={handleChange} className={inputCls(errors, "alternatePhone")} />
+                  <input name="alternatePhone" type="tel" value={formData.alternatePhone} onChange={handleChange} disabled={isView} className={inputCls(errors, "alternatePhone")} />
                 </div>
                 <div>
                   <label className={labelCls}>WhatsApp Number</label>
-                  <input name="whatsappNumber" type="tel" value={formData.whatsappNumber} onChange={handleChange} className={inputCls(errors, "whatsappNumber")} />
+                  <input name="whatsappNumber" type="tel" value={formData.whatsappNumber} onChange={handleChange} disabled={isView} className={inputCls(errors, "whatsappNumber")} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Address</label>
-                  <input name="address" value={formData.address} onChange={handleChange} className={inputCls(errors, "address")} placeholder="Full address" />
+                  <input name="address" value={formData.address} onChange={handleChange} disabled={isView} className={inputCls(errors, "address")} placeholder="Full address" />
                 </div>
               </div>
             </div>
+              )}
 
-            {/* 3. Login Information */}
+              {/* 6. Login Information */}
+              {step === 5 && (
             <div className={cardCls}>
               <div className={sectionTitleCls}>
                 <FiLock className="text-[#2563EB]" size={14} /> Login Information
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Username</label>
-                  <input name="username" value={formData.username} onChange={handleChange} className={inputCls(errors, "username")} placeholder="Login username" />
+                  <input name="username" value={formData.username} onChange={handleChange} disabled={isView} className={inputCls(errors, "username")} placeholder="Login username" />
                 </div>
                 <div>
                   <label className={labelCls}>Email (login) <span className="text-red-500">*</span></label>
-                  <input name="email" type="email" value={formData.email} onChange={handleChange} className={inputCls(errors, "email")} placeholder="Login email" />
+                  <input name="email" type="email" value={formData.email} onChange={handleChange} disabled={isView} className={inputCls(errors, "email")} placeholder="Login email" />
                   <FieldError error={errors.email} />
                 </div>
                 <div>
                   <label className={labelCls}>Password {!isEdit && <span className="text-red-500">*</span>}</label>
-                  <input name="password" type="password" value={formData.password} onChange={handleChange} className={inputCls(errors, "password")} placeholder={isEdit ? "Leave blank to keep" : "Min 8 characters"} autoComplete="new-password" />
+                  <input name="password" type="password" value={formData.password} onChange={handleChange} disabled={isView} className={inputCls(errors, "password")} placeholder={isEdit ? "Leave blank to keep" : "Min 8 characters"} autoComplete="new-password" />
                   <FieldError error={errors.password} />
                 </div>
                 <div>
                   <label className={labelCls}>Confirm Password</label>
-                  <input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} className={inputCls(errors, "confirmPassword")} placeholder="Re-enter password" autoComplete="new-password" />
+                  <input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} disabled={isView} className={inputCls(errors, "confirmPassword")} placeholder="Re-enter password" autoComplete="new-password" />
                 </div>
                 <div className="sm:col-span-2 flex items-center gap-2">
-                  <input type="checkbox" id="twoFactor" name="twoFactorEnabled" checked={formData.twoFactorEnabled} onChange={handleChange} className="rounded border-[#E5E7EB]" />
+                  <input type="checkbox" id="twoFactor" name="twoFactorEnabled" checked={formData.twoFactorEnabled} onChange={handleChange} disabled={isView} className="rounded border-[#E5E7EB]" />
                   <label htmlFor="twoFactor" className="text-sm font-medium text-[#374151]">Two-Factor Authentication</label>
                 </div>
               </div>
             </div>
+              )}
 
-            {/* 4. Role & Permissions */}
+              {/* 7. Role & Permissions */}
+              {step === 6 && (
             <div className={cardCls}>
               <div className={sectionTitleCls}>
                 <FiShield className="text-[#2563EB]" size={14} /> Role & Permissions
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>User Role <span className="text-red-500">*</span></label>
-                  <select name="role" value={formData.role} onChange={handleChange} className={inputCls(errors, "role")} disabled={isBranchManager}>
+                  <select name="role" value={formData.role} onChange={handleChange} className={inputCls(errors, "role")} disabled={isView || isBranchManager}>
                     {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                   </select>
                   <FieldError error={errors.role} />
                 </div>
                 <div>
                   <label className={labelCls}>Department</label>
-                  <input name="department" value={formData.department} onChange={handleChange} className={inputCls(errors, "department")} placeholder="e.g. Sales" />
+                  <input name="department" value={formData.department} onChange={handleChange} disabled={isView} className={inputCls(errors, "department")} placeholder="e.g. Sales" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Reporting Manager</label>
-                  <select name="reportingManagerId" value={formData.reportingManagerId} onChange={handleChange} className={inputCls(errors, "reportingManagerId")}>
+                  <select name="reportingManagerId" value={formData.reportingManagerId} onChange={handleChange} disabled={isView} className={inputCls(errors, "reportingManagerId")}>
                     <option value="">Select manager...</option>
                     {users.filter((u) => u._id !== id).map((u) => <option key={u._id} value={u._id}>{u.name} {u.email ? `(${u.email})` : ""}</option>)}
                   </select>
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Permission Level</label>
-                  <input name="permissionLevel" value={formData.permissionLevel} onChange={handleChange} className={inputCls(errors, "permissionLevel")} placeholder="e.g. Standard" />
+                  <input name="permissionLevel" value={formData.permissionLevel} onChange={handleChange} disabled={isView} className={inputCls(errors, "permissionLevel")} placeholder="e.g. Standard" />
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Right column */}
-          <div className="space-y-4">
+              )}
             {/* 5. Branch Assignment */}
+            {step === 2 && (
             <div className={cardCls}>
               <div className={sectionTitleCls}>
                 <FiMapPin className="text-[#2563EB]" size={14} /> Branch Assignment
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {isSuperAdmin && (
                   <div className="sm:col-span-2">
                     <label className={labelCls}>Company <span className="text-red-500">*</span></label>
-                    <select name="companyId" value={formData.companyId} onChange={handleChange} className={inputCls(errors, "companyId")}>
+                    <select name="companyId" value={formData.companyId} onChange={handleChange} disabled={isView} className={inputCls(errors, "companyId")}>
                       <option value="">Select company...</option>
                       {companies.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
                     </select>
@@ -483,7 +606,7 @@ export default function UserFormPage() {
                 )}
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Primary Branch {!isBranchManager && <span className="text-red-500">*</span>}</label>
-                  <select name="primaryBranchId" value={formData.primaryBranchId} onChange={handleChange} className={inputCls(errors, "primaryBranchId")} disabled={isBranchManager}>
+                  <select name="primaryBranchId" value={formData.primaryBranchId} onChange={handleChange} className={inputCls(errors, "primaryBranchId")} disabled={isView || isBranchManager}>
                     <option value="">Select branch...</option>
                     {branches.map((b) => <option key={b._id} value={b._id}>{b.name} {b.branchCode ? `(${b.branchCode})` : ""}</option>)}
                   </select>
@@ -496,119 +619,151 @@ export default function UserFormPage() {
                     value={formData.additionalBranchIds}
                     onChange={(e) => setField("additionalBranchIds", Array.from(e.target.selectedOptions, (o) => o.value))}
                     className={inputCls(errors, "additionalBranchIds") + " min-h-[80px]"}
-                    disabled={isBranchManager}
+                    disabled={isView || isBranchManager}
                   >
                     {branches.filter((b) => b._id !== formData.primaryBranchId).map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className={labelCls}>Team</label>
-                  <input name="team" value={formData.team} onChange={handleChange} className={inputCls(errors, "team")} placeholder="Team name" />
+                  <input name="team" value={formData.team} onChange={handleChange} disabled={isView} className={inputCls(errors, "team")} placeholder="Team name" />
                 </div>
                 <div>
                   <label className={labelCls}>Territory</label>
-                  <input name="territory" value={formData.territory} onChange={handleChange} className={inputCls(errors, "territory")} placeholder="Territory" />
+                  <input name="territory" value={formData.territory} onChange={handleChange} disabled={isView} className={inputCls(errors, "territory")} placeholder="Territory" />
                 </div>
               </div>
             </div>
+            )}
 
             {/* 6. Work Information */}
+            {step === 3 && (
             <div className={cardCls}>
               <div className={sectionTitleCls}>
                 <FiBriefcase className="text-[#2563EB]" size={14} /> Work Information
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Employee ID</label>
-                  <input name="employeeId" value={formData.employeeId} onChange={handleChange} className={inputCls(errors, "employeeId")} placeholder="EMP-001" />
+                  <input name="employeeId" value={formData.employeeId} onChange={handleChange} disabled={isView} className={inputCls(errors, "employeeId")} placeholder="EMP-001" />
                 </div>
                 <div>
                   <label className={labelCls}>Job Title</label>
-                  <input name="jobTitle" value={formData.jobTitle} onChange={handleChange} className={inputCls(errors, "jobTitle")} placeholder="e.g. Sales Rep" />
+                  <input name="jobTitle" value={formData.jobTitle} onChange={handleChange} disabled={isView} className={inputCls(errors, "jobTitle")} placeholder="e.g. Sales Rep" />
                 </div>
                 <div>
                   <label className={labelCls}>Joining Date</label>
-                  <input name="joiningDate" type="date" value={formData.joiningDate} onChange={handleChange} className={inputCls(errors, "joiningDate")} />
+                  <input name="joiningDate" type="date" value={formData.joiningDate} onChange={handleChange} disabled={isView} className={inputCls(errors, "joiningDate")} />
                 </div>
                 <div>
                   <label className={labelCls}>Employment Type</label>
-                  <select name="employmentType" value={formData.employmentType} onChange={handleChange} className={inputCls(errors, "employmentType")}>
+                  <select name="employmentType" value={formData.employmentType} onChange={handleChange} disabled={isView} className={inputCls(errors, "employmentType")}>
                     {EMPLOYMENT_TYPES.map((e) => <option key={e.value || "x"} value={e.value}>{e.label}</option>)}
                   </select>
                 </div>
               </div>
             </div>
+            )}
 
             {/* 7. CRM Sales Settings */}
+            {step === 4 && (
             <div className={cardCls}>
               <div className={sectionTitleCls}>
                 <FiTrendingUp className="text-[#2563EB]" size={14} /> CRM Sales Settings
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Sales Target</label>
-                  <input name="salesTarget" type="number" min={0} value={formData.salesTarget} onChange={handleChange} className={inputCls(errors, "salesTarget")} placeholder="Amount" />
+                  <input name="salesTarget" type="number" min={0} value={formData.salesTarget} onChange={handleChange} disabled={isView} className={inputCls(errors, "salesTarget")} placeholder="Amount" />
                 </div>
                 <div>
                   <label className={labelCls}>Commission %</label>
-                  <input name="commissionPercentage" type="number" min={0} max={100} step={0.01} value={formData.commissionPercentage} onChange={handleChange} className={inputCls(errors, "commissionPercentage")} placeholder="%" />
+                  <input name="commissionPercentage" type="number" min={0} max={100} step={0.01} value={formData.commissionPercentage} onChange={handleChange} disabled={isView} className={inputCls(errors, "commissionPercentage")} placeholder="%" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Lead Assignment Rule</label>
-                  <input name="leadAssignmentRule" value={formData.leadAssignmentRule} onChange={handleChange} className={inputCls(errors, "leadAssignmentRule")} placeholder="Rule name" />
+                  <input name="leadAssignmentRule" value={formData.leadAssignmentRule} onChange={handleChange} disabled={isView} className={inputCls(errors, "leadAssignmentRule")} placeholder="Rule name" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Default Pipeline</label>
-                  <select name="defaultPipelineId" value={formData.defaultPipelineId} onChange={handleChange} className={inputCls(errors, "defaultPipelineId")}>
+                  <select name="defaultPipelineId" value={formData.defaultPipelineId} onChange={handleChange} disabled={isView} className={inputCls(errors, "defaultPipelineId")}>
                     <option value="">Select pipeline...</option>
                     {pipelines.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
                   </select>
                 </div>
               </div>
             </div>
+            )}
 
             {/* 8. Account Settings */}
+            {step === 7 && (
             <div className={cardCls}>
               <div className={sectionTitleCls}>
                 <FiSettings className="text-[#2563EB]" size={14} /> Account Settings
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Account Status</label>
-                  <select name="status" value={formData.status} onChange={handleChange} className={inputCls(errors, "status")}>
+                  <select name="status" value={formData.status} onChange={handleChange} disabled={isView} className={inputCls(errors, "status")}>
                     {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className={labelCls}>Language</label>
-                  <select name="language" value={formData.language} onChange={handleChange} className={inputCls(errors, "language")}>
+                  <select name="language" value={formData.language} onChange={handleChange} disabled={isView} className={inputCls(errors, "language")}>
                     {LANGUAGES.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
                   </select>
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Timezone</label>
-                  <select name="timezone" value={formData.timezone} onChange={handleChange} className={inputCls(errors, "timezone")}>
+                  <select name="timezone" value={formData.timezone} onChange={handleChange} disabled={isView} className={inputCls(errors, "timezone")}>
                     {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
                   </select>
                 </div>
               </div>
             </div>
+            )}
           </div>
         </div>
 
         <div className="shrink-0 sticky bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] shadow-lg py-4 px-5 md:px-6">
-          <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-4">
-            <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm">
-              Cancel
-            </button>
+          <div className="max-w-[1200px] mx-auto flex flex-wrap items-center justify-end gap-2">
             <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+              type="button"
+              onClick={step === 0 ? () => navigate(-1) : goBack}
+              className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm disabled:opacity-50"
             >
-              {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSave size={16} />}
-              {isEdit ? "Update User" : "Save User"}
+              Back
             </button>
+            {!isView && (
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#111827] font-semibold hover:bg-[#F8FAFC] text-sm disabled:opacity-50"
+              >
+                Save Draft
+              </button>
+            )}
+            {!isView && step < STEPS.length - 1 ? (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={loading}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading || isView}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+              >
+                {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSave size={16} />}
+                {isEdit ? "Update User" : "Create User"}
+              </button>
+            )}
           </div>
         </div>
       </form>

@@ -46,9 +46,9 @@ const inputCls = (errors, field) =>
     errors[field] ? "border-[#EF4444]" : "border-[#E5E7EB]"
   }`;
 
-const labelCls = "block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1.5";
+const labelCls = "block text-sm font-medium text-[#6B7280] mb-1.5";
 const cardCls = "bg-white rounded-xl border border-[#E5E7EB] shadow-sm overflow-hidden";
-const sectionTitleCls = "flex items-center gap-2 text-xs font-bold text-[#111827] uppercase tracking-wider px-4 py-2.5 border-b border-[#E5E7EB] bg-[#F8FAFC]";
+const sectionTitleCls = "text-sm font-semibold text-[#111827] px-5 py-4 border-b border-[#E5E7EB] bg-[#F8FAFC]";
 
 export default function BranchFormPage() {
   const { id } = useParams();
@@ -62,6 +62,7 @@ export default function BranchFormPage() {
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
+  const [step, setStep] = useState(0);
   const [companies, setCompanies] = useState([]);
   const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
@@ -95,13 +96,26 @@ export default function BranchFormPage() {
     companyId: currentUser?.companyId || "",
   });
 
-  const schema = {
+  const fullSchema = {
     name: [rules.required("Branch name"), rules.minLength(2, "Branch name")],
     email: [rules.email()],
     managerEmail: [rules.email()],
     ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
   };
-  const { errors, validate, clearError } = useFormValidation(schema);
+
+  const stepSchema = (() => {
+    // Validate only current step fields.
+    // Step 1: Branch name (+ companyId for super admin)
+    // Step 2: Manager email format (optional)
+    // Step 3: Branch email format (optional)
+    // Step 4/5: no required validations
+    if (step === 0) return { name: fullSchema.name, ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}) };
+    if (step === 1) return { managerEmail: fullSchema.managerEmail };
+    if (step === 2) return { email: fullSchema.email };
+    return {};
+  })();
+
+  const { errors, validate, clearError, clearAllErrors } = useFormValidation(stepSchema);
 
   const handleChange = useCallback(
     (e) => {
@@ -189,8 +203,13 @@ export default function BranchFormPage() {
       .finally(() => setFetching(false));
   }, [id, isEdit, apiBase]);
 
+  useEffect(() => {
+    clearAllErrors?.();
+  }, [step, clearAllErrors]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Final submit: still validate current step only (per requirement)
     if (!validate(formData)) {
       toast.error("Please fix the errors before saving.");
       return;
@@ -221,6 +240,62 @@ export default function BranchFormPage() {
       setLoading(false);
     }
   };
+
+  const handleSaveDraft = async () => {
+    const nameOk = Boolean(String(formData.name || "").trim());
+    const companyOk = !isSuperAdmin || Boolean(String(formData.companyId || "").trim());
+    if (!nameOk || !companyOk) {
+      toast.error("Branch name is required to save a draft.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        ...formData,
+        status: "draft",
+        name: String(formData.name || "").trim(),
+        branchCode: formData.branchCode?.trim() || undefined,
+        latitude: formData.latitude ? Number(formData.latitude) : undefined,
+        longitude: formData.longitude ? Number(formData.longitude) : undefined,
+        branchCapacity: formData.branchCapacity ? Number(formData.branchCapacity) : undefined,
+        openingDate: formData.openingDate || undefined,
+        assignedUserIds: formData.assignedUserIds.filter(Boolean),
+        documentUrls: formData.documentUrls.filter(Boolean),
+      };
+      if (isEdit) {
+        await API.put(`${apiBase}/${id}`, payload);
+      } else {
+        await API.post(apiBase, payload);
+      }
+      toast.success("Branch saved as draft");
+      navigate(-1);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const STEPS = [
+    { key: "basic", label: "Basic Info" },
+    { key: "management", label: "Management" },
+    { key: "contact", label: "Contact" },
+    { key: "address", label: "Address" },
+    { key: "operational", label: "Operational" },
+  ];
+
+  const canGoNext = () => validate(formData);
+
+  const goNext = () => {
+    if (!canGoNext()) {
+      toast.error("Please fix the errors before continuing.");
+      return;
+    }
+    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+  };
+
+  const goBack = () => setStep((s) => Math.max(0, s - 1));
 
   // Indian Postal API: pincode -> city, state, country
   const fetchAddressByPincode = useCallback(async (pincode) => {
@@ -341,15 +416,51 @@ export default function BranchFormPage() {
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="flex-1 min-h-0 overflow-auto pb-4">
-        <div className="p-4 md:p-5 grid grid-cols-1 xl:grid-cols-2 gap-5 xl:gap-6 max-w-[1600px] mx-auto">
-          {/* Left column: Basic, Contact, Address */}
-          <div className="space-y-4">
-            {/* 1. Basic Information */}
-            <div className={cardCls}>
-              <div className={sectionTitleCls}>
-                <FiLayers className="text-[#2563EB]" size={14} /> Basic Information
+        <div className="p-4 md:p-6 w-full">
+          <div className="max-w-[1100px] mx-auto space-y-6">
+            {/* Stepper */}
+            <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm px-5 py-4">
+              <div className="flex items-center justify-between gap-3">
+                {STEPS.map((s, idx) => {
+                  const active = idx === step;
+                  const done = idx < step;
+                  return (
+                    <div key={s.key} className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${
+                            active
+                              ? "bg-[#2563EB] text-white border-[#2563EB]"
+                              : done
+                              ? "bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]"
+                              : "bg-white text-[#6B7280] border-[#E5E7EB]"
+                          }`}
+                        >
+                          {idx + 1}
+                        </div>
+                        <span className={`text-sm font-semibold truncate ${active ? "text-[#111827]" : "text-[#6B7280]"}`}>
+                          {s.label}
+                        </span>
+                      </div>
+                      {idx < STEPS.length - 1 && (
+                        <div className="mt-3 h-1 w-full bg-[#E5E7EB] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#2563EB] transition-all"
+                            style={{ width: idx < step ? "100%" : "0%" }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            </div>
+
+            {/* Step content */}
+            {step === 0 && (
+              <div className={cardCls}>
+                <div className={sectionTitleCls}>Basic Information</div>
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {isSuperAdmin && (
               <div className="sm:col-span-2">
                 <label className={labelCls}>Company <span className="text-red-500">*</span></label>
@@ -383,86 +494,12 @@ export default function BranchFormPage() {
             </div>
           </div>
             </div>
+            )}
 
-            {/* 2. Contact Information */}
+            {step === 1 && (
             <div className={cardCls}>
-              <div className={sectionTitleCls}>
-                <FiMail className="text-[#2563EB]" size={14} /> Contact Information
-              </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Branch Email</label>
-                  <input name="email" type="email" placeholder="branch@company.com" value={formData.email} onChange={handleChange} className={inputCls(errors, "email")} />
-                  <FieldError error={errors.email} />
-                </div>
-                <div>
-                  <label className={labelCls}>Phone</label>
-                  <input name="phone" type="tel" placeholder="10-digit" value={formData.phone} onChange={handleChange} className={inputCls(errors, "phone")} />
-                </div>
-                <div>
-                  <label className={labelCls}>Alternate Phone</label>
-                  <input name="alternatePhone" type="tel" value={formData.alternatePhone} onChange={handleChange} className={inputCls(errors, "alternatePhone")} />
-                </div>
-                <div>
-                  <label className={labelCls}>Website</label>
-                  <input name="website" type="url" placeholder="https://..." value={formData.website} onChange={handleChange} className={inputCls(errors, "website")} />
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Address Details */}
-            <div className={cardCls}>
-              <div className={sectionTitleCls}>
-                <FiMapPin className="text-[#2563EB]" size={14} /> Address Details
-              </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2">
-                  <label className={labelCls}>Address Line 1</label>
-                  <input name="addressLine1" type="text" value={formData.addressLine1} onChange={handleChange} className={inputCls(errors, "addressLine1")} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className={labelCls}>Address Line 2</label>
-                  <input name="addressLine2" type="text" value={formData.addressLine2} onChange={handleChange} className={inputCls(errors, "addressLine2")} />
-                </div>
-                <div>
-                  <label className={labelCls}>City (auto-fills postal code on blur)</label>
-                  <input name="city" type="text" value={formData.city} onChange={handleChange} onBlur={handleCityBlur} className={inputCls(errors, "city")} placeholder="Enter city name" />
-                </div>
-                <div>
-                  <label className={labelCls}>State</label>
-                  <input name="state" type="text" value={formData.state} onChange={handleChange} className={inputCls(errors, "state")} />
-                </div>
-                <div>
-                  <label className={labelCls}>Country</label>
-                  <input name="country" type="text" value={formData.country} onChange={handleChange} className={inputCls(errors, "country")} />
-                </div>
-                <div>
-                  <label className={labelCls}>Postal Code (6-digit; auto-fills city/state/country on blur)</label>
-                  <input name="postalCode" type="text" value={formData.postalCode} onChange={handleChange} onBlur={handlePostalCodeBlur} className={inputCls(errors, "postalCode")} placeholder="e.g. 400001" maxLength={6} />
-                </div>
-                <div>
-                  <label className={labelCls}>Latitude</label>
-                  <input name="latitude" type="text" placeholder="19.0760" value={formData.latitude} onChange={handleChange} className={inputCls(errors, "latitude")} />
-                </div>
-                <div>
-                  <label className={labelCls}>Longitude</label>
-                  <input name="longitude" type="text" placeholder="72.8777" value={formData.longitude} onChange={handleChange} className={inputCls(errors, "longitude")} />
-                </div>
-                <div className="sm:col-span-2 pt-1">
-                  <a href={`https://www.google.com/maps?q=${formData.latitude || "0"},${formData.longitude || "0"}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2563EB] hover:underline">Open in Google Maps</a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right column: Management, Operational — last card grows to fill so no empty gap below */}
-          <div className="space-y-4 xl:flex xl:flex-col xl:min-h-0 xl:h-full">
-            {/* 4. Branch Management */}
-            <div className={cardCls}>
-              <div className={sectionTitleCls}>
-                <FiUser className="text-[#2563EB]" size={14} /> Branch Management
-              </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className={sectionTitleCls}>Branch Management</div>
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Branch Manager</label>
               <select name="branchManagerId" value={formData.branchManagerId} onChange={handleChange} className={inputCls(errors, "branchManagerId")}>
@@ -492,13 +529,80 @@ export default function BranchFormPage() {
             </div>
               </div>
             </div>
+            )}
 
-            {/* 5. Operational Details — compact 2x2 grid; card fills column on xl, content does not stretch */}
-            <div className={`${cardCls} xl:flex xl:flex-col xl:flex-1 xl:min-h-0`}>
-              <div className={sectionTitleCls}>
-                <FiClock className="text-[#2563EB]" size={14} /> Operational Details
+            {step === 2 && (
+              <div className={cardCls}>
+                <div className={sectionTitleCls}>Contact Information</div>
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Branch Email</label>
+                    <input name="email" type="email" placeholder="branch@company.com" value={formData.email} onChange={handleChange} className={inputCls(errors, "email")} />
+                    <FieldError error={errors.email} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Phone</label>
+                    <input name="phone" type="tel" placeholder="10-digit" value={formData.phone} onChange={handleChange} className={inputCls(errors, "phone")} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Alternate Phone</label>
+                    <input name="alternatePhone" type="tel" value={formData.alternatePhone} onChange={handleChange} className={inputCls(errors, "alternatePhone")} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Website</label>
+                    <input name="website" type="url" placeholder="https://..." value={formData.website} onChange={handleChange} className={inputCls(errors, "website")} />
+                  </div>
+                </div>
               </div>
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            )}
+
+            {step === 3 && (
+              <div className={cardCls}>
+                <div className={sectionTitleCls}>Address Details</div>
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>Address Line 1</label>
+                    <input name="addressLine1" type="text" value={formData.addressLine1} onChange={handleChange} className={inputCls(errors, "addressLine1")} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>Address Line 2</label>
+                    <input name="addressLine2" type="text" value={formData.addressLine2} onChange={handleChange} className={inputCls(errors, "addressLine2")} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>City (auto-fills postal code on blur)</label>
+                    <input name="city" type="text" value={formData.city} onChange={handleChange} onBlur={handleCityBlur} className={inputCls(errors, "city")} placeholder="Enter city name" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>State</label>
+                    <input name="state" type="text" value={formData.state} onChange={handleChange} className={inputCls(errors, "state")} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Country</label>
+                    <input name="country" type="text" value={formData.country} onChange={handleChange} className={inputCls(errors, "country")} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Postal Code (6-digit; auto-fills city/state/country on blur)</label>
+                    <input name="postalCode" type="text" value={formData.postalCode} onChange={handleChange} onBlur={handlePostalCodeBlur} className={inputCls(errors, "postalCode")} placeholder="e.g. 400001" maxLength={6} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Latitude</label>
+                    <input name="latitude" type="text" placeholder="19.0760" value={formData.latitude} onChange={handleChange} className={inputCls(errors, "latitude")} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Longitude</label>
+                    <input name="longitude" type="text" placeholder="72.8777" value={formData.longitude} onChange={handleChange} className={inputCls(errors, "longitude")} />
+                  </div>
+                  <div className="sm:col-span-2 pt-1">
+                    <a href={`https://www.google.com/maps?q=${formData.latitude || "0"},${formData.longitude || "0"}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2563EB] hover:underline">Open in Google Maps</a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className={cardCls}>
+                <div className={sectionTitleCls}>Operational Details</div>
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Opening Date</label>
                   <input name="openingDate" type="date" value={formData.openingDate} onChange={handleChange} className={inputCls(errors, "openingDate")} />
@@ -518,24 +622,55 @@ export default function BranchFormPage() {
                   <input name="branchCapacity" type="number" min={0} placeholder="Seats" value={formData.branchCapacity} onChange={handleChange} className={inputCls(errors, "branchCapacity")} />
                 </div>
               </div>
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Sticky actions */}
         <div className="shrink-0 sticky bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] shadow-lg py-4 px-5 md:px-6">
-          <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div className="max-w-[1100px] mx-auto w-full flex flex-wrap items-center justify-between gap-4">
             <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
-            >
-              {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSave size={16} />}
-              {isEdit ? "Update Branch" : "Submit"}
-            </button>
+            <div className="flex items-center gap-3">
+              {step > 0 && (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm"
+                >
+                  ← Back
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={loading}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-white border border-[#E5E7EB] text-[#111827] font-semibold hover:bg-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+              >
+                <FiSave size={16} />
+                Save Draft
+              </button>
+              {step < STEPS.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] shadow-sm text-sm"
+                >
+                  Next →
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+                >
+                  {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSave size={16} />}
+                  Submit
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </form>

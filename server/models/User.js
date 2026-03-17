@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
     branchId: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", default: null },
     status: {
       type: String,
-      enum: ["active", "inactive", "suspended", "pending"],
+      enum: ["active", "inactive", "suspended", "pending", "draft"],
       default: "active"
     },
 

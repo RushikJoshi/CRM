@@ -23,11 +23,11 @@ import { getCurrentUser } from "../context/AuthContext";
 
 const formatCurrency = (val) => `₹${Number(val || 0).toLocaleString("en-IN")}`;
 
-const MetricWidget = ({ title, value, icon, trend, onClick }) => (
+const MetricWidget = ({ title, value, icon, trend, onClick, padded = "p-6" }) => (
     <button
         type="button"
         onClick={onClick}
-        className="w-full text-left bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md hover:border-[#E0EAFF] transition-all duration-200 group"
+        className={`w-full text-left bg-white rounded-2xl border border-gray-100 ${padded} shadow-sm hover:shadow-md hover:border-[#E0EAFF] transition-all duration-200 group`}
     >
         <div className="flex items-start justify-between gap-3">
             <div className="w-12 h-12 rounded-xl bg-[#2563EB] text-white flex items-center justify-center shrink-0 shadow-lg shadow-[#2563EB]/20 [&>svg]:w-6 [&>svg]:h-6">
@@ -39,7 +39,7 @@ const MetricWidget = ({ title, value, icon, trend, onClick }) => (
                 </span>
             )}
         </div>
-        <p className="text-2xl font-bold text-gray-900 mt-4 group-hover:text-[#2563EB] transition-colors">{value}</p>
+        <p className="text-[28px] font-bold text-gray-900 mt-4 group-hover:text-[#2563EB] transition-colors">{value}</p>
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mt-1">{title}</p>
     </button>
 );
@@ -134,15 +134,12 @@ const Dashboard = () => {
         { title: "Active Users", value: stats?.activeUsers ?? 0, icon: <FiUsers size={16} />, link: `${basePath}/users` },
         { title: "Platform Revenue", value: formatCurrency(stats?.platformMonthlyRevenue ?? 0), icon: <FaIndianRupeeSign size={16} />, link: `${basePath}/billing` },
         { title: "Plans", value: stats?.subscriptionPlansCount ?? 0, icon: <FiLayers size={16} />, link: `${basePath}/plans` },
-        { title: "Server", value: stats?.serverHealth ?? "—", icon: <FiCheckCircle size={16} />, link: null },
-        { title: "API Usage", value: stats?.apiUsage ?? 0, icon: <FiActivity size={16} />, link: `${basePath}/usage-analytics` },
-        { title: "Storage", value: stats?.storageUsage ?? "—", icon: <FiLayers size={16} />, link: `${basePath}/usage-analytics` },
     ];
 
     const otherMetrics = [
         { title: isSales ? "Inquiries" : "Inquiries", value: stats?.totalInquiries ?? 0, icon: <FiLayers size={16} />, link: `${basePath}/inquiries` },
         { title: isSales ? "Leads" : "Leads", value: stats?.totalLeads ?? 0, icon: <FiTrendingUp size={16} />, link: `${basePath}/leads` },
-        { title: isSales ? "Prospects" : "Qualified Prospects", value: stats?.totalProspects ?? 0, icon: <FiZap size={16} />, link: `${basePath}/prospects` },
+        { title: "Users", value: stats?.totalUsers ?? stats?.activeUsers ?? 0, icon: <FiUsers size={16} />, link: `${basePath}/users` },
         { title: isSales ? "Deals" : "Deals", value: stats?.totalDeals ?? 0, icon: <FiCheckCircle size={16} />, link: `${basePath}/deals` },
         { title: isSales ? "Revenue" : "Revenue", value: formatCurrency(stats?.totalRevenue), icon: <FaIndianRupeeSign size={16} />, link: `${basePath}/reports` },
         { title: "Conversion", value: `${stats?.conversionRate ?? 0}%`, icon: <FiArrowUpRight size={16} />, link: `${basePath}/reports` },
@@ -151,12 +148,17 @@ const Dashboard = () => {
     const metrics = isSuperAdmin ? platformMetrics : otherMetrics;
 
     const firstName = user.name?.split(" ")[0] || "User";
+    const metricPad = isSuperAdmin ? "p-6" : "p-5"; // 24px vs 20px for company dashboard spec
     return (
-        <div className="space-y-8 pb-12">
+        <div
+            className={`flex flex-col w-full ${
+                isSuperAdmin ? "space-y-8 pb-12" : "space-y-8 pt-6 px-6 pb-8"
+            }`}
+        >
             {/* Welcome - Horizon style */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                    <h1 className="text-[26px] font-bold text-[#0F172A] tracking-tight">
                         {isSuperAdmin ? "Dashboard" : `Welcome back, ${firstName} 👋`}
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">
@@ -206,7 +208,13 @@ const Dashboard = () => {
             )}
 
             {/* Metric widgets - Horizon style */}
-            <div className={`grid gap-5 ${isSuperAdmin ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-5" : "grid-cols-2 md:grid-cols-4 lg:grid-cols-6"}`}>
+            <div
+                className={`grid gap-5 w-full ${
+                    isSuperAdmin
+                        ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+                        : "[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]"
+                }`}
+            >
                 {metrics.map((m, i) => (
                     <MetricWidget
                         key={i}
@@ -215,13 +223,14 @@ const Dashboard = () => {
                         icon={m.icon}
                         trend={i === metrics.length - 1 && typeof stats?.conversionRate === "number" ? stats.conversionRate : null}
                         onClick={m.link ? () => navigate(m.link) : undefined}
+                        padded={metricPad}
                     />
                 ))}
             </div>
 
             {/* Sales funnel - Horizon card style */}
             {!isSuperAdmin && funnelStages.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm mt-8 w-full">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                         <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                             <FiTrendingUp className="text-[#2563EB]" size={20} />
@@ -231,7 +240,7 @@ const Dashboard = () => {
                             {stats?.conversionRate ?? 0}% conversion
                         </span>
                     </div>
-                    <div className="space-y-4 max-w-3xl">
+                    <div className="space-y-[14px] max-w-3xl">
                         {funnelStages.map((stage, i) => {
                             const prevCount = i > 0 ? funnelStages[i - 1].count : stage.count;
                             const pct = prevCount > 0 ? Math.round((stage.count / prevCount) * 100) : 100;
@@ -304,8 +313,8 @@ const Dashboard = () => {
 
             {/* Two columns: Activity + Recent (Company CRM only – hidden for Super Admin) */}
             {!isSuperAdmin && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div className="lg:col-span-8 space-y-6">
+            <div className="grid grid-cols-1 lg:[grid-template-columns:2fr_1fr] gap-6 mt-8 w-full">
+                <div className="space-y-6">
                     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
                             <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
@@ -368,7 +377,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <div className="lg:col-span-4 space-y-6">
+                <div className="space-y-5">
                     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                             <h3 className="text-sm font-semibold text-gray-900">New leads</h3>

@@ -83,7 +83,7 @@ exports.getInquiries = async (req, res) => {
             return res.status(401).json({ success: false, message: "Unauthorized: Access denied" });
         }
 
-        const { page = 1, limit = 20, search, status, isExternal } = req.query;
+        const { page = 1, limit = 20, search, status, isExternal, website, location } = req.query;
         const pageNum = Math.max(1, parseInt(page, 10));
         const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
         const skip = (pageNum - 1) * limitNum;
@@ -113,6 +113,9 @@ exports.getInquiries = async (req, res) => {
         }
         if (status && status !== "all") query.status = status;
         if (isExternal === "true" || isExternal === "1") query.isExternal = true;
+        if (isExternal === "false" || isExternal === "0") query.isExternal = { $ne: true };
+        if (website && String(website).trim() && website !== "all") query.website = String(website).trim();
+        if (location && String(location).trim() && location !== "all") query.location = String(location).trim();
 
         const baseQuery = {};
         if (req.user.role !== "super_admin") {

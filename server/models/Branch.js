@@ -12,7 +12,7 @@ const branchSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "inactive", "closed"],
+      enum: ["active", "inactive", "closed", "draft"],
       default: "active"
     },
 

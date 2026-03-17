@@ -55,22 +55,62 @@ const Navbar = ({ toggleMobileSidebar }) => {
         return ["Home", label].join(" / ");
     })();
 
+    const isCompanyRoute = location.pathname.startsWith("/company");
+    const isCompanyDashboard = location.pathname === "/company/dashboard";
+
+    const companyPageTitle = (() => {
+        if (!isCompanyRoute) return "";
+        const path = location.pathname.replace(/^\/company\/?/, "");
+        const first = (path.split("/").filter(Boolean)[0] || "dashboard").toLowerCase();
+        const map = {
+            dashboard: "Dashboard",
+            branches: "Branches",
+            users: "Users",
+            inquiries: "Inquiries",
+            leads: "Leads",
+            prospects: "Prospects",
+            deals: "Deals",
+            accounts: "Accounts",
+            customers: "Accounts",
+            contacts: "Contacts",
+            pipeline: "Pipeline",
+            meetings: "Meetings",
+            tasks: "Tasks",
+            todos: "Tasks",
+            activities: "Activities",
+            reports: "Reports",
+            automation: "Automation",
+            settings: "Settings",
+        };
+        return map[first] || (first.charAt(0).toUpperCase() + first.slice(1).replace(/-/g, " "));
+    })();
+
     return (
-        <header className="sticky top-0 z-40 h-14 bg-[#F3F4F6] border-b border-gray-200 flex items-center justify-between px-4 md:px-6">
+        <header className="sticky top-0 z-40 h-16 crm-glass flex items-center justify-between px-4 md:px-6">
             <div className="flex items-center gap-4 min-w-0 flex-1">
                 <button
                     type="button"
                     onClick={toggleMobileSidebar}
-                    className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
+                    className="lg:hidden p-2 rounded-[10px] text-slate-600 hover:bg-sky-50 hover:text-slate-900 transition-colors"
                     aria-label="Open menu"
                 >
                     <FiMenu size={22} />
                 </button>
-                <p className="hidden lg:block text-sm text-gray-600 truncate">{breadcrumb}</p>
+                {!isCompanyRoute && !isCompanyDashboard && (
+                    <p className="hidden lg:block text-sm text-slate-500 truncate">{breadcrumb}</p>
+                )}
 
-                <div className="flex-1 max-w-md mx-auto hidden md:block">
-                    <GlobalSearch placeholder="Search anything..." />
-                </div>
+                {!isCompanyRoute ? (
+                    <div className="flex-1 max-w-xl mx-auto hidden md:block">
+                        <GlobalSearch placeholder="Search anything..." />
+                    </div>
+                ) : (
+                    <div className="flex-1 min-w-0 flex justify-center">
+                        <span className="text-[18px] font-semibold text-slate-700 truncate max-w-[70vw]">
+                            {companyPageTitle}
+                        </span>
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
@@ -79,7 +119,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
                         <button
                             type="button"
                             onClick={() => setShowQuickCreate((o) => !o)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm"
+                            className="flex items-center gap-2 px-4 py-2 rounded-[10px] bg-gradient-to-br from-sky-400 to-sky-600 text-white text-sm font-semibold hover:from-sky-500 hover:to-sky-700 transition-all shadow-sm active:scale-[0.99]"
                         >
                             <FiPlus size={18} />
                             <span className="hidden sm:inline">Quick Create</span>
@@ -91,25 +131,25 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                     onClick={() => setShowQuickCreate(false)}
                                     aria-hidden
                                 />
-                                <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl border border-[#E5E7EB] shadow-lg z-50 py-1">
+                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-[#E0F2FE] shadow-crm-card z-50 py-1 overflow-hidden">
                                     <Link
                                         to={`${base}/leads/create`}
                                         onClick={() => setShowQuickCreate(false)}
-                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#111827] hover:bg-[#F8FAFC]"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F0F9FF]"
                                     >
                                         <FiUser size={16} className="text-[#6B7280]" /> New Lead
                                     </Link>
                                     <Link
                                         to={`${base}/deals/create`}
                                         onClick={() => setShowQuickCreate(false)}
-                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#111827] hover:bg-[#F8FAFC]"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F0F9FF]"
                                     >
                                         <FaIndianRupeeSign size={16} className="text-[#6B7280]" /> New Deal
                                     </Link>
                                     <Link
                                         to={`${base}/contacts/create`}
                                         onClick={() => setShowQuickCreate(false)}
-                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#111827] hover:bg-[#F8FAFC]"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F0F9FF]"
                                     >
                                         <FiBriefcase size={16} className="text-[#6B7280]" /> New Contact
                                     </Link>
@@ -122,12 +162,12 @@ const Navbar = ({ toggleMobileSidebar }) => {
 <button
                             type="button"
                             onClick={() => setShowNotifications((o) => !o)}
-                            className="relative p-2.5 rounded-xl text-gray-600 hover:bg-gray-200 hover:text-gray-900 transition-colors"
+                            className="relative p-2.5 rounded-[10px] text-slate-600 hover:bg-sky-50 hover:text-slate-900 transition-colors"
                             aria-label="Notifications"
                         >
                             <FiBell size={20} />
                             {notifications.length > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-[#F3F4F6]">
+                                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white/70">
                                     {notifications.length > 9 ? "9+" : notifications.length}
                                 </span>
                             )}
@@ -143,36 +183,36 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                 onKeyDown={(e) => e.key === "Escape" && setShowNotifications(false)}
                                 aria-label="Close notifications"
                             />
-                            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl border border-[#E5E7EB] shadow-lg z-50 overflow-hidden">
-                                <div className="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
-                                    <span className="text-sm font-semibold text-[#111827]">Notifications</span>
+                            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl border border-[#E0F2FE] shadow-crm-card z-50 overflow-hidden">
+                                <div className="px-4 py-3 border-b border-[#E0F2FE] flex items-center justify-between bg-[#F0F9FF]">
+                                    <span className="text-sm font-semibold text-[#0F172A]">Notifications</span>
                                     {notifications.length > 0 && (
-                                        <span className="text-xs font-medium text-[#2563EB] bg-[#EFF6FF] px-2 py-0.5 rounded">
+                                        <span className="text-xs font-medium text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded">
                                             {notifications.length} new
                                         </span>
                                     )}
                                 </div>
                                 <div className="max-h-80 overflow-y-auto">
                                     {notifications.length === 0 ? (
-                                        <div className="py-12 text-center text-sm text-[#6B7280]">
+                                        <div className="py-12 text-center text-sm text-[#64748B]">
                                             No new notifications
                                         </div>
                                     ) : (
                                         notifications.map((n) => (
                                             <div
                                                 key={n._id}
-                                                className="px-4 py-3 hover:bg-[#F8FAFC] border-b border-[#E5E7EB] last:border-0"
+                                                className="px-4 py-3 hover:bg-[#F0F9FF] border-b border-[#E0F2FE] last:border-0"
                                             >
-                                                <p className="text-sm font-medium text-[#111827]">{n.title}</p>
-                                                <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-2">{n.message}</p>
+                                                <p className="text-sm font-medium text-[#0F172A]">{n.title}</p>
+                                                <p className="text-xs text-[#64748B] mt-0.5 line-clamp-2">{n.message}</p>
                                                 <div className="flex items-center justify-between mt-2">
-                                                    <span className="text-xs text-[#6B7280]">
+                                                    <span className="text-xs text-[#64748B]">
                                                         {n.createdAt && new Date(n.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                                     </span>
                                                     <button
                                                         type="button"
                                                         onClick={() => markAsRead(n._id)}
-                                                        className="text-xs font-medium text-[#2563EB] hover:underline"
+                                                        className="text-xs font-medium text-[#0284C7] hover:underline"
                                                     >
                                                         Mark read
                                                     </button>
@@ -186,7 +226,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
                     )}
                 </div>
 
-                <div className="h-8 w-px bg-gray-300 hidden sm:block" />
+                <div className="h-8 w-px bg-[#E0F2FE] hidden sm:block" />
 
                 <div className="relative">
                     <button
@@ -195,13 +235,13 @@ const Navbar = ({ toggleMobileSidebar }) => {
                         className="flex items-center gap-2 pl-2"
                     >
                         <div className="hidden sm:block text-right">
-                            <p className="text-sm font-semibold text-gray-900 leading-tight">{user.name || "User"}</p>
-                            <p className="text-xs text-gray-500 leading-tight capitalize">{(user.role ?? "member").replace("_", " ")}</p>
+                            <p className="text-sm font-semibold text-[#0F172A] leading-tight">{user.name || "User"}</p>
+                            <p className="text-xs text-[#64748B] leading-tight capitalize">{(user.role ?? "member").replace("_", " ")}</p>
                         </div>
-                        <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-sm shrink-0 shadow-sm">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 text-white flex items-center justify-center font-semibold text-sm shrink-0 shadow-sm">
                             {(user.name || "U").split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase() || "U"}
                         </div>
-                        <FiChevronDown className="hidden sm:block w-4 h-4 text-gray-500 shrink-0" />
+                        <FiChevronDown className="hidden sm:block w-4 h-4 text-[#64748B] shrink-0" />
                     </button>
 
                     {showProfileMenu && (
@@ -214,16 +254,16 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                 onKeyDown={(e) => e.key === "Escape" && setShowProfileMenu(false)}
                                 aria-label="Close profile menu"
                             />
-                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden">
-                                <div className="px-4 py-3 border-b border-gray-100">
-                                    <p className="text-sm font-semibold text-gray-900 truncate">{user.name || "User"}</p>
-                                    <p className="text-xs text-gray-500 capitalize">{(user.role ?? "member").replace("_", " ")}</p>
+                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-[#E0F2FE] shadow-crm-card z-50 overflow-hidden">
+                                <div className="px-4 py-3 border-b border-[#E0F2FE] bg-[#F0F9FF]">
+                                    <p className="text-sm font-semibold text-[#0F172A] truncate">{user.name || "User"}</p>
+                                    <p className="text-xs text-[#64748B] capitalize">{(user.role ?? "member").replace("_", " ")}</p>
                                 </div>
                                 <div className="py-1">
                                     {/* Placeholder for future profile page */}
                                     <button
                                         type="button"
-                                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                                        className="w-full text-left px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F0F9FF]"
                                         onClick={() => {
                                             setShowProfileMenu(false);
                                             navigate(`${base}/profile`);
@@ -232,7 +272,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                         View profile
                                     </button>
                                 </div>
-                                <div className="border-t border-gray-100">
+                                <div className="border-t border-[#E0F2FE]">
                                     <button
                                         type="button"
                                         onClick={handleLogout}

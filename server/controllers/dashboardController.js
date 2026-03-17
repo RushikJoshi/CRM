@@ -6,6 +6,7 @@ const Contact = require("../models/Contact");
 const Call = require("../models/Call");
 const Meeting = require("../models/Meeting");
 const Todo = require("../models/Todo");
+const User = require("../models/User");
 
 exports.getDashboardStats = async (req, res) => {
   try {
@@ -76,6 +77,7 @@ exports.getDashboardStats = async (req, res) => {
       agingLeads,
       dealsWon,
       activeUsers,
+      totalUsers,
       performanceLeaderboard
     ] = await Promise.all([
       Lead.countDocuments(filter),
@@ -133,9 +135,16 @@ exports.getDashboardStats = async (req, res) => {
       // Funnel Stage: Deals Won
       Deal.countDocuments({ ...dealFilter, stage: { $in: ["Won", "Closed Won"] } }),
       // Active Users Count
-      require("../models/User").countDocuments({
+      User.countDocuments({
         companyId,
         status: "active",
+        isDeleted: { $ne: true },
+        ...(role === "branch_manager" ? { branchId } : {})
+      }),
+      // Total Users Count (company-level; branch managers scoped to branch)
+      User.countDocuments({
+        companyId,
+        isDeleted: { $ne: true },
         ...(role === "branch_manager" ? { branchId } : {})
       }),
       // Performance Leaderboard (Rank users by revenue/deals)
@@ -228,6 +237,7 @@ exports.getDashboardStats = async (req, res) => {
         agingLeads,
         dealsWon,
         activeUsers,
+        totalUsers,
         performanceLeaderboard,
         funnel: [
           { label: "Inquiries", count: totalInquiries || 0, color: "bg-blue-500" },

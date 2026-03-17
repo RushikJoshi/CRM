@@ -1,23 +1,30 @@
 import React from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
-/**
- * Reusable pagination for list pages.
- * @param {number} currentPage - 1-based current page
- * @param {number} totalPages - total pages
- * @param {function} onPageChange - (page: number) => void
- * @param {number} [total] - optional total count for "Showing X–Y of Z"
- * @param {number} [pageSize] - items per page (for range display)
- */
+const buildPages = (currentPage, totalPages) => {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+  const pages = new Set([1, 2, totalPages - 1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const filtered = [...pages].filter((p) => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+  const out = [];
+  for (let i = 0; i < filtered.length; i++) {
+    const p = filtered[i];
+    const prev = filtered[i - 1];
+    if (i > 0 && prev != null && p - prev > 1) out.push("…");
+    out.push(p);
+  }
+  return out;
+};
+
 const Pagination = ({ currentPage, totalPages, onPageChange, total, pageSize = 10 }) => {
   if (!totalPages || totalPages <= 1) return null;
 
   const start = (currentPage - 1) * pageSize + 1;
   const end = Math.min(currentPage * pageSize, total ?? currentPage * pageSize);
+  const pages = buildPages(currentPage, totalPages);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
-      <div className="text-xs font-medium text-[#6B7280] uppercase tracking-wider">
+    <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 bg-white rounded-xl border border-[#E0F2FE] shadow-crm-soft">
+      <div className="text-xs font-medium text-[#64748B]">
         {total != null && total > 0 ? (
           <>Showing {start}–{end} of {total}</>
         ) : (
@@ -29,39 +36,38 @@ const Pagination = ({ currentPage, totalPages, onPageChange, total, pageSize = 1
           type="button"
           disabled={currentPage === 1}
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          className="p-2.5 rounded-lg border border-[#E5E7EB] transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-white hover:bg-[#F8FAFC] text-[#6B7280] hover:text-[#111827]"
+          className="px-3 h-10 inline-flex items-center gap-2 rounded-[10px] border border-[#E0F2FE] transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-white hover:bg-[#E0F7FF] text-[#64748B] hover:text-[#0F172A]"
           aria-label="Previous page"
         >
           <FiChevronLeft size={20} />
         </button>
-        <div className="flex gap-1.5">
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNum;
-            if (totalPages <= 5) pageNum = i + 1;
-            else if (currentPage <= 3) pageNum = i + 1;
-            else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-            else pageNum = currentPage - 2 + i;
-            return (
+        <div className="flex items-center gap-1.5">
+          {pages.map((p, idx) =>
+            p === "…" ? (
+              <span key={`ellipsis-${idx}`} className="min-w-[2.5rem] h-10 inline-flex items-center justify-center text-sm text-[#94A3B8]">
+                …
+              </span>
+            ) : (
               <button
-                key={pageNum}
+                key={p}
                 type="button"
-                onClick={() => onPageChange(pageNum)}
-                className={`min-w-[2.5rem] h-10 rounded-lg text-sm font-semibold transition-all ${
-                  currentPage === pageNum
-                    ? "bg-[#2563EB] text-white shadow-sm"
-                    : "text-[#6B7280] hover:bg-[#F8FAFC] hover:text-[#111827]"
+                onClick={() => onPageChange(p)}
+                className={`min-w-[2.5rem] h-10 rounded-[10px] text-sm font-semibold transition-all border ${
+                  currentPage === p
+                    ? "bg-[#38BDF8] text-white border-[#38BDF8] shadow-sm"
+                    : "bg-white text-[#0F172A] border-[#E0F2FE] hover:bg-[#E0F7FF]"
                 }`}
               >
-                {pageNum}
+                {p}
               </button>
-            );
-          })}
+            )
+          )}
         </div>
         <button
           type="button"
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-          className="p-2.5 rounded-lg border border-[#E5E7EB] transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-white hover:bg-[#F8FAFC] text-[#6B7280] hover:text-[#111827]"
+          className="px-3 h-10 inline-flex items-center gap-2 rounded-[10px] border border-[#E0F2FE] transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-white hover:bg-[#E0F7FF] text-[#64748B] hover:text-[#0F172A]"
           aria-label="Next page"
         >
           <FiChevronRight size={20} />

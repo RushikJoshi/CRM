@@ -53,7 +53,7 @@ export default function ConvertInquiryFormPage() {
             // Redirect based on role (super_admin has no leads route, go to inquiries)
             const role = currentUser.role;
             if (role === 'super_admin') {
-                navigate('/superadmin/inquiries');
+                navigate('/superadmin/dashboard');
             } else {
                 const base = role === 'sales' ? '/sales' : (role === 'branch_manager' ? '/branch' : '/company');
                 navigate(`${base}/leads`);

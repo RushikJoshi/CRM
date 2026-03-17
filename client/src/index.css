@@ -2,25 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design system: simple, modern, professional SaaS – light theme */
+/* Design system: modern SaaS – Sky theme */
 @layer base {
   :root {
-    --crm-bg: #F8FAFC;
+    --crm-bg: #F0F9FF;
     --crm-surface: #FFFFFF;
-    --crm-border: #E5E7EB;
-    --crm-primary: #2563EB;
+    --crm-border: #E0F2FE;
+    --crm-primary: #38BDF8;
+    --crm-primary-hover: #0EA5E9;
     --crm-success: #22C55E;
     --crm-warning: #F59E0B;
     --crm-danger: #EF4444;
-    --crm-text: #111827;
-    --crm-text-muted: #6B7280;
-    --sidebar-width: 240px;
-    --sidebar-collapsed: 80px;
+    --crm-text: #0F172A;
+    --crm-text-muted: #64748B;
+    --sidebar-width: 260px;
+    --sidebar-collapsed: 84px;
+    --topbar-height: 64px;
   }
 
   body {
-    @apply bg-[#F8FAFC] text-[#111827];
-    font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+    @apply bg-[#F0F9FF] text-[#0F172A];
+    font-family: "Inter", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -28,7 +30,7 @@
 
 @layer components {
   .crm-card {
-    @apply bg-white border border-[#E5E7EB] rounded-xl shadow-crm-soft transition-shadow duration-200;
+    @apply bg-white border border-[#E0F2FE] rounded-xl shadow-crm-soft transition-shadow duration-200;
   }
 
   .crm-card-hover {
@@ -36,19 +38,28 @@
   }
 
   .crm-btn-primary {
-    @apply px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-lg font-semibold text-sm transition-colors duration-150 active:scale-[0.98];
+    @apply px-4 py-2.5 text-white rounded-[10px] font-semibold text-sm transition-all duration-150 active:scale-[0.98] hover:scale-[1.01];
+    background-image: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
   }
 
   .crm-btn-secondary {
-    @apply px-4 py-2.5 bg-white border border-[#E5E7EB] text-[#111827] hover:bg-[#F8FAFC] rounded-lg font-semibold text-sm transition-colors duration-150 active:scale-[0.98];
+    @apply px-4 py-2.5 bg-white border border-[#E0F2FE] text-[#0F172A] hover:bg-[#E0F7FF] rounded-[10px] font-semibold text-sm transition-colors duration-150 active:scale-[0.98];
   }
 
   .crm-table-header {
-    @apply bg-[#F8FAFC] border-b border-[#E5E7EB] text-[#6B7280] text-xs font-semibold uppercase tracking-wider px-6 py-4;
+    @apply bg-[#F0F9FF] border-b border-[#E0F2FE] text-[#64748B] text-xs font-semibold uppercase tracking-wider px-6 py-4;
   }
 
   .crm-table-row {
-    @apply border-b border-[#E5E7EB] hover:bg-[#F8FAFC]/80 transition-colors duration-150;
+    @apply border-b border-[#E0F2FE] hover:bg-[#F0F9FF]/60 transition-colors duration-150;
+  }
+
+  .crm-glass {
+    @apply bg-white/70 backdrop-blur-md border border-[#E0F2FE] shadow-crm-card;
+  }
+
+  .canvas-card {
+    @apply bg-white border border-[#E0F2FE] rounded-xl shadow-crm-soft;
   }
 }
 

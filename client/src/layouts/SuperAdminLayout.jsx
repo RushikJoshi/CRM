@@ -10,7 +10,7 @@ const SuperAdminLayout = () => {
 
     return (
         <RoleGuard allowedRole="super_admin">
-            <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
+            <div className="flex h-screen bg-[#F0F9FF] overflow-hidden">
                 <SuperAdminSidebar
                     isOpen={mobileSidebar}
                     onClose={() => setMobileSidebar(false)}

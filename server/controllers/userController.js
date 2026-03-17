@@ -2,7 +2,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 
 const ROLES = ["super_admin", "company_admin", "branch_manager", "sales", "support", "marketing"];
-const STATUSES = ["active", "inactive", "suspended", "pending"];
+const STATUSES = ["active", "inactive", "suspended", "pending", "draft"];
 const EMPLOYMENT_TYPES = ["full_time", "part_time", "contract"];
 
 function sanitizeUserBody(body) {
@@ -115,7 +115,8 @@ exports.createUser = async (req, res) => {
     }
 
     const raw = sanitizeUserBody(req.body);
-    const emailNorm = (raw.email || req.body.email || "").trim().toLowerCase();
+    const isDraft = (raw.status || req.body.status) === "draft";
+    const emailNorm = (raw.email || req.body.email || raw.workEmail || req.body.workEmail || "").trim().toLowerCase();
     if (!emailNorm) return res.status(400).json({ message: "Email is required" });
 
     const existingUser = await User.findOne({
@@ -125,10 +126,13 @@ exports.createUser = async (req, res) => {
     if (existingUser) return res.status(400).json({ message: "User with this email already exists" });
 
     const password = raw.password || req.body.password;
-    if (!password || String(password).trim().length < 6) {
+    if (!isDraft && (!password || String(password).trim().length < 6)) {
       return res.status(400).json({ message: "Password is required (min 6 characters)" });
     }
-    const hashedPassword = await bcrypt.hash(String(password).trim(), 10);
+    const resolvedPassword = isDraft
+      ? (password && String(password).trim().length >= 6 ? String(password).trim() : `${Date.now()}-${Math.random().toString(36).slice(2)}-draft`)
+      : String(password).trim();
+    const hashedPassword = await bcrypt.hash(resolvedPassword, 10);
 
     const targetBranchId = isBranchManager ? req.user.branchId : (raw.primaryBranchId || raw.branchId) || null;
     const targetRole = isBranchManager ? "sales" : (ROLES.includes(raw.role) ? raw.role : "sales");
@@ -173,12 +177,17 @@ exports.getUsers = async (req, res) => {
       return res.status(401).json({ success: false, message: "Unauthorized: User not found in request" });
     }
 
-    const { search, role, page = 1, limit = 20 } = req.query;
+    const { search, role, status, page = 1, limit = 20 } = req.query;
     const pageNum = Math.max(1, parseInt(page, 10));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
     const skip = (pageNum - 1) * limitNum;
 
     let filter = { isDeleted: { $ne: true } };
+    if (status) {
+      filter.status = status;
+    } else {
+      filter.status = { $ne: "draft" };
+    }
 
     if (search) {
       const s = String(search).trim();
