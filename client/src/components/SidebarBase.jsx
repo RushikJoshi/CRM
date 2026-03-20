@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { FiChevronLeft, FiChevronRight, FiGrid } from "react-icons/fi";
 
 /**
- * SaaS sidebar (Sky theme). UI only – no logic changes.
+ * SaaS sidebar (Minimal Indigo/Gray). UI only – no logic changes.
  */
 const SidebarBase = ({
   menuItems,
@@ -29,22 +29,22 @@ const SidebarBase = ({
       <aside
         className={`
           fixed top-0 left-0 z-[70] h-full flex flex-col
-          bg-[#E0F2FE]/60 backdrop-blur-sm border-r border-[#E0F2FE]
+          bg-white border-r border-gray-200
           transition-all duration-300 ease-out
           ${isCollapsed ? "w-sidebar-collapsed" : "w-sidebar"}
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
         {/* Brand */}
-        <div className={`shrink-0 border-b border-[#E0F2FE] ${isCollapsed ? "px-0 py-5" : "px-4 py-5"}`}>
+        <div className={`shrink-0 border-b border-gray-200 ${isCollapsed ? "px-0 py-4" : "px-4 py-4"}`}>
           <div className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : ""}`}>
             {logoIcon || (
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#38BDF8] to-[#0EA5E9] flex items-center justify-center text-white shrink-0 shadow-lg shadow-[#0EA5E9]/20">
+              <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center text-white shrink-0 shadow-sm">
                 <FiGrid size={18} strokeWidth={2.5} />
               </div>
             )}
             {!isCollapsed && (
-              <span className="font-semibold text-[#0F172A] text-sm truncate">
+              <span className="font-semibold text-gray-800 text-sm truncate">
                 {logoLabel}
               </span>
             )}
@@ -52,7 +52,7 @@ const SidebarBase = ({
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
           {menuItems.map((item) => {
             const isActive =
               location.pathname === item.path ||
@@ -65,8 +65,8 @@ const SidebarBase = ({
                   group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px]
                   transition-colors duration-150
                   ${isActive
-                    ? "bg-white/80 text-[#0284C7] font-semibold shadow-sm"
-                    : "text-[#64748B] hover:bg-white/60 hover:text-[#0F172A] font-medium"
+                    ? "bg-gray-100 text-gray-900 font-semibold"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium"
                   }
                   ${isCollapsed ? "justify-center" : ""}
                 `}
@@ -81,11 +81,11 @@ const SidebarBase = ({
         </nav>
 
         {/* Collapse (logout moved to profile menu in Navbar) */}
-        <div className="p-3 border-t border-[#E0F2FE] shrink-0 space-y-0.5">
+        <div className="p-3 border-t border-gray-200 shrink-0 space-y-0.5">
           <button
             type="button"
             onClick={onToggleCollapse}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#64748B] hover:bg-white/70 hover:text-[#0F172A] transition-colors text-sm font-medium ${isCollapsed ? "justify-center" : ""}`}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors text-sm font-medium ${isCollapsed ? "justify-center" : ""}`}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}

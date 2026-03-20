@@ -29,7 +29,7 @@ export default function ConvertInquiryFormPage() {
             try {
                 const [inqRes, usersRes] = await Promise.all([
                     API.get(`/inquiries/${id}`),
-                    API.get("/users")
+                    API.get("/users?limit=500")
                 ]);
                 const inq = inqRes.data?.data || inqRes.data;
                 if (inq) setInquiry(inq);

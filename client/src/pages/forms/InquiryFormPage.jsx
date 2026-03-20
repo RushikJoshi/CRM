@@ -109,7 +109,7 @@ export default function InquiryFormPage() {
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="flex-1 min-h-0 overflow-auto pb-24">
+            <form id="inquiry-form" onSubmit={handleSubmit} noValidate className="flex-1 min-h-0 overflow-auto pb-24">
                 <div className="max-w-[1200px] mx-auto w-full p-4 md:p-6 space-y-5">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                         {/* Customer Information */}
@@ -352,6 +352,7 @@ export default function InquiryFormPage() {
                     </button>
                     <button
                         type="submit"
+                        form="inquiry-form"
                         disabled={loading}
                         className="flex items-center justify-center gap-3 px-6 py-2.5 rounded-2xl bg-blue-600 text-white font-black hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-blue-600/20 disabled:opacity-50 duration-300"
                     >

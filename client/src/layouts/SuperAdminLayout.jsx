@@ -10,7 +10,7 @@ const SuperAdminLayout = () => {
 
     return (
         <RoleGuard allowedRole="super_admin">
-            <div className="flex h-screen bg-[#F0F9FF] overflow-hidden">
+            <div className="flex h-screen bg-gray-50 overflow-hidden">
                 <SuperAdminSidebar
                     isOpen={mobileSidebar}
                     onClose={() => setMobileSidebar(false)}
@@ -20,7 +20,7 @@ const SuperAdminLayout = () => {
                 {/* Main content adjusts based on sidebar state */}
                 <div className={`flex flex-col flex-1 min-w-0 overflow-hidden transition-all duration-300 ${isCollapsed ? "lg:ml-sidebar-collapsed" : "lg:ml-sidebar"}`}>
                     <Navbar toggleMobileSidebar={() => setMobileSidebar(!mobileSidebar)} />
-                    <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6">
+                    <main className="flex-1 overflow-hidden p-4">
                         <Outlet />
                     </main>
                 </div>

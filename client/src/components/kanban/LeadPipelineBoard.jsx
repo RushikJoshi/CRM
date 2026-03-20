@@ -17,10 +17,11 @@ import { useToast } from "../../context/ToastContext";
 import LeadPipelineColumn from "./LeadPipelineColumn";
 import LeadPipelineCard from "./LeadPipelineCard";
 import ConvertLeadModal from "../ConvertLeadModal";
+import { getCurrentUser } from "../../context/AuthContext";
 
-const LEAD_STAGES = ["new_lead", "attempted_contact", "contacted", "qualified", "prospect", "won", "lost"];
+const LEAD_STAGES = ["new", "qualified", "proposition", "won"];
 
-const skeletonCols = new Array(7).fill(0);
+const skeletonCols = new Array(4).fill(0);
 
 export default function LeadPipelineBoard() {
   const toast = useToast();
@@ -28,6 +29,8 @@ export default function LeadPipelineBoard() {
   const location = useLocation();
   const scrollRef = useRef(null);
   const basePath = location.pathname.startsWith("/company") ? "/company" : location.pathname.startsWith("/branch") ? "/branch" : "/sales";
+  const user = getCurrentUser();
+  const canManagePipeline = user?.role === "company_admin" && basePath === "/company";
 
   const [grouped, setGrouped] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -249,7 +252,7 @@ export default function LeadPipelineBoard() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-40 -mr-10 -mt-10 pointer-events-none" />
         <div className="relative z-10">
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Pipeline</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Lead pipeline kanban board</p>
+          <p className="text-sm text-gray-500 mt-0.5">Sales pipeline kanban board</p>
           {grouped && typeof grouped === "object" && (
             <p className="text-xs text-gray-400 mt-1">
               {Object.values(grouped).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0)} leads across {LEAD_STAGES.length} stages
@@ -264,6 +267,15 @@ export default function LeadPipelineBoard() {
           >
             Refresh
           </button>
+          {canManagePipeline && (
+            <button
+              type="button"
+              onClick={() => navigate(`${basePath}/pipeline/settings`)}
+              className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 text-xs font-medium hover:bg-gray-50"
+            >
+              Settings
+            </button>
+          )}
           <Link
             to={`${basePath}/leads/create`}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 shadow-sm"

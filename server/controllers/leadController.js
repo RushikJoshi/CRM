@@ -32,14 +32,16 @@ exports.createLead = async (req, res) => {
     if (cleanData.assignedTo === "") cleanData.assignedTo = null;
 
     const now = new Date();
+    const initialStage = normalizeLeadStage(cleanData.stage || "new_lead");
     const lead = await Lead.create({
       ...cleanData,
       companyId: req.user.companyId,
       branchId: req.user.branchId || req.body.branchId || null,
       createdBy: req.user.id,
       assignedTo: req.user.role === "sales" ? req.user.id : (cleanData.assignedTo || null),
-      stage: cleanData.stage || "new_lead",
-      stageUpdatedAt: now
+      stage: initialStage,
+      stageUpdatedAt: now,
+      stageHistory: [{ stage: initialStage, enteredAt: now, exitedAt: null }],
     });
 
     if (req.body.sourceId) {
@@ -75,14 +77,14 @@ exports.createLead = async (req, res) => {
     await runAutomation("lead_created", req.user.companyId, { record: finalizedLead, userId: req.user.id, ...finalizedLead.toObject() });
 
     await createAuditEntry({
-        userId: req.user.id,
-        action: "create",
-        objectType: "Lead",
-        objectId: finalizedLead._id,
-        companyId: req.user.companyId,
-        branchId: finalizedLead.branchId || req.user.branchId || null,
-        description: `Lead created: ${finalizedLead.name}`,
-        req
+      userId: req.user.id,
+      action: "create",
+      objectType: "Lead",
+      objectId: finalizedLead._id,
+      companyId: req.user.companyId,
+      branchId: finalizedLead.branchId || req.user.branchId || null,
+      description: `Lead created: ${finalizedLead.name}`,
+      req
     });
 
     console.log("Lead created:", finalizedLead._id, "for company:", req.user.companyId);
@@ -459,14 +461,21 @@ exports.convertLead = async (req, res) => {
     lead.stageUpdatedAt = new Date();
     await lead.save();
 
-    // LOG CONVERSION ACTIVITY
+    // LOG CONVERSION ACTIVITY (system + deal for timeline)
+    await Activity.create({
+      leadId: lead._id,
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      type: "system",
+      note: "Lead converted",
+    });
     await Activity.create({
       leadId: lead._id,
       dealId: deal._id,
       userId: req.user.id,
       companyId: req.user.companyId,
       type: "deal",
-      note: `Converted to Deal: ${deal.title}`
+      note: `Converted to Deal: ${deal.title}`,
     });
 
     await runAutomation("deal_created", lead.companyId, { record: deal, userId: req.user.id });
@@ -483,7 +492,31 @@ exports.convertLead = async (req, res) => {
   }
 };
 
-const LEAD_PIPELINE_STAGES = ["new_lead", "attempted_contact", "contacted", "qualified", "prospect", "won", "lost"];
+// Odoo-style pipeline stages (kanban columns)
+const LEAD_PIPELINE_STAGES = ["new", "qualified", "proposition", "won"];
+
+const STAGE_DEFAULT_PROBABILITY = {
+  new: 10,
+  qualified: 25,
+  proposition: 50,
+  won: 100,
+};
+
+function normalizeLeadStage(stage) {
+  const s = (stage || "new").toString();
+  // New keys already
+  if (LEAD_PIPELINE_STAGES.includes(s)) return s;
+  // Legacy mapping
+  if (s === "new_lead") return "new";
+  if (s === "qualified") return "qualified";
+  if (s === "proposal" || s === "prospect") return "proposition";
+  if (s === "negotiation") return "proposition";
+  if (s === "attempted_contact" || s === "contacted") return "new";
+  if (s === "won") return "won";
+  // If it was "lost" (legacy), keep it as lost marker (not a pipeline stage)
+  if (s === "lost") return "new";
+  return "new";
+}
 
 /* ================= GET LEADS BY PIPELINE STAGE ================= */
 exports.getLeadsPipeline = async (req, res) => {
@@ -497,14 +530,15 @@ exports.getLeadsPipeline = async (req, res) => {
       if (req.user.role === "sales") filter.assignedTo = req.user.id;
     }
 
-    const leads = await Lead.find(filter)
+    // Lost leads should not appear in the main kanban
+    const leads = await Lead.find({ ...filter, isLost: { $ne: true } })
       .populate("assignedTo", "name email")
       .sort({ stageUpdatedAt: -1, createdAt: -1 })
       .lean();
 
     const grouped = {};
     for (const stage of LEAD_PIPELINE_STAGES) {
-      grouped[stage] = leads.filter((l) => (l.stage || "new_lead") === stage);
+      grouped[stage] = leads.filter((l) => normalizeLeadStage(l.stage) === stage);
     }
 
     res.json({ success: true, data: grouped });
@@ -521,7 +555,10 @@ exports.updateLeadStage = async (req, res) => {
 
     const { status: newStage } = req.body;
     if (!newStage || !LEAD_PIPELINE_STAGES.includes(newStage)) {
-      return res.status(400).json({ success: false, message: "Invalid or missing stage. Use: new_lead, attempted_contact, contacted, qualified, prospect, won, lost." });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing stage. Use: new, qualified, proposition, won.",
+      });
     }
 
     const query = { _id: req.params.id, companyId: req.user.companyId };
@@ -531,13 +568,34 @@ exports.updateLeadStage = async (req, res) => {
     const lead = await Lead.findOne(query);
     if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
 
-    const oldStage = lead.stage || "new_lead";
-    if (oldStage === newStage) {
+    const oldStage = normalizeLeadStage(lead.stage);
+    if (oldStage === newStage && lead.isLost !== true) {
       return res.json({ success: true, data: lead });
     }
 
+    const now = new Date();
+    let history = Array.isArray(lead.stageHistory) ? [...lead.stageHistory] : [];
+    if (history.length > 0 && history[history.length - 1].exitedAt == null) {
+      history[history.length - 1].exitedAt = now;
+    } else if (history.length === 0 && oldStage) {
+      const prevEntered = lead.stageUpdatedAt || lead.createdAt;
+      if (prevEntered) history.push({ stage: oldStage, enteredAt: new Date(prevEntered), exitedAt: now });
+    }
+    history.push({ stage: newStage, enteredAt: now, exitedAt: null });
+    lead.stageHistory = history;
     lead.stage = newStage;
-    lead.stageUpdatedAt = new Date();
+    lead.stageUpdatedAt = now;
+    if (typeof STAGE_DEFAULT_PROBABILITY[newStage] === "number") {
+      lead.probability = STAGE_DEFAULT_PROBABILITY[newStage];
+    }
+    if (newStage === "won") {
+      lead.status = "Won";
+      lead.wonAt = now;
+      lead.isLost = false;
+      lead.lostAt = null;
+      lead.lostReason = "";
+      lead.lostNotes = "";
+    }
     await lead.save();
 
     await Activity.create({
@@ -545,10 +603,19 @@ exports.updateLeadStage = async (req, res) => {
       userId: req.user.id,
       companyId: req.user.companyId,
       type: "lead_stage_changed",
-      note: `Lead stage moved from ${formatStageLabel(oldStage)} to ${formatStageLabel(newStage)}`,
+      note: `Stage changed from ${formatStageLabel(oldStage)} → ${formatStageLabel(newStage)}`,
       previousStage: oldStage,
       newStage,
     });
+    if (newStage === "won") {
+      await Activity.create({
+        leadId: lead._id,
+        userId: req.user.id,
+        companyId: req.user.companyId,
+        type: "system",
+        note: "Lead marked as Won",
+      });
+    }
 
     const updated = await Lead.findById(lead._id).populate("assignedTo", "name email").lean();
     res.json({ success: true, data: updated });
@@ -560,16 +627,76 @@ exports.updateLeadStage = async (req, res) => {
 
 function formatStageLabel(stage) {
   const labels = {
-    new_lead: "New Lead",
-    attempted_contact: "Attempted Contact",
-    contacted: "Contacted",
     qualified: "Qualified",
-    prospect: "Prospect",
+    new: "New",
+    proposition: "Proposition",
     won: "Won",
-    lost: "Lost",
   };
   return labels[stage] || stage;
 }
+
+/* ================= MARK LEAD AS LOST (POST /api/leads/:id/lost) ================= */
+exports.markLeadLost = async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const { reason, notes } = req.body || {};
+
+    const query = { _id: req.params.id, companyId: req.user.companyId };
+    if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
+    if (req.user.role === "sales") query.assignedTo = req.user.id;
+
+    const lead = await Lead.findOne(query);
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    const oldStage = normalizeLeadStage(lead.stage);
+
+    lead.isLost = true;
+    lead.lostAt = new Date();
+    lead.lostReason = (reason || "").toString();
+    lead.lostNotes = (notes || "").toString();
+    lead.probability = 0;
+    lead.status = "Lost";
+    lead.stageUpdatedAt = new Date();
+    await lead.save();
+
+    await Activity.create({
+      leadId: lead._id,
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      type: "lead_lost",
+      note: `Lead marked as Lost from ${formatStageLabel(oldStage)}${lead.lostReason ? ` — Reason: ${lead.lostReason}` : ""}`,
+      previousStage: oldStage,
+      newStage: "lost",
+    });
+
+    const updated = await Lead.findById(lead._id).populate("assignedTo", "name email").lean();
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error("MARK LEAD LOST ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/* ================= GET LOST LEADS (GET /api/leads/lost) ================= */
+exports.getLostLeads = async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    let filter = { isDeleted: false, isLost: true };
+    if (req.user.role !== "super_admin") {
+      filter.companyId = req.user.companyId;
+      if (req.user.role === "branch_manager" && req.user.branchId) filter.branchId = req.user.branchId;
+      if (req.user.role === "sales") filter.assignedTo = req.user.id;
+    }
+
+    const leads = await Lead.find(filter).populate("assignedTo", "name email").sort({ lostAt: -1, updatedAt: -1 }).lean();
+    res.json({ success: true, data: leads });
+  } catch (error) {
+    console.error("GET LOST LEADS ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 /* ================= BULK UPDATE LEADS ================= */
 exports.bulkUpdateLeads = async (req, res) => {

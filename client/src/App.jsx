@@ -32,6 +32,7 @@ const CustomerDetails = lazy(() => import("./pages/CustomerDetails"));
 const Activities = lazy(() => import("./pages/Activities"));
 const Tasks = lazy(() => import("./pages/Tasks"));
 const DealPipelinePage = lazy(() => import("./pages/DealPipelinePage"));
+const PipelineSettings = lazy(() => import("./pages/PipelineSettings"));
 const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard"));
 const Prospects = lazy(() => import("./pages/Prospects"));
 const Targets = lazy(() => import("./pages/Targets"));
@@ -53,6 +54,7 @@ const UserFormPage = lazy(() => import("./pages/forms/UserFormPage"));
 const LeadFormPage = lazy(() => import("./pages/forms/LeadFormPage"));
 const LeadDetailPage = lazy(() => import("./pages/LeadDetailPage"));
 const DealFormPage = lazy(() => import("./pages/forms/DealFormPage"));
+const DealDetailPage = lazy(() => import("./pages/DealDetailPage"));
 const ContactFormPage = lazy(() => import("./pages/forms/ContactFormPage"));
 const InquiryFormPage = lazy(() => import("./pages/forms/InquiryFormPage"));
 const ConvertInquiryFormPage = lazy(() => import("./pages/forms/ConvertInquiryFormPage"));
@@ -62,7 +64,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const PageLoader = () => (
   <div className="flex items-center justify-center h-screen bg-gray-50">
     <div className="flex flex-col items-center gap-4">
-      <div className="w-12 h-12 border-4 border-green-100 border-t-green-500 rounded-full animate-spin" />
+      <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin" />
       <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Loading...</p>
     </div>
   </div>
@@ -143,6 +145,7 @@ function App() {
           <Route path="/company/deals" element={<Deals />} />
           <Route path="/company/deals/create" element={<DealFormPage />} />
           <Route path="/company/deals/:id/edit" element={<DealFormPage />} />
+          <Route path="/company/deals/:id" element={<DealDetailPage />} />
           <Route path="/company/contacts" element={<Contacts />} />
           <Route path="/company/contacts/create" element={<ContactFormPage />} />
           <Route path="/company/contacts/:id/edit" element={<ContactFormPage />} />
@@ -157,6 +160,7 @@ function App() {
           <Route path="/company/activities" element={<Activities />} />
           <Route path="/company/tasks" element={<Tasks />} />
           <Route path="/company/pipeline" element={<DealPipelinePage />} />
+          <Route path="/company/pipeline/settings" element={<PipelineSettings />} />
           <Route path="/company/calls" element={<Calls />} />
           <Route path="/company/meetings" element={<Meetings />} />
           <Route path="/company/targets" element={<Targets />} />
@@ -185,6 +189,7 @@ function App() {
           <Route path="/branch/deals" element={<Deals />} />
           <Route path="/branch/deals/create" element={<DealFormPage />} />
           <Route path="/branch/deals/:id/edit" element={<DealFormPage />} />
+          <Route path="/branch/deals/:id" element={<DealDetailPage />} />
           <Route path="/branch/contacts" element={<Contacts />} />
           <Route path="/branch/contacts/create" element={<ContactFormPage />} />
           <Route path="/branch/contacts/:id/edit" element={<ContactFormPage />} />
@@ -198,6 +203,7 @@ function App() {
           <Route path="/branch/activities" element={<Activities />} />
           <Route path="/branch/tasks" element={<Tasks />} />
           <Route path="/branch/pipeline" element={<DealPipelinePage />} />
+          <Route path="/branch/pipeline/settings" element={<PipelineSettings />} />
           <Route path="/branch/calls" element={<Calls />} />
           <Route path="/branch/meetings" element={<Meetings />} />
           <Route path="/branch/targets" element={<Targets />} />
@@ -223,6 +229,7 @@ function App() {
           <Route path="/sales/deals" element={<Deals />} />
           <Route path="/sales/deals/create" element={<DealFormPage />} />
           <Route path="/sales/deals/:id/edit" element={<DealFormPage />} />
+          <Route path="/sales/deals/:id" element={<DealDetailPage />} />
           <Route path="/sales/contacts" element={<Contacts />} />
           <Route path="/sales/contacts/create" element={<ContactFormPage />} />
           <Route path="/sales/contacts/:id/edit" element={<ContactFormPage />} />
@@ -237,6 +244,7 @@ function App() {
           <Route path="/sales/activities" element={<Activities />} />
           <Route path="/sales/tasks" element={<Tasks />} />
           <Route path="/sales/pipeline" element={<DealPipelinePage />} />
+          <Route path="/sales/pipeline/settings" element={<PipelineSettings />} />
           <Route path="/sales/analytics" element={<AnalyticsDashboard />} />
           <Route path="/sales/settings" element={<Settings />} />
         </Route>

@@ -2,19 +2,7 @@ import React, { memo } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
-import { FiClock, FiFlag, FiUser, FiMenu } from "react-icons/fi";
-
-const priorityStyles = {
-  high: "border-l-4 border-l-rose-500",
-  medium: "border-l-4 border-l-amber-400",
-  low: "border-l-4 border-l-emerald-500",
-};
-
-const getPriority = (lead) => {
-  const p = (lead?.priority || "medium").toString().toLowerCase();
-  if (p === "high" || p === "medium" || p === "low") return p;
-  return "medium";
-};
+import { FiClock, FiFlag, FiMail, FiPhone, FiActivity, FiMenu } from "react-icons/fi";
 
 const formatMoney = (v) => {
   const n = Number(v || 0);
@@ -27,6 +15,22 @@ const formatDateTime = (d) => {
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return "—";
   return dt.toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+};
+
+const clampStars = (n) => {
+  const v = Number(n || 0);
+  if (Number.isNaN(v)) return 0;
+  return Math.max(0, Math.min(3, Math.round(v)));
+};
+
+const Stars = ({ value }) => {
+  const v = clampStars(value);
+  return (
+    <span className="text-[11px] font-black tracking-widest text-amber-500">
+      {"★".repeat(v)}
+      <span className="text-gray-200">{"★".repeat(3 - v)}</span>
+    </span>
+  );
 };
 
 function LeadPipelineCard({ lead, isOverlay = false, onView, compact = false }) {
@@ -47,11 +51,12 @@ function LeadPipelineCard({ lead, isOverlay = false, onView, compact = false }) 
   };
 
   const title = lead?.name || "Untitled lead";
-  const companyName = lead?.companyName || "—";
   const ownerName = lead?.assignedTo?.name || "Unassigned";
   const source = lead?.source || "—";
   const lastActivity = formatDateTime(lead?.stageUpdatedAt || lead?.updatedAt || lead?.createdAt);
-  const priority = getPriority(lead);
+  const expectedRevenue = lead?.expectedRevenue ?? lead?.value ?? 0;
+  const priorityStars = lead?.priorityStars ?? 0;
+  const isWon = lead?.stage === "won";
 
   const showCompact = compact && !isOverlay;
 
@@ -69,7 +74,7 @@ function LeadPipelineCard({ lead, isOverlay = false, onView, compact = false }) 
         showCompact ? "rounded-xl px-3 py-2.5 shadow-sm" : "rounded-2xl p-4 shadow-sm",
         "transition-shadow",
         isOverlay ? "shadow-2xl" : "hover:shadow-md",
-        priorityStyles[priority],
+        isWon ? "ring-2 ring-emerald-500/20 border-emerald-200" : "",
         isDragging && !isOverlay ? "opacity-40" : "",
       ].join(" ")}
       role="article"
@@ -100,11 +105,12 @@ function LeadPipelineCard({ lead, isOverlay = false, onView, compact = false }) 
               <p className={["font-black text-gray-900 dark:text-slate-50 truncate", showCompact ? "text-[13px]" : "text-sm"].join(" ")}>
                 {title}
               </p>
-              {!showCompact && (
-                <p className="mt-1 text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest truncate">
-                  {companyName}
-                </p>
-              )}
+              <div className="mt-1 flex items-center gap-2">
+                <span className={showCompact ? "text-[10px] font-black text-gray-400 uppercase tracking-widest" : "text-[10px] font-black text-gray-400 uppercase tracking-widest"}>
+                  {formatMoney(expectedRevenue)}
+                </span>
+                <Stars value={priorityStars} />
+              </div>
             </div>
             <div
               className={[
@@ -120,22 +126,12 @@ function LeadPipelineCard({ lead, isOverlay = false, onView, compact = false }) 
           <div className={showCompact ? "mt-2 flex items-center justify-between gap-2" : "mt-4 flex flex-wrap items-center gap-2"}>
             <div className={showCompact ? "flex items-center gap-2 min-w-0" : "contents"}>
               <span className={showCompact
-                ? "px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-[10px] font-black text-gray-600 dark:text-slate-300 uppercase tracking-widest"
+                ? "px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-[10px] font-black text-gray-600 dark:text-slate-300 uppercase tracking-widest truncate max-w-[160px]"
                 : "px-3 py-1 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-[10px] font-black text-gray-500 dark:text-slate-300 uppercase tracking-widest flex items-center gap-2"
               }>
-                {showCompact ? formatMoney(lead?.value).replace("₹ ", "₹") : formatMoney(lead?.value)}
+                <FiFlag size={12} className="text-gray-300 dark:text-slate-500" />
+                {source}
               </span>
-              {!showCompact ? (
-                <span className="px-3 py-1 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-[10px] font-black text-gray-500 dark:text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                  <FiFlag size={12} />
-                  {source}
-                </span>
-              ) : (
-                <span className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest truncate" title={source}>
-                  <FiFlag size={12} className="inline -mt-0.5 mr-1 text-gray-300 dark:text-slate-500" />
-                  {source}
-                </span>
-              )}
             </div>
             {showCompact && (
               <span className="text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest whitespace-nowrap" title={lastActivity}>
@@ -146,20 +142,15 @@ function LeadPipelineCard({ lead, isOverlay = false, onView, compact = false }) 
           </div>
 
           {!showCompact && (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <div className="px-3 py-2 rounded-2xl bg-gray-50/60 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700">
-                <p className="text-[9px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest">Owner</p>
-                <p className="mt-1 text-xs font-black text-gray-900 dark:text-slate-50 truncate flex items-center gap-2">
-                  <FiUser size={12} className="text-gray-300 dark:text-slate-500" />
-                  {ownerName}
-                </p>
-              </div>
-              <div className="px-3 py-2 rounded-2xl bg-gray-50/60 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700">
-                <p className="text-[9px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest">Last activity</p>
-                <p className="mt-1 text-xs font-black text-gray-900 dark:text-slate-50 truncate flex items-center gap-2">
-                  <FiClock size={12} className="text-gray-300 dark:text-slate-500" />
-                  {lastActivity}
-                </p>
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest" title={lastActivity}>
+                <FiClock size={12} className="inline -mt-0.5 mr-1 text-gray-300" />
+                {lastActivity}
+              </span>
+              <div className="flex items-center gap-2 text-gray-400">
+                <FiPhone size={14} title={lead?.phone || "Phone"} />
+                <FiMail size={14} title={lead?.email || "Email"} />
+                <FiActivity size={14} title="Activity" />
               </div>
             </div>
           )}

@@ -10,7 +10,7 @@ const Message = require("../models/Message");
 // ── LOG NEW ACTIVITY ──────────────────────────────────────────────────────────
 exports.createActivity = async (req, res) => {
     try {
-        const { leadId, dealId, customerId, type, note } = req.body;
+        const { leadId, dealId, customerId, type, note, title, mentionedUserId, attachments } = req.body;
 
         if (!type || !note) {
             return res.status(400).json({ success: false, message: "Type and note are required." });
@@ -23,8 +23,25 @@ exports.createActivity = async (req, res) => {
             userId: req.user.id,
             companyId: req.user.companyId,
             type,
-            note
+            note,
+            title: title || null,
+            mentionedUserId: mentionedUserId || null,
+            attachments: attachments || []
         });
+
+        const io = req.app.get("io");
+        if (io && req.user?.companyId) {
+            io.to(`company:${req.user.companyId}`).emit("activity:created", {
+                id: activity._id,
+                leadId: activity.leadId,
+                dealId: activity.dealId,
+                customerId: activity.customerId,
+                type: activity.type,
+                note: activity.note,
+                userId: req.user.id,
+                createdAt: activity.createdAt
+            });
+        }
 
         res.status(201).json({ success: true, data: activity });
     } catch (error) {
@@ -81,7 +98,7 @@ exports.getActivityTimeline = async (req, res) => {
             Todo.find(activityMatch).sort({ updatedAt: -1 }).limit(20),
             Note.find(activityMatch).sort({ createdAt: -1 }).limit(20),
             Message.find(activityMatch).sort({ createdAt: -1 }).limit(20),
-            Activity.find(activityMatch).populate("userId", "name").sort({ createdAt: -1 }).limit(50)
+            Activity.find(activityMatch).populate("userId", "name").populate("mentionedUserId", "name").sort({ createdAt: -1 }).limit(100)
         ]);
 
         const timeline = [
@@ -92,7 +109,16 @@ exports.getActivityTimeline = async (req, res) => {
             ...todos.map(t => ({ type: 'task', title: `Task ${t.status}: ${t.title}`, date: t.updatedAt || t.createdAt, id: t._id })),
             ...notes.map(n => ({ type: 'note', title: `Note: ${n.title}`, date: n.createdAt, id: n._id })),
             ...messages.map(msg => ({ type: 'message', title: `${msg.type.toUpperCase()} ${msg.status}`, date: msg.createdAt, id: msg._id })),
-            ...logActivities.map(a => ({ type: a.type, title: a.note, date: a.createdAt || a.updatedAt, id: a._id, user: a.userId?.name }))
+            ...logActivities.map(a => ({
+                type: a.type,
+                title: a.title || a.note,
+                note: a.note,
+                date: a.createdAt || a.updatedAt,
+                id: a._id,
+                user: a.userId?.name,
+                mentionedUser: a.mentionedUserId?.name,
+                attachments: a.attachments || []
+            }))
         ].filter(item => item.date); // Ensure valid dates
 
         timeline.sort((a, b) => new Date(b.date) - new Date(a.date));

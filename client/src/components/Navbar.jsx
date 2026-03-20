@@ -86,18 +86,18 @@ const Navbar = ({ toggleMobileSidebar }) => {
     })();
 
     return (
-        <header className="sticky top-0 z-40 h-16 crm-glass flex items-center justify-between px-4 md:px-6">
+        <header className="sticky top-0 z-40 h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6">
             <div className="flex items-center gap-4 min-w-0 flex-1">
                 <button
                     type="button"
                     onClick={toggleMobileSidebar}
-                    className="lg:hidden p-2 rounded-[10px] text-slate-600 hover:bg-sky-50 hover:text-slate-900 transition-colors"
+                    className="lg:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                     aria-label="Open menu"
                 >
                     <FiMenu size={22} />
                 </button>
                 {!isCompanyRoute && !isCompanyDashboard && (
-                    <p className="hidden lg:block text-sm text-slate-500 truncate">{breadcrumb}</p>
+                    <p className="hidden lg:block text-sm text-gray-500 truncate">{breadcrumb}</p>
                 )}
 
                 {!isCompanyRoute ? (
@@ -106,7 +106,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
                     </div>
                 ) : (
                     <div className="flex-1 min-w-0 flex justify-center">
-                        <span className="text-[18px] font-semibold text-slate-700 truncate max-w-[70vw]">
+                        <span className="text-[18px] font-semibold text-gray-800 truncate max-w-[70vw]">
                             {companyPageTitle}
                         </span>
                     </div>
@@ -119,7 +119,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
                         <button
                             type="button"
                             onClick={() => setShowQuickCreate((o) => !o)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-[10px] bg-gradient-to-br from-sky-400 to-sky-600 text-white text-sm font-semibold hover:from-sky-500 hover:to-sky-700 transition-all shadow-sm active:scale-[0.99]"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-semibold hover:bg-indigo-600 transition-colors shadow-sm"
                         >
                             <FiPlus size={18} />
                             <span className="hidden sm:inline">Quick Create</span>
@@ -131,27 +131,27 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                     onClick={() => setShowQuickCreate(false)}
                                     aria-hidden
                                 />
-                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-[#E0F2FE] shadow-crm-card z-50 py-1 overflow-hidden">
+                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-gray-200 shadow-sm z-50 py-1 overflow-hidden">
                                     <Link
                                         to={`${base}/leads/create`}
                                         onClick={() => setShowQuickCreate(false)}
-                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F0F9FF]"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50"
                                     >
-                                        <FiUser size={16} className="text-[#6B7280]" /> New Lead
+                                        <FiUser size={16} className="text-gray-500" /> New Lead
                                     </Link>
                                     <Link
                                         to={`${base}/deals/create`}
                                         onClick={() => setShowQuickCreate(false)}
-                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F0F9FF]"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50"
                                     >
-                                        <FaIndianRupeeSign size={16} className="text-[#6B7280]" /> New Deal
+                                        <FaIndianRupeeSign size={16} className="text-gray-500" /> New Deal
                                     </Link>
                                     <Link
                                         to={`${base}/contacts/create`}
                                         onClick={() => setShowQuickCreate(false)}
-                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F0F9FF]"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50"
                                     >
-                                        <FiBriefcase size={16} className="text-[#6B7280]" /> New Contact
+                                        <FiBriefcase size={16} className="text-gray-500" /> New Contact
                                     </Link>
                                 </div>
                             </>
@@ -162,7 +162,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
 <button
                             type="button"
                             onClick={() => setShowNotifications((o) => !o)}
-                            className="relative p-2.5 rounded-[10px] text-slate-600 hover:bg-sky-50 hover:text-slate-900 transition-colors"
+                            className="relative p-2.5 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
                             aria-label="Notifications"
                         >
                             <FiBell size={20} />
@@ -183,36 +183,36 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                 onKeyDown={(e) => e.key === "Escape" && setShowNotifications(false)}
                                 aria-label="Close notifications"
                             />
-                            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl border border-[#E0F2FE] shadow-crm-card z-50 overflow-hidden">
-                                <div className="px-4 py-3 border-b border-[#E0F2FE] flex items-center justify-between bg-[#F0F9FF]">
-                                    <span className="text-sm font-semibold text-[#0F172A]">Notifications</span>
+                            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl border border-gray-200 shadow-sm z-50 overflow-hidden">
+                                <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                                    <span className="text-sm font-semibold text-gray-800">Notifications</span>
                                     {notifications.length > 0 && (
-                                        <span className="text-xs font-medium text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded">
+                                        <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
                                             {notifications.length} new
                                         </span>
                                     )}
                                 </div>
                                 <div className="max-h-80 overflow-y-auto">
                                     {notifications.length === 0 ? (
-                                        <div className="py-12 text-center text-sm text-[#64748B]">
+                                        <div className="py-12 text-center text-sm text-gray-500">
                                             No new notifications
                                         </div>
                                     ) : (
                                         notifications.map((n) => (
                                             <div
                                                 key={n._id}
-                                                className="px-4 py-3 hover:bg-[#F0F9FF] border-b border-[#E0F2FE] last:border-0"
+                                                className="px-4 py-3 hover:bg-gray-50 border-b border-gray-200 last:border-0"
                                             >
-                                                <p className="text-sm font-medium text-[#0F172A]">{n.title}</p>
-                                                <p className="text-xs text-[#64748B] mt-0.5 line-clamp-2">{n.message}</p>
+                                                <p className="text-sm font-medium text-gray-800">{n.title}</p>
+                                                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
                                                 <div className="flex items-center justify-between mt-2">
-                                                    <span className="text-xs text-[#64748B]">
+                                                    <span className="text-xs text-gray-500">
                                                         {n.createdAt && new Date(n.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                                     </span>
                                                     <button
                                                         type="button"
                                                         onClick={() => markAsRead(n._id)}
-                                                        className="text-xs font-medium text-[#0284C7] hover:underline"
+                                                        className="text-xs font-medium text-indigo-600 hover:underline"
                                                     >
                                                         Mark read
                                                     </button>
@@ -226,7 +226,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
                     )}
                 </div>
 
-                <div className="h-8 w-px bg-[#E0F2FE] hidden sm:block" />
+                <div className="h-8 w-px bg-gray-200 hidden sm:block" />
 
                 <div className="relative">
                     <button
@@ -235,13 +235,13 @@ const Navbar = ({ toggleMobileSidebar }) => {
                         className="flex items-center gap-2 pl-2"
                     >
                         <div className="hidden sm:block text-right">
-                            <p className="text-sm font-semibold text-[#0F172A] leading-tight">{user.name || "User"}</p>
-                            <p className="text-xs text-[#64748B] leading-tight capitalize">{(user.role ?? "member").replace("_", " ")}</p>
+                            <p className="text-sm font-semibold text-gray-800 leading-tight">{user.name || "User"}</p>
+                            <p className="text-xs text-gray-500 leading-tight capitalize">{(user.role ?? "member").replace("_", " ")}</p>
                         </div>
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-400 to-sky-600 text-white flex items-center justify-center font-semibold text-sm shrink-0 shadow-sm">
+                        <div className="w-9 h-9 rounded-full bg-indigo-500 text-white flex items-center justify-center font-semibold text-sm shrink-0 shadow-sm">
                             {(user.name || "U").split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase() || "U"}
                         </div>
-                        <FiChevronDown className="hidden sm:block w-4 h-4 text-[#64748B] shrink-0" />
+                        <FiChevronDown className="hidden sm:block w-4 h-4 text-gray-500 shrink-0" />
                     </button>
 
                     {showProfileMenu && (
@@ -254,16 +254,16 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                 onKeyDown={(e) => e.key === "Escape" && setShowProfileMenu(false)}
                                 aria-label="Close profile menu"
                             />
-                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-[#E0F2FE] shadow-crm-card z-50 overflow-hidden">
-                                <div className="px-4 py-3 border-b border-[#E0F2FE] bg-[#F0F9FF]">
-                                    <p className="text-sm font-semibold text-[#0F172A] truncate">{user.name || "User"}</p>
-                                    <p className="text-xs text-[#64748B] capitalize">{(user.role ?? "member").replace("_", " ")}</p>
+                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-gray-200 shadow-sm z-50 overflow-hidden">
+                                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                                    <p className="text-sm font-semibold text-gray-800 truncate">{user.name || "User"}</p>
+                                    <p className="text-xs text-gray-500 capitalize">{(user.role ?? "member").replace("_", " ")}</p>
                                 </div>
                                 <div className="py-1">
                                     {/* Placeholder for future profile page */}
                                     <button
                                         type="button"
-                                        className="w-full text-left px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F0F9FF]"
+                                        className="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-50"
                                         onClick={() => {
                                             setShowProfileMenu(false);
                                             navigate(`${base}/profile`);
@@ -272,7 +272,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                         View profile
                                     </button>
                                 </div>
-                                <div className="border-t border-[#E0F2FE]">
+                                <div className="border-t border-gray-200">
                                     <button
                                         type="button"
                                         onClick={handleLogout}

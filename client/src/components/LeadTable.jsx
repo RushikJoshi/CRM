@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
     FiEdit2, FiUser, FiPhone, FiCheckCircle, FiBriefcase,
-    FiFlag, FiEye, FiUserPlus, FiCalendar, FiMail,
+    FiFlag, FiUserPlus, FiCalendar, FiMail,
     FiTrash2, FiRepeat, FiX, FiCheck, FiDownload
 } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
@@ -188,13 +188,6 @@ const LeadTable = ({ leads, onEdit, onDelete, onConvert, onView, onAssign, onAdd
                                         </td>
                                         <td className="px-8 py-6 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => onView(lead)}
-                                                    className="w-10 h-10 bg-white border border-[#E5E7EB] rounded-lg flex items-center justify-center text-[#6B7280] hover:text-[#2563EB] hover:border-[#2563EB]/30 hover:bg-[#F8FAFC] transition-all shadow-sm"
-                                                    title="Quick View"
-                                                >
-                                                    <FiEye size={16} />
-                                                </button>
                                                 <button
                                                     onClick={() => onAddTask(lead)}
                                                     className="w-10 h-10 bg-white border border-[#E5E7EB] rounded-lg flex items-center justify-center text-[#6B7280] hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all shadow-sm"

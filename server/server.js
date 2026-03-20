@@ -3,11 +3,14 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const app = express();
+const server = http.createServer(app);
 
 // ── Dynamic CORS configuration ────────────────────────────────────────────────
 const allowedOrigins = [
@@ -65,6 +68,7 @@ app.use("/api/", apiLimiter);
 // ── Placeholder for relocation ──
 
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 // Request logger
 app.use((req, res, next) => {
@@ -100,6 +104,7 @@ app.use("/api/pipelines", require("./routes/pipelineRoutes"));
 app.use("/api/targets", require("./routes/targetRoutes"));
 app.use("/api/branch-analytics", require("./routes/branchAnalyticsRoutes"));
 app.use("/api/planner", require("./routes/plannerRoutes"));
+app.use("/api/uploads", require("./routes/uploadRoutes"));
 
 app.get("/", (req, res) => {
     res.json({
@@ -123,6 +128,51 @@ mongoose.connect(process.env.MONGO_URI)
 /* ================= SERVER ================= */
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+// ── Socket.IO (real-time updates) ─────────────────────────────────────────────
+const io = new Server(server, {
+    cors: {
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+            if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+                return callback(null, true);
+            }
+            const allowedOrigins = [
+                process.env.FRONTEND_URL,
+                ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : [])
+            ].filter(Boolean).map(o => o.trim());
+            if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*")) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        credentials: true
+    }
+});
+
+// Basic auth + room join by companyId for scoped broadcasts.
+io.use((socket, next) => {
+    try {
+        const authHeader = socket.handshake.auth?.token || socket.handshake.headers?.authorization || "";
+        const token = String(authHeader).replace(/^Bearer\s+/i, "");
+        if (!token) return next(new Error("Unauthorized"));
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.data.user = decoded;
+        return next();
+    } catch (err) {
+        return next(new Error("Unauthorized"));
+    }
+});
+
+io.on("connection", (socket) => {
+    const companyId = socket.data.user?.companyId;
+    if (companyId) socket.join(`company:${companyId}`);
+});
+
+app.set("io", io);
+
+server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });

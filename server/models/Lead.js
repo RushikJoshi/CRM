@@ -30,12 +30,37 @@ const leadSchema = new mongoose.Schema(
     },
     stage: {
       type: String,
-      enum: ["new_lead", "attempted_contact", "contacted", "qualified", "prospect", "won", "lost"],
-      default: "new_lead"
+      // NOTE: we keep legacy stage keys for backward compatibility/migration.
+      enum: [
+        // New Odoo-style keys
+        "new",
+        "qualified",
+        "proposition",
+        "negotiation",
+        "won",
+        // Legacy keys (to be migrated)
+        "new_lead",
+        "attempted_contact",
+        "contacted",
+        "prospect",
+        "proposal",
+        "lost",
+      ],
+      default: "new"
     },
     stageUpdatedAt: {
       type: Date,
       default: null
+    },
+    stageHistory: {
+      type: [
+        {
+          stage: { type: String, required: true },
+          enteredAt: { type: Date, required: true },
+          exitedAt: { type: Date, default: null },
+        },
+      ],
+      default: [],
     },
 
     source: { // Legacy Support
@@ -48,10 +73,20 @@ const leadSchema = new mongoose.Schema(
       ref: "LeadSource"
     },
 
-    value: {
-      type: Number,
-      default: 0
-    },
+    // Legacy field used across UI as expected revenue
+    value: { type: Number, default: 0 },
+    // Odoo-style expected revenue
+    expectedRevenue: { type: Number, default: 0 },
+    // Editable probability percent (0-100)
+    probability: { type: Number, default: 10 },
+    // Odoo-style priority stars (0-3)
+    priorityStars: { type: Number, default: 0 },
+    // Won/Lost metadata
+    wonAt: { type: Date, default: null },
+    lostAt: { type: Date, default: null },
+    lostReason: { type: String, default: "" },
+    lostNotes: { type: String, default: "" },
+    isLost: { type: Boolean, default: false },
 
     score: {
       type: Number,
@@ -132,6 +167,9 @@ leadSchema.index({ companyId: 1 });
 leadSchema.index({ companyId: 1, updatedAt: -1 });
 leadSchema.index({ companyId: 1, status: 1 });
 leadSchema.index({ companyId: 1, stage: 1 });
+leadSchema.index({ companyId: 1, isLost: 1 });
+leadSchema.index({ companyId: 1, wonAt: -1 });
+leadSchema.index({ companyId: 1, lostAt: -1 });
 leadSchema.index({ email: 1, companyId: 1 });
 leadSchema.index({ phone: 1, companyId: 1 });
 leadSchema.index({ assignedTo: 1 });

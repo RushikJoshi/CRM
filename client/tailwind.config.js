@@ -8,17 +8,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Super Admin SaaS theme (Sky)
-        "crm-bg": "#F0F9FF",
+        // Minimal SaaS theme (Indigo/Gray)
+        "crm-bg": "#F9FAFB",
         "crm-surface": "#FFFFFF",
-        "crm-border": "#E0F2FE",
-        "crm-primary": "#38BDF8",
-        "crm-primary-hover": "#0EA5E9",
+        "crm-border": "#E5E7EB",
+        "crm-primary": "#6366F1",
+        "crm-primary-hover": "#4F46E5",
         "crm-success": "#22C55E",
         "crm-warning": "#F59E0B",
         "crm-danger": "#EF4444",
-        "crm-text": "#0F172A",
-        "crm-text-muted": "#64748B",
+        "crm-text": "#1F2937",
+        "crm-text-muted": "#6B7280",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
@@ -34,13 +34,13 @@ export default {
         "crm-glass": "0 8px 30px rgb(15 23 42 / 0.08)",
       },
       spacing: {
-        "sidebar": "260px",
-        "sidebar-collapsed": "84px",
-        "topbar": "64px",
+        "sidebar": "240px",
+        "sidebar-collapsed": "72px",
+        "topbar": "56px",
       },
       width: {
-        "sidebar": "260px",
-        "sidebar-collapsed": "84px",
+        "sidebar": "240px",
+        "sidebar-collapsed": "72px",
       },
     },
   },

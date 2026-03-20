@@ -15,7 +15,6 @@ import {
   FiSettings,
   FiInbox,
 } from "react-icons/fi";
-import { FaIndianRupeeSign } from "react-icons/fa6";
 import { AuthContext } from "../../context/AuthContext";
 import SidebarBase from "../SidebarBase";
 
@@ -26,7 +25,6 @@ const COMPANY_ADMIN_MENU = [
   { name: "Inquiries", icon: <FiTarget />, path: "/company/inquiries" },
   { name: "Leads", icon: <FiTarget />, path: "/company/leads" },
   { name: "Prospects", icon: <FiTrendingUp />, path: "/company/prospects" },
-  { name: "Deals", icon: <FaIndianRupeeSign />, path: "/company/deals" },
   { name: "Accounts", icon: <FiBriefcase />, path: "/company/customers" },
   { name: "Contacts", icon: <FiUser />, path: "/company/contacts" },
   { name: "Pipeline", icon: <FiLayers />, path: "/company/pipeline" },

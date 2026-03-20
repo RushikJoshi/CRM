@@ -27,6 +27,15 @@ const activitySchema = new mongoose.Schema(
             ref: "User",
             required: true
         },
+        mentionedUserId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
+        title: {
+            type: String,
+            default: null
+        },
         type: {
             type: String,
             enum: [
@@ -40,6 +49,7 @@ const activitySchema = new mongoose.Schema(
                 "lead_qualified",
                 "status_change",
                 "lead_stage_changed",
+                "lead_lost",
                 "deal",
                 "deal_stage_changed",
                 "customer",
@@ -66,7 +76,13 @@ const activitySchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Company",
             required: true
-        }
+        },
+        attachments: [
+            {
+                name: { type: String, required: true },
+                url: { type: String, required: true }
+            }
+        ]
     },
     { timestamps: true }
 );
