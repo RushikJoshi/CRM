@@ -3,6 +3,7 @@ const Deal = require("../models/Deal");
 const Customer = require("../models/Customer");
 const Contact = require("../models/Contact");
 const Todo = require("../models/Todo");
+const FollowUp = require("../models/FollowUp");
 const Pipeline = require("../models/Pipeline"); // DYNAMIC PIPELINE
 const { runAutomation } = require("../utils/automationEngine");
 const { calculateLeadScore, assignLeadAutomatically } = require("../utils/leadManagement");
@@ -122,6 +123,39 @@ exports.createLead = async (req, res) => {
       description: `Lead created: ${finalizedLead.name}`,
       req
     });
+
+    // ── AUTO-FOLLOWUPS ───────────────────────────────────
+    const createAutoFollowUps = async (leadId, companyId, userId) => {
+        const plans = [
+            { day: 1, type: "call", note: "Initial discovery call" },
+            { day: 3, type: "whatsapp", note: "Value proposition message" },
+            { day: 5, type: "email", note: "Follow-up email with brochure" }
+        ];
+        for (const p of plans) {
+            const scheduledAt = new Date();
+            scheduledAt.setDate(scheduledAt.getDate() + p.day);
+            scheduledAt.setHours(10, 0, 0, 0); // Default to 10 AM
+
+            const f = await FollowUp.create({
+                leadId,
+                companyId,
+                createdBy: userId,
+                type: p.type,
+                scheduledAt,
+                note: p.note,
+                status: "pending"
+            });
+
+            await Activity.create({
+                leadId,
+                userId,
+                companyId,
+                type: "follow_up",
+                note: `Auto-scheduled ${p.type.toUpperCase()} follow-up for Day ${p.day}`
+            });
+        }
+    };
+    createAutoFollowUps(finalizedLead._id, req.user.companyId, req.user.id);
 
     console.log("Lead created:", finalizedLead._id, "for company:", req.user.companyId);
 

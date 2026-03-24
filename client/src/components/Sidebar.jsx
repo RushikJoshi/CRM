@@ -30,7 +30,8 @@ import {
     FiFileText,
     FiX,
     FiMail,
-    FiSend
+    FiSend,
+    FiLayout
 } from "react-icons/fi";
 import { AuthContext, getCurrentUser } from "../context/AuthContext";
 import logo from "/src/assets/logos/edupathpro_logo.png";
@@ -60,7 +61,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             items: [
                 { name: "Companies", icon: <FiBriefcase />, path: "/companies" },
                 { name: "Subscriptions", icon: <FiCreditCard />, path: "/subscriptions" },
-                { name: "Plans", icon: <FiPackage />, path: "/plans" },
+                { name: "Portals", icon: <FiLayout />, path: "/test-management/landing" },
+                { name: "Courses", icon: <FiCheckSquare />, path: "/test-management/courses" },
                 { name: "Platform Users", icon: <FiUsers />, path: "/users" }
             ]
         },

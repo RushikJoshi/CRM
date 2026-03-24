@@ -100,6 +100,7 @@ const TIMELINE_TYPE_LABELS = {
   lead_lost: "Lost",
   system: "System",
   deal: "Deal",
+  follow_up: "Follow-up",
 };
 
 function formatStageDuration(enteredAt, exitedAt) {
@@ -355,6 +356,13 @@ export default function LeadDetailPage() {
   const [activityLoading, setActivityLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [emailTemplates, setEmailTemplates] = useState([]);
+  const [followUps, setFollowUps] = useState([]);
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+  const [followUpType, setFollowUpType] = useState("call");
+  const [followUpDate, setFollowUpDate] = useState("");
+  const [followUpTime, setFollowUpTime] = useState("10:00");
+  const [followUpNote, setFollowUpNote] = useState("");
+  const [savingFollowUp, setSavingFollowUp] = useState(false);
 
   const fetchPipeline = useCallback(async () => {
     try {
@@ -497,9 +505,23 @@ export default function LeadDetailPage() {
     fetchPipeline();
   }, [fetchLead, fetchPipeline]);
 
+  const fetchFollowUps = useCallback(async () => {
+    if (!id) return;
+    setFollowUpLoading(true);
+    try {
+      const res = await API.get(`/follow-ups/lead/${id}`);
+      setFollowUps(res.data?.data || []);
+    } catch {
+      setFollowUps([]);
+    } finally {
+      setFollowUpLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchTimeline();
-  }, [fetchTimeline]);
+    fetchFollowUps();
+  }, [fetchTimeline, fetchFollowUps]);
 
   useEffect(() => {
     const userRole = getCurrentUser()?.role;
@@ -1120,7 +1142,7 @@ export default function LeadDetailPage() {
              {/* Tab Switcher */}
              <div className="px-6 py-4 border-b border-gray-100 bg-white z-20 shadow-sm flex items-center justify-between">
                 <div className="flex gap-1 overflow-x-auto no-scrollbar">
-                   {['conversation', 'notes', 'activity', 'emails'].map((tab) => (
+                   {['conversation', 'notes', 'follow-ups', 'activity', 'emails'].map((tab) => (
                       <button
                         key={tab}
                         onClick={() => setChatterTab(tab)}
@@ -1130,7 +1152,7 @@ export default function LeadDetailPage() {
                            : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
                         }`}
                       >
-                         {tab}
+                         {tab === 'follow-ups' ? 'FOLLOW-UPS' : tab}
                       </button>
                    ))}
                 </div>
@@ -1142,7 +1164,7 @@ export default function LeadDetailPage() {
 
              {/* Feed Area */}
              <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6 flex flex-col-reverse relative min-h-0">
-                {activityLoading ? (
+                {activityLoading || followUpLoading ? (
                   <div className="h-full flex items-center justify-center py-20">
                      <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
                   </div>
@@ -1150,12 +1172,13 @@ export default function LeadDetailPage() {
                    const filtered = activities.filter(item => {
                       if (chatterTab === 'conversation') return ['email', 'message', 'whatsapp'].includes(item.type);
                       if (chatterTab === 'notes') return item.type === 'note';
-                      if (chatterTab === 'activity') return ['lead_stage_changed', 'system', 'lead_assignment_changed', 'lead', 'deal_stage_changed'].includes(item.type);
+                      if (chatterTab === 'activity') return ['lead_stage_changed', 'system', 'lead_assignment_changed', 'lead', 'deal_stage_changed', 'follow_up'].includes(item.type);
                       if (chatterTab === 'emails') return item.type === 'email';
+                      if (chatterTab === 'follow-ups') return false; // Handled separately
                       return false;
                    });
 
-                   if (filtered.length === 0) {
+                   if (filtered.length === 0 && chatterTab !== 'follow-ups') {
                       return (
                         <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-20 px-8">
                            <FiMessageSquare size={64} className="text-gray-200 mb-4" />
@@ -1204,15 +1227,62 @@ export default function LeadDetailPage() {
                                           </div>
                                        );
                                     }
-                                    return <ActivityItem key={item._id || idx} item={item} isLast={idx === group.items.length - 1} />;
-                                 })}
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-                   );
-                })()}
-             </div>
+                       return <ActivityItem key={item._id || idx} item={item} isLast={idx === group.items.length - 1} />;
+                                  })}
+                               </div>
+                            </div>
+                         ))}
+                      </div>
+                    );
+                 })()}
+
+                 {chatterTab === 'follow-ups' && (
+                    <div className="h-full flex flex-col pt-4">
+                       <div className="flex-1 space-y-4">
+                          {followUps.length === 0 ? (
+                             <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-20 px-8">
+                                <FiCalendar size={64} className="text-gray-200 mb-4" />
+                                <p className="text-sm font-black uppercase tracking-widest text-gray-400">No scheduled follow-ups</p>
+                             </div>
+                          ) : (
+                             followUps.map((f) => {
+                                const isPending = f.status === 'pending';
+                                const isMissed = f.status === 'pending' && new Date(f.scheduledAt) < new Date();
+                                return (
+                                   <div key={f._id} className={`bg-white border p-4 rounded-xl shadow-sm border-gray-100 flex items-center justify-between group h-min`}>
+                                      <div className="flex items-start gap-4">
+                                         <div className={`p-3 rounded-lg ${f.type === 'call' ? 'bg-blue-50 text-blue-600' : f.type === 'whatsapp' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                                            {f.type === 'call' ? <FiPhone size={18} /> : f.type === 'whatsapp' ? <FiMessageSquare size={18} /> : <FiMail size={18} />}
+                                         </div>
+                                         <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-sm font-bold text-gray-900 capitalize">{f.type} Follow-up</span>
+                                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isMissed ? 'bg-red-50 text-red-600' : isPending ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                 {isMissed ? 'Missed' : f.status}
+                                              </span>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-1 font-medium">{formatDateTime(f.scheduledAt)}</p>
+                                            {f.note && <p className="text-xs text-gray-400 mt-1 italic">"{f.note}"</p>}
+                                         </div>
+                                      </div>
+                                      {isPending && (
+                                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                              onClick={() => API.patch(`/follow-ups/${f._id}/status`, { status: 'completed' }).then(() => { fetchFollowUps(); fetchTimeline(); })}
+                                              className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-emerald-100" title="Complete"
+                                            >
+                                               <FiCheckCircle size={14} />
+                                            </button>
+                                         </div>
+                                      )}
+                                   </div>
+                                );
+                             })
+                          )}
+                       </div>
+                    </div>
+                 )}
+              </div>
 
              {/* Sticky Input Area */}
              <div className="p-6 border-t border-gray-100 bg-white">
@@ -1311,6 +1381,68 @@ export default function LeadDetailPage() {
                       </div>
                    </div>
                 )}
+
+                {chatterTab === 'follow-ups' && (
+                    <div className="space-y-4">
+                       <div className="grid grid-cols-2 gap-3">
+                          <select 
+                            value={followUpType}
+                            onChange={(e) => setFollowUpType(e.target.value)}
+                            className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-xs font-bold"
+                          >
+                             <option value="call">📞 Phone Call</option>
+                             <option value="whatsapp">💬 WhatsApp</option>
+                             <option value="email">📧 Send Email</option>
+                          </select>
+                          <div className="flex gap-1">
+                             <input 
+                               type="date" 
+                               value={followUpDate}
+                               onChange={(e) => setFollowUpDate(e.target.value)}
+                               className="flex-1 bg-gray-50 border border-gray-100 rounded-lg px-2 py-2 text-[10px] font-bold"
+                             />
+                             <input 
+                               type="time" 
+                               value={followUpTime}
+                               onChange={(e) => setFollowUpTime(e.target.value)}
+                               className="w-20 bg-gray-50 border border-gray-100 rounded-lg px-2 py-2 text-[10px] font-bold"
+                             />
+                          </div>
+                       </div>
+                       <textarea
+                          value={followUpNote}
+                          onChange={(e) => setFollowUpNote(e.target.value)}
+                          placeholder="What is the goal of this follow-up?"
+                          className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 text-sm min-h-[80px]"
+                       />
+                       <div className="flex justify-end">
+                          <button
+                             onClick={async () => {
+                                if (!followUpDate || !followUpTime) return toast.error("Select date and time");
+                                setSavingFollowUp(true);
+                                try {
+                                   const scheduledAt = new Date(`${followUpDate}T${followUpTime}:00`);
+                                   await API.post(`/follow-ups/lead/${id}/follow-up`, {
+                                      type: followUpType,
+                                      scheduledAt,
+                                      note: followUpNote
+                                   });
+                                   toast.success("Follow-up scheduled!");
+                                   setFollowUpNote("");
+                                   fetchFollowUps();
+                                   fetchTimeline();
+                                } catch (err) {
+                                   toast.error(err.response?.data?.message || "Failed to schedule");
+                                } finally { setSavingFollowUp(false); }
+                             }}
+                             disabled={savingFollowUp || !followUpDate}
+                             className="px-8 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg hover:bg-indigo-700 shadow-indigo-100 transition-all"
+                          >
+                             {savingFollowUp ? '...' : 'Schedule Follow-up'}
+                          </button>
+                       </div>
+                    </div>
+                 )}
 
                 {chatterTab === 'activity' && (
                    <div className="flex flex-col gap-4">

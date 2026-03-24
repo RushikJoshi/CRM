@@ -55,7 +55,8 @@ const activitySchema = new mongoose.Schema(
                 "customer",
                 "contact",
                 "task",
-                "message"
+                "message",
+                "follow_up"
             ],
             required: true
         },

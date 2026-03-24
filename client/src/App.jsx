@@ -47,6 +47,16 @@ const SystemLogs = lazy(() => import("./pages/platform/SystemLogs"));
 const ApiKeys = lazy(() => import("./pages/platform/ApiKeys"));
 const EmailTemplates = lazy(() => import("./pages/EmailTemplates"));
 
+// ── Test Management System ───────────────────────────────────────────────────
+const CourseManagement = lazy(() => import("./pages/testManagement/CourseManagement"));
+const QuestionManagement = lazy(() => import("./pages/testManagement/QuestionManagement"));
+const LandingPageManagement = lazy(() => import("./pages/testManagement/LandingPageManagement"));
+
+// ── Public High-Conversion Funnel ─────────────────────────────────────────────
+const PublicAssessmentLanding = lazy(() => import("./pages/publicTest/PublicAssessmentLanding"));
+const AssessmentTest = lazy(() => import("./pages/publicTest/AssessmentTest"));
+const AssessmentResult = lazy(() => import("./pages/publicTest/AssessmentResult"));
+
 // ── Lazy-loaded Full-page Form Pages ─────────────────────────────────────────
 const CompanyFormPage = lazy(() => import("./pages/forms/CompanyFormPage"));
 const CompanyDetailPage = lazy(() => import("./pages/companies/CompanyDetailPage"));
@@ -102,11 +112,17 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<SmartRedirect />} />
+        
+        {/* ── High Conversion Assessment Funnel ── */}
+        <Route path="/assessment/:companyId/:slug" element={<PublicAssessmentLanding />} />
+        <Route path="/assessment/test/:token" element={<AssessmentTest />} />
+        <Route path="/assessment/result/:token" element={<AssessmentResult />} />
+        
         <Route path="/login" element={<Login />} />
         <Route path="/subscription-expired" element={<SubscriptionExpired />} />
 
         {/* ════════════════════════════════════
-            SUPER ADMIN ROUTES (Platform only – no CRM sales data)
+            SUPER ADMIN ROUTES
             ════════════════════════════════════ */}
         <Route element={<SessionGuard><SuperAdminLayout /></SessionGuard>}>
           <Route path="/superadmin/dashboard" element={<Dashboard />} />
@@ -124,6 +140,12 @@ function App() {
           <Route path="/superadmin/usage-analytics" element={<UsageAnalytics />} />
           <Route path="/superadmin/system-logs" element={<SystemLogs />} />
           <Route path="/superadmin/api-keys" element={<ApiKeys />} />
+          
+          {/* Test Management Sub-module */}
+          <Route path="/superadmin/test-management/landing" element={<LandingPageManagement />} />
+          <Route path="/superadmin/test-management/courses" element={<CourseManagement />} />
+          <Route path="/superadmin/test-management/questions" element={<QuestionManagement />} />
+          
           <Route path="/superadmin/reports" element={<Reports />} />
           <Route path="/superadmin/automation" element={<Automation />} />
           <Route path="/superadmin/settings" element={<Settings />} />

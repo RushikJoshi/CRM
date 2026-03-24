@@ -101,6 +101,8 @@ app.use("/api/messages", require("./routes/messageRoutes"));
 app.use("/api/email", require("./routes/emailRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
 app.use("/api/pipeline", require("./routes/pipelineRoutes"));
+app.use("/api/test", require("./routes/testRoutes"));
+app.use("/api/follow-ups", require("./routes/followUpRoutes"));
 
 app.use("/api/targets", require("./routes/targetRoutes"));
 app.use("/api/branch-analytics", require("./routes/branchAnalyticsRoutes"));
@@ -171,6 +173,9 @@ io.on("connection", (socket) => {
     const companyId = socket.data.user?.companyId;
     if (companyId) socket.join(`company:${companyId}`);
 });
+
+const { initFollowUpCron } = require("./cron/followUpCron");
+initFollowUpCron(io);
 
 app.set("io", io);
 
