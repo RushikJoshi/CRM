@@ -21,7 +21,7 @@ import { FiClock, FiCheckCircle, FiAlertCircle, FiUser, FiCalendar } from "react
 
 const taskStages = [
     { id: "Pending", label: "To Do", color: "bg-gray-400" },
-    { id: "In Progress", label: "Doing", color: "bg-sky-500" },
+    { id: "In Progress", label: "Doing", color: "bg-teal-500" },
     { id: "Completed", label: "Done", color: "bg-emerald-500" },
     { id: "Cancelled", label: "Cancelled", color: "bg-red-400 opacity-60" },
 ];
@@ -60,7 +60,7 @@ const SortableTask = ({ id, task, onUpdateStatus, color }) => {
             </div>
 
             <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 text-lg font-black group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
+                <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 text-lg font-black group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
                     {task.leadId?.name?.charAt(0) || <FiUser size={14} />}
                 </div>
                 <div className="flex-1">
@@ -76,7 +76,7 @@ const SortableTask = ({ id, task, onUpdateStatus, color }) => {
             <div className="flex items-center justify-between mt-auto">
                 {task.priority && (
                     <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${task.priority === 'High' ? 'bg-red-500 text-white' :
-                        task.priority === 'Medium' ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'
+                        task.priority === 'Medium' ? 'bg-amber-500 text-white' : 'bg-teal-600 text-white'
                         }`}>
                         {task.priority}
                     </span>
@@ -176,9 +176,9 @@ const TaskKanban = ({ tasks, onUpdateStatus }) => {
                 }),
             }}>
                 {activeId ? (
-                    <div className="bg-white p-5 rounded-2xl border border-blue-500 shadow-2xl opacity-90 scale-105 rotate-2">
+                    <div className="bg-white p-5 rounded-2xl border border-teal-600 shadow-2xl opacity-90 scale-105 rotate-2">
                         <h4 className="font-black text-gray-900 pr-6">{tasks.find(t => t._id === activeId)?.title}</h4>
-                        <div className="mt-4 flex items-center justify-between text-blue-600 font-black">
+                        <div className="mt-4 flex items-center justify-between text-teal-700 font-black">
                             <span className="text-[10px] uppercase tracking-widest">{tasks.find(t => t._id === activeId)?.leadId?.name}</span>
                         </div>
                     </div>

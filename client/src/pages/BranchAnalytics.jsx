@@ -134,7 +134,7 @@ const BranchAnalyticsPage = () => {
             <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-[2.5rem] p-10 text-white relative overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden">
                     <div className="absolute -right-20 -top-20 w-64 h-64 bg-green-500/10 rounded-full blur-[80px]" />
-                    <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-[60px]" />
+                    <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-teal-600/10 rounded-full blur-[60px]" />
                 </div>
                 <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div>
@@ -158,7 +158,7 @@ const BranchAnalyticsPage = () => {
                 {/* KPI Strip */}
                 <div className="relative z-10 grid grid-cols-2 md:grid-cols-5 gap-4 mt-10">
                     {[
-                        { label: "This Month Leads", value: kpis.monthLeads, icon: <FiTarget size={16} />, accent: "text-blue-400" },
+                        { label: "This Month Leads", value: kpis.monthLeads, icon: <FiTarget size={16} />, accent: "text-teal-500" },
                         { label: "Deals Closed", value: kpis.monthDeals, icon: <FiAward size={16} />, accent: "text-yellow-400" },
                         { label: "Revenue", value: formatINR(kpis.monthRevenue || 0), icon: <FaIndianRupeeSign size={14} />, accent: "text-green-400" },
                         { label: "Calls Made", value: kpis.monthCalls, icon: <FiPhone size={16} />, accent: "text-orange-400" },

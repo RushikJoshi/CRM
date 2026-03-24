@@ -49,12 +49,12 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl border border-[#E5EAF2] overflow-hidden animate-in zoom-in-95 duration-500 relative">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-teal-600/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
 
                 {/* Header */}
                 <div className="px-10 py-8 bg-white flex items-center justify-between border-b border-[#F0F2F5] relative z-10">
                     <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 bg-blue-600 text-white rounded-[20px] flex items-center justify-center shadow-xl shadow-blue-500/20 transform rotate-3">
+                        <div className="w-14 h-14 bg-teal-700 text-white rounded-[20px] flex items-center justify-center shadow-xl shadow-teal-600/20 transform rotate-3">
                             <FiPlus size={28} strokeWidth={2.5} />
                         </div>
                         <div>
@@ -83,11 +83,11 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Lead Identity</label>
                             <div className="relative group">
-                                <FiUser size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiUser size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <input
                                     required
                                     type="text"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
+                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
                                     placeholder="Enter full name..."
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -99,11 +99,11 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Communication Link</label>
                             <div className="relative group">
-                                <FiMail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiMail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <input
                                     required
                                     type="email"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
+                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
                                     placeholder="email@example.com"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
@@ -115,11 +115,11 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Direct Terminal</label>
                             <div className="relative group">
-                                <FiPhone size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiPhone size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <input
                                     required
                                     type="tel"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
+                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
                                     placeholder="+91"
                                     value={formData.phone}
                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
@@ -131,10 +131,10 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Entity Context</label>
                             <div className="relative group">
-                                <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <input
                                     type="text"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
+                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
                                     placeholder="Organization Name"
                                     value={formData.companyName}
                                     onChange={e => setFormData({ ...formData, companyName: e.target.value })}
@@ -147,13 +147,13 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Origin Vector</label>
                             <div className="relative group">
                                 <select
-                                    className="w-full px-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
+                                    className="w-full px-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
                                     value={formData.source}
                                     onChange={e => setFormData({ ...formData, source: e.target.value })}
                                 >
                                     {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
-                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-blue-600 text-[10px] font-black tracking-widest uppercase">
+                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-teal-700 text-[10px] font-black tracking-widest uppercase">
                                     [ Select ]
                                 </div>
                             </div>
@@ -163,10 +163,10 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Global Web URI</label>
                             <div className="relative group">
-                                <FiGlobe size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiGlobe size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <input
                                     type="text"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
+                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
                                     placeholder="https://domain.com"
                                     value={formData.website}
                                     onChange={e => setFormData({ ...formData, website: e.target.value })}
@@ -179,10 +179,10 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
                     <div className="space-y-3">
                         <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Intelligence Packet</label>
                         <div className="relative group">
-                            <FiMessageSquare size={20} className="absolute left-5 top-6 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                            <FiMessageSquare size={20} className="absolute left-5 top-6 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                             <textarea
                                 rows={4}
-                                className="w-full pl-14 pr-6 py-5 bg-[#F4F7FB] border border-transparent rounded-[32px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm resize-none placeholder-[#CBD5E0]"
+                                className="w-full pl-14 pr-6 py-5 bg-[#F4F7FB] border border-transparent rounded-[32px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm resize-none placeholder-[#CBD5E0]"
                                 placeholder="Describe the intake context..."
                                 value={formData.message}
                                 onChange={e => setFormData({ ...formData, message: e.target.value })}
@@ -202,7 +202,7 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-[2] flex items-center justify-center gap-4 py-5 bg-blue-600 text-white font-black rounded-[24px] hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-blue-600/20 disabled:opacity-70 duration-300"
+                            className="flex-[2] flex items-center justify-center gap-4 py-5 bg-teal-700 text-white font-black rounded-[24px] hover:bg-teal-800 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-teal-700/20 disabled:opacity-70 duration-300"
                         >
                             {loading ? (
                                 <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />

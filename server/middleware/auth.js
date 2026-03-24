@@ -12,6 +12,13 @@ module.exports = (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         req.user = decoded; // Contains id, role, companyId, branchId
+
+        // Auto-apply subscription check if companyId is present
+        if (req.user.companyId && req.user.role !== "super_admin") {
+            const subscriptionCheck = require("./subscriptionCheck");
+            return subscriptionCheck(req, res, next);
+        }
+
         next();
     } catch (error) {
         console.error("Auth Middleware Error:", error.message);

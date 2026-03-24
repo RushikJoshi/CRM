@@ -109,7 +109,7 @@ export default function DealDetailPage() {
         className="h-[calc(100vh-56px)] flex flex-col items-center justify-center gap-4 bg-gray-50"
         style={{ height: "calc(100vh - 56px)" }}
       >
-        <div className="w-10 h-10 border-2 border-gray-200 border-t-indigo-500 rounded-full animate-spin" />
+        <div className="w-10 h-10 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
         <p className="text-sm text-gray-500">Loading deal...</p>
       </div>
     );

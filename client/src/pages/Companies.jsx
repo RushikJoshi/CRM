@@ -84,7 +84,7 @@ function Companies() {
           </div>
           <button
             onClick={() => navigate("/superadmin/companies/create")}
-            className="flex items-center gap-3 px-6 py-4 bg-[#38BDF8] text-white font-semibold rounded-xl shadow-xl shadow-sky-500/20 hover:bg-[#0EA5E9] hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest"
+            className="flex items-center gap-3 px-6 py-4 bg-[#38BDF8] text-white font-semibold rounded-xl shadow-xl shadow-teal-500/20 hover:bg-[#0EA5E9] hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest"
           >
             <FiPlus size={20} />
             Add Company
@@ -94,7 +94,7 @@ function Companies() {
 
       {loading ? (
         <div className="h-[400px] bg-white rounded-[2rem] border border-gray-100 flex flex-col items-center justify-center space-y-4 animate-pulse shadow-sm">
-          <div className="w-12 h-12 border-[6px] border-sky-50 border-t-sky-500 rounded-full animate-spin" />
+          <div className="w-12 h-12 border-[6px] border-teal-50 border-t-teal-500 rounded-full animate-spin" />
           <p className="text-gray-400 font-black uppercase tracking-widest text-[10px]">Loading...</p>
         </div>
       ) : (

@@ -63,8 +63,8 @@ export default function GlobalSearch({ className = "", placeholder = "Search lea
 
   return (
     <div className={`relative ${className}`}>
-      <div className="flex items-center bg-[#F8FAFC] px-4 py-2.5 rounded-lg w-full focus-within:ring-2 focus-within:ring-[#2563EB]/20 focus-within:bg-white border border-[#E5E7EB] transition-all group">
-        <FiSearch className="text-[#6B7280] shrink-0 group-focus-within:text-[#2563EB] transition-colors" size={18} />
+      <div className="flex items-center bg-[#F8FAFC] px-4 py-2.5 rounded-lg w-full focus-within:ring-2 focus-within:ring-[#0D9488]/20 focus-within:bg-white border border-[#E5E7EB] transition-all group">
+        <FiSearch className="text-[#6B7280] shrink-0 group-focus-within:text-[#0D9488] transition-colors" size={18} />
         <input
           type="text"
           placeholder={placeholder}
@@ -74,14 +74,14 @@ export default function GlobalSearch({ className = "", placeholder = "Search lea
           onFocus={() => query.trim().length >= 2 && setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 160)}
         />
-        {loading && <div className="w-4 h-4 border-2 border-[#E5E7EB] border-t-[#2563EB] rounded-full animate-spin" />}
+        {loading && <div className="w-4 h-4 border-2 border-[#E5E7EB] border-t-[#0D9488] rounded-full animate-spin" />}
       </div>
 
       {open && (
         <div className="absolute left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-[#E5E7EB] overflow-hidden z-50">
           <div className="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between bg-[#F8FAFC]">
             <span className="text-xs font-medium text-[#6B7280]">Results</span>
-            <span className="text-xs font-semibold text-[#2563EB]">{items.length}</span>
+            <span className="text-xs font-semibold text-[#0D9488]">{items.length}</span>
           </div>
           <div className="max-h-80 overflow-y-auto">
             {error ? (
@@ -105,7 +105,7 @@ export default function GlobalSearch({ className = "", placeholder = "Search lea
                           <p className="text-sm font-semibold text-[#111827] truncate">{it.name}</p>
                           <p className="text-xs text-[#6B7280] mt-0.5">{it.type}</p>
                         </div>
-                        <FiArrowUpRight className="text-[#E5E7EB] hover:text-[#2563EB] shrink-0" size={16} />
+                        <FiArrowUpRight className="text-[#E5E7EB] hover:text-[#0D9488] shrink-0" size={16} />
                       </button>
                     ))}
                   </div>

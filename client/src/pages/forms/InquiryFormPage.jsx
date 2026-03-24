@@ -80,7 +80,7 @@ export default function InquiryFormPage() {
 
     const inputCls = (field) =>
         `w-full pl-12 pr-4 py-3.5 bg-[#F4F7FB] border border-transparent rounded-2xl outline-none font-black text-[#1A202C] text-sm transition-all
-     focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 shadow-sm placeholder-[#CBD5E0]
+     focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-blue-300 shadow-sm placeholder-[#CBD5E0]
      ${errors[field] ? "border-red-200 focus:border-red-300 focus:ring-red-500/5" : ""}`;
 
     const sectionCard = "bg-white rounded-2xl border border-[#E5EAF2] shadow-sm overflow-hidden";
@@ -90,14 +90,14 @@ export default function InquiryFormPage() {
         <div className="flex flex-col min-h-[calc(100vh-6rem)] animate-in fade-in duration-1000">
             {/* Header */}
             <div className="bg-white rounded-[32px] border border-[#E5EAF2] shadow-sm p-8 md:p-10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-teal-600/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
                 <button onClick={() => navigate(-1)}
-                    className="flex items-center gap-3 text-[11px] font-black text-[#A0AEC0] hover:text-blue-600 transition-all mb-8 group uppercase tracking-widest relative z-10">
+                    className="flex items-center gap-3 text-[11px] font-black text-[#A0AEC0] hover:text-teal-700 transition-all mb-8 group uppercase tracking-widest relative z-10">
                     <FiArrowLeft size={16} strokeWidth={3} className="group-hover:-translate-x-1 transition-transform" />
                     Discard & Return
                 </button>
                 <div className="flex items-center gap-6 relative z-10">
-                    <div className="w-16 h-16 bg-blue-600 text-white rounded-[24px] flex items-center justify-center shadow-xl shadow-blue-500/20 group-hover:rotate-6 transition-transform">
+                    <div className="w-16 h-16 bg-teal-700 text-white rounded-[24px] flex items-center justify-center shadow-xl shadow-teal-600/20 group-hover:rotate-6 transition-transform">
                         <FiInbox size={30} strokeWidth={2.5} />
                     </div>
                     <div>
@@ -114,12 +114,12 @@ export default function InquiryFormPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                         {/* Customer Information */}
                         <div className={sectionCard}>
-                            <div className={sectionHeader}><FiUser className="text-blue-600" size={14} /> Customer Information</div>
+                            <div className={sectionHeader}><FiUser className="text-teal-700" size={14} /> Customer Information</div>
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Full Name *</label>
                                     <div className="relative group">
-                                        <FiUser size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                        <FiUser size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                         <input name="name" className={inputCls("name")} placeholder="Full name"
                                             value={formData.name} onChange={handleChange} />
                                     </div>
@@ -128,7 +128,7 @@ export default function InquiryFormPage() {
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Email *</label>
                                     <div className="relative group">
-                                        <FiMail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                        <FiMail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                         <input name="email" className={inputCls("email")} placeholder="Email address"
                                             value={formData.email} onChange={handleChange} />
                                     </div>
@@ -137,7 +137,7 @@ export default function InquiryFormPage() {
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Phone *</label>
                                     <div className="relative group">
-                                        <FiPhone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                        <FiPhone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                         <input name="phone" className={inputCls("phone")} placeholder="Mobile number"
                                             value={formData.phone} onChange={handleChange} />
                                     </div>
@@ -146,8 +146,8 @@ export default function InquiryFormPage() {
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Expected Value / Budget</label>
                                     <div className="relative group">
-                                        <FiActivity size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
-                                        <div className="absolute left-10 top-1/2 -translate-y-1/2 font-black text-blue-600/70">
+                                        <FiActivity size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
+                                        <div className="absolute left-10 top-1/2 -translate-y-1/2 font-black text-teal-700/70">
                                             ₹
                                         </div>
                                         <input
@@ -165,12 +165,12 @@ export default function InquiryFormPage() {
 
                         {/* Inquiry Details */}
                         <div className={sectionCard}>
-                            <div className={sectionHeader}><FiBook className="text-blue-600" size={14} /> Inquiry Details</div>
+                            <div className={sectionHeader}><FiBook className="text-teal-700" size={14} /> Inquiry Details</div>
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Occupation</label>
                                     <div className="relative group">
-                                        <FiBriefcase size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors z-10" />
+                                        <FiBriefcase size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                                         <select
                                             name="inquiryStatus"
                                             className={inputCls("inquiryStatus").replace("pl-12", "pl-12 appearance-none")}
@@ -190,7 +190,7 @@ export default function InquiryFormPage() {
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Interested Course</label>
                                     <div className="relative group">
-                                        <FiBook size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors z-10" />
+                                        <FiBook size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                                         <select
                                             name="course"
                                             className={inputCls("course").replace("pl-12", "pl-12 appearance-none")}
@@ -221,12 +221,12 @@ export default function InquiryFormPage() {
 
                         {/* Source & Location */}
                         <div className={sectionCard}>
-                            <div className={sectionHeader}><FiGlobe className="text-blue-600" size={14} /> Source & Location</div>
+                            <div className={sectionHeader}><FiGlobe className="text-teal-700" size={14} /> Source & Location</div>
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Lead Source</label>
                                     <div className="relative group">
-                                        <FiGlobe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors z-10" />
+                                        <FiGlobe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                                         <select
                                             name="source"
                                             className={inputCls("source").replace("pl-12", "pl-12 appearance-none")}
@@ -250,7 +250,7 @@ export default function InquiryFormPage() {
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Location</label>
                                     <div className="relative group">
-                                        <FiMapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors z-10" />
+                                        <FiMapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                                         <select
                                             name="location"
                                             className={inputCls("location").replace("pl-12", "pl-12 appearance-none")}
@@ -270,7 +270,7 @@ export default function InquiryFormPage() {
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">City *</label>
                                     <div className="relative group">
-                                        <FiMapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                        <FiMapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                         <input name="city" className={inputCls("city")} placeholder="City"
                                             value={formData.city} onChange={handleChange} />
                                     </div>
@@ -280,7 +280,7 @@ export default function InquiryFormPage() {
                                     <div className="space-y-2">
                                         <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Assign Branch</label>
                                         <div className="relative group">
-                                            <FiLayers size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors z-10" />
+                                            <FiLayers size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                                             <select
                                                 name="branchId"
                                                 className={inputCls("branchId").replace("pl-12", "pl-12 appearance-none")}
@@ -303,12 +303,12 @@ export default function InquiryFormPage() {
 
                         {/* Notes */}
                         <div className={sectionCard}>
-                            <div className={sectionHeader}><FiMessageSquare className="text-blue-600" size={14} /> Notes</div>
+                            <div className={sectionHeader}><FiMessageSquare className="text-teal-700" size={14} /> Notes</div>
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Full Address *</label>
                                     <div className="relative group">
-                                        <FiMap size={18} className="absolute left-4 top-4 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                        <FiMap size={18} className="absolute left-4 top-4 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                         <textarea
                                             name="address"
                                             rows={3}
@@ -323,7 +323,7 @@ export default function InquiryFormPage() {
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">Additional Notes</label>
                                     <div className="relative group">
-                                        <FiMessageSquare size={18} className="absolute left-4 top-4 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                        <FiMessageSquare size={18} className="absolute left-4 top-4 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                         <textarea
                                             name="message"
                                             rows={3}
@@ -354,7 +354,7 @@ export default function InquiryFormPage() {
                         type="submit"
                         form="inquiry-form"
                         disabled={loading}
-                        className="flex items-center justify-center gap-3 px-6 py-2.5 rounded-2xl bg-blue-600 text-white font-black hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-blue-600/20 disabled:opacity-50 duration-300"
+                        className="flex items-center justify-center gap-3 px-6 py-2.5 rounded-2xl bg-teal-700 text-white font-black hover:bg-teal-800 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-teal-700/20 disabled:opacity-50 duration-300"
                     >
                         {loading ? (
                             <div className="w-5 h-5 border-[3px] border-white/40 border-t-white rounded-full animate-spin" />

@@ -98,8 +98,9 @@ app.use("/api/audit-logs", require("./routes/auditLogRoutes"));
 app.use("/api/automation", require("./routes/automationRoutes"));
 app.use("/api/inquiries", require("./routes/inquiryRoutes"));
 app.use("/api/messages", require("./routes/messageRoutes"));
+app.use("/api/email", require("./routes/emailRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
-app.use("/api/pipelines", require("./routes/pipelineRoutes"));
+app.use("/api/pipeline", require("./routes/pipelineRoutes"));
 
 app.use("/api/targets", require("./routes/targetRoutes"));
 app.use("/api/branch-analytics", require("./routes/branchAnalyticsRoutes"));

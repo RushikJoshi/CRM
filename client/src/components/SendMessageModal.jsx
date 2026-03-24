@@ -64,7 +64,7 @@ const SendMessageModal = ({ isOpen, onClose, recipientNumber, leadId, customerId
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-50">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-sky-50 text-sky-600 rounded-xl"><FiMessageCircle size={20} /></div>
+                        <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl"><FiMessageCircle size={20} /></div>
                         <div>
                             <h3 className="font-black text-gray-900">Send Message</h3>
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{recipientNumber || "No number"}</p>
@@ -81,7 +81,7 @@ const SendMessageModal = ({ isOpen, onClose, recipientNumber, leadId, customerId
                             <button
                                 key={t}
                                 onClick={() => setType(t)}
-                                className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${type === t ? 'bg-[#38BDF8] text-white shadow-lg shadow-sky-500/20' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                                className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${type === t ? 'bg-[#38BDF8] text-white shadow-lg shadow-teal-500/20' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
                             >
                                 {t === "whatsapp" ? <FiMessageCircle size={16} /> : t === "sms" ? <FiPhone size={16} /> : <FiMail size={16} />}
                                 {t}
@@ -97,7 +97,7 @@ const SendMessageModal = ({ isOpen, onClose, recipientNumber, leadId, customerId
                                 <button
                                     key={tpl.id}
                                     onClick={() => { setType("email"); setSubject(tpl.subject); setContent(tpl.body); }}
-                                    className="px-3 py-1.5 bg-gray-50 hover:bg-sky-50 hover:text-sky-700 border border-gray-100 hover:border-sky-100 text-gray-600 text-xs font-bold rounded-lg transition-all truncate max-w-[220px]"
+                                    className="px-3 py-1.5 bg-gray-50 hover:bg-teal-50 hover:text-teal-700 border border-gray-100 hover:border-teal-100 text-gray-600 text-xs font-bold rounded-lg transition-all truncate max-w-[220px]"
                                     title={tpl.label}
                                 >
                                     {tpl.label}
@@ -113,7 +113,7 @@ const SendMessageModal = ({ isOpen, onClose, recipientNumber, leadId, customerId
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
                                 placeholder="Email subject..."
-                                className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-800 placeholder-gray-300 outline-none focus:ring-4 focus:ring-sky-500/10 focus:border-sky-300 transition-all"
+                                className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-800 placeholder-gray-300 outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-300 transition-all"
                             />
                         </div>
                     )}
@@ -124,7 +124,7 @@ const SendMessageModal = ({ isOpen, onClose, recipientNumber, leadId, customerId
                         onChange={e => setContent(e.target.value)}
                         rows={4}
                         placeholder="Type your message..."
-                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-800 placeholder-gray-300 outline-none focus:ring-4 focus:ring-sky-500/10 focus:border-sky-300 resize-none transition-all"
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-800 placeholder-gray-300 outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-300 resize-none transition-all"
                     />
 
                     {/* Status feedback */}
@@ -142,7 +142,7 @@ const SendMessageModal = ({ isOpen, onClose, recipientNumber, leadId, customerId
                     <button
                         onClick={handleSend}
                         disabled={sending || !content.trim()}
-                        className="flex-1 py-3 bg-[#38BDF8] text-white font-black rounded-xl text-sm shadow-lg shadow-sky-500/20 hover:bg-[#0EA5E9] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 py-3 bg-[#38BDF8] text-white font-black rounded-xl text-sm shadow-lg shadow-teal-500/20 hover:bg-[#0EA5E9] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {sending ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSend size={16} />}
                         {sending ? "Sending..." : "Send"}

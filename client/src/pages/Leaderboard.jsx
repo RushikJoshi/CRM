@@ -119,7 +119,7 @@ const LeaderboardPage = () => {
                     {isMgr && (
                         <button
                             onClick={() => setShowAutoAssign(p => !p)}
-                            className="flex items-center gap-2 px-5 py-3 bg-indigo-500 text-white font-black rounded-xl text-xs uppercase tracking-widest hover:bg-indigo-600 shadow-lg shadow-indigo-100 transition-all"
+                            className="flex items-center gap-2 px-5 py-3 bg-teal-600 text-white font-black rounded-xl text-xs uppercase tracking-widest hover:bg-teal-700 shadow-lg shadow-teal-100 transition-all"
                         >
                             <FiZap size={14} /> Auto Assign
                             {showAutoAssign ? <FiCheckCircle size={14} /> : null}
@@ -130,14 +130,14 @@ const LeaderboardPage = () => {
 
             {/* ── AUTO-ASSIGNMENT PANEL ────────────────────────────────────────── */}
             {isMgr && showAutoAssign && assignStatus && (
-                <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-[2rem] p-8 space-y-6">
+                <div className="bg-gradient-to-br from-teal-50 to-teal-50 border border-teal-100 rounded-[2rem] p-8 space-y-6">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <FiZap className="text-indigo-600" size={20} />
-                                <h2 className="text-xl font-black text-indigo-900">Auto Round-Robin Assignment</h2>
+                                <FiZap className="text-teal-700" size={20} />
+                                <h2 className="text-xl font-black text-teal-900">Auto Round-Robin Assignment</h2>
                             </div>
-                            <p className="text-indigo-600 text-sm font-medium">
+                            <p className="text-teal-700 text-sm font-medium">
                                 {assignStatus.unassignedLeads > 0
                                     ? `⚠️ ${assignStatus.unassignedLeads} leads are unassigned and waiting for distribution.`
                                     : "✅ All leads are currently assigned to team members."}
@@ -146,7 +146,7 @@ const LeaderboardPage = () => {
                         <button
                             onClick={handleRedistribute}
                             disabled={redistributing || assignStatus.unassignedLeads === 0}
-                            className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white font-black rounded-xl shadow-xl shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all text-xs uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                            className="flex items-center gap-2 px-8 py-4 bg-teal-700 text-white font-black rounded-xl shadow-xl shadow-teal-200 hover:bg-teal-700 active:scale-95 transition-all text-xs uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                         >
                             <FiZap size={16} />
                             {redistributing ? "Distributing..." : `Distribute ${assignStatus.unassignedLeads} Leads`}
@@ -154,7 +154,7 @@ const LeaderboardPage = () => {
                     </div>
 
                     {/* Rep Workload Table */}
-                    <div className="bg-white rounded-2xl border border-indigo-100 overflow-hidden shadow-sm">
+                    <div className="bg-white rounded-2xl border border-teal-100 overflow-hidden shadow-sm">
                         <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/50">
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Workload Distribution</p>
                         </div>
@@ -164,7 +164,7 @@ const LeaderboardPage = () => {
                                 const isOverloaded = rep.activeLeads > maxLeads * 0.8 && rep.activeLeads > 5;
                                 return (
                                     <div key={rep._id} className="px-6 py-4 flex items-center gap-4">
-                                        <div className="w-9 h-9 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-sm shrink-0">
+                                        <div className="w-9 h-9 bg-teal-600 rounded-xl flex items-center justify-center text-white font-black text-sm shrink-0">
                                             {rep.name?.charAt(0)}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -176,7 +176,7 @@ const LeaderboardPage = () => {
                                             </div>
                                             <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                                                 <div
-                                                    className={`h-2 rounded-full transition-all duration-700 ${isOverloaded ? "bg-red-400" : "bg-indigo-500"}`}
+                                                    className={`h-2 rounded-full transition-all duration-700 ${isOverloaded ? "bg-red-400" : "bg-teal-600"}`}
                                                     style={{ width: `${(rep.activeLeads / maxLeads) * 100}%` }}
                                                 />
                                             </div>
@@ -268,7 +268,7 @@ const LeaderboardPage = () => {
                                         <div className="hidden lg:grid grid-cols-5 gap-6">
                                             <Stat icon={<FaIndianRupeeSign />} label="Revenue" value={formatINR(rep.revenue)} accent="text-green-500" />
                                             <Stat icon={<FiAward />} label="Deals Won" value={rep.dealsWon} accent="text-yellow-500" />
-                                            <Stat icon={<FiTrendingUp />} label="Leads" value={rep.leads} accent="text-blue-500" />
+                                            <Stat icon={<FiTrendingUp />} label="Leads" value={rep.leads} accent="text-teal-600" />
                                             <Stat icon={<FiPhone />} label="Calls" value={rep.calls} accent="text-orange-500" />
                                             <Stat icon={<FiCalendar />} label="Meetings" value={rep.meetings} accent="text-purple-500" />
                                         </div>

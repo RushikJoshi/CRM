@@ -125,9 +125,9 @@ const SalesPlanner = () => {
                 <div className="lg:col-span-8 space-y-8">
                     <div>
                         <SectionTitle
-                            icon={<FiClock size={20} className="text-blue-500" />}
+                            icon={<FiClock size={20} className="text-teal-600" />}
                             title="Command Center: Actions"
-                            accent="bg-blue-500"
+                            accent="bg-teal-600"
                             count={agenda.calls.length + agenda.meetings.length}
                         />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -140,7 +140,7 @@ const SalesPlanner = () => {
                                     <Card key={idx} className="group hover:border-emerald-300 transition-all cursor-pointer">
                                         <div className="p-6 flex flex-col h-full">
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className={`p-2.5 rounded-xl ${isMeeting ? "bg-indigo-50 text-indigo-600" : "bg-green-50 text-green-600"}`}>
+                                                <div className={`p-2.5 rounded-xl ${isMeeting ? "bg-teal-50 text-teal-700" : "bg-green-50 text-green-600"}`}>
                                                     {isMeeting ? <FiCalendar size={18} /> : <FiPhone size={18} />}
                                                 </div>
                                                 <span className="text-[10px] font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full uppercase tracking-widest">

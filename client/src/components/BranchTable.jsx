@@ -29,31 +29,25 @@ const BranchTable = ({ branches, onEdit, onDelete, onToggleStatus }) => {
             {branches.length > 0 ? (
               branches.map((branch) => (
                 <tr key={branch._id} className="h-14 hover:bg-[#F8FAFC] transition-colors group">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center shrink-0">
-                        <FiLayers size={18} strokeWidth={2} />
-                      </div>
-                      <div>
-                        <span className="font-semibold text-[#111827] text-sm">{branch.name}</span>
-                        <div className="flex items-center text-xs text-[#6B7280] mt-0.5">
-                          <FiMapPin className="mr-1 shrink-0" size={12} />
-                          {branch.addressLine1 || branch.address || branch.city || "—"}
-                        </div>
-                      </div>
+                  <td className="px-4 py-2">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-[#111827] text-[13px]">{branch.name}</span>
+                      <span className="text-[10px] text-gray-400 font-medium uppercase tracking-tight">
+                        {branch.addressLine1 || branch.address || branch.city || "—"}
+                      </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm font-medium text-[#6B7280]">{branch.branchCode || "—"}</span>
+                  <td className="px-4 py-2">
+                    <span className="text-[12px] font-bold text-gray-600 tracking-tight">{branch.branchCode || "—"}</span>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs font-medium text-[#6B7280]">
+                  <td className="px-4 py-2">
+                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
                       {BRANCH_TYPE_LABELS[branch.branchType] || branch.branchType || "—"}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2">
                     <span
-                      className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest inline-block ${
                         branch.status === "active"
                           ? "bg-emerald-50 text-emerald-700"
                           : branch.status === "closed"
@@ -61,54 +55,35 @@ const BranchTable = ({ branches, onEdit, onDelete, onToggleStatus }) => {
                           : "bg-amber-50 text-amber-700"
                       }`}
                     >
-                      {branch.status ? String(branch.status).charAt(0).toUpperCase() + branch.status.slice(1) : "—"}
+                      {branch.status || "—"}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 text-sm text-[#6B7280]">
-                      {branch.branchManagerId?.name ? (
-                        <>
-                          <FiUser size={14} className="shrink-0" />
-                          {branch.branchManagerId.name}
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </div>
+                  <td className="px-4 py-2">
+                    <span className="text-[12px] font-bold text-gray-700 uppercase tracking-tight">
+                      {branch.branchManagerId?.name || "—"}
+                    </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 text-xs text-[#6B7280]">
-                      <FiPhone size={12} className="shrink-0" />
+                  <td className="px-4 py-2">
+                    <span className="text-[12px] font-medium text-gray-500 tracking-tight">
                       {branch.phone || branch.managerPhone || "—"}
-                    </div>
+                    </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-4 py-2 text-right">
+                    <div className="flex items-center justify-end gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
                       {onToggleStatus && branch.status !== "closed" && (
                         <button
                           onClick={() => onToggleStatus(branch)}
-                          className="p-2 rounded-lg text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#2563EB] transition-colors"
-                          title={branch.status === "active" ? "Mark Inactive" : "Mark Active"}
+                          className="hover:text-emerald-600"
                         >
-                          <FiToggleLeft size={18} />
+                          STATUS
                         </button>
                       )}
                       <button
                         onClick={() => onEdit(branch)}
-                        className="p-2 rounded-lg text-[#6B7280] hover:bg-[#EFF6FF] hover:text-[#2563EB] transition-colors"
-                        title="Edit"
+                        className="hover:text-indigo-600"
                       >
-                        <FiEdit2 size={16} />
+                        EDIT
                       </button>
-                      {onDelete && (
-                        <button
-                          onClick={() => onDelete(branch._id)}
-                          className="p-2 rounded-lg text-[#6B7280] hover:bg-[#FEF2F2] hover:text-[#EF4444] transition-colors"
-                          title="Delete"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
-                      )}
                     </div>
                   </td>
                 </tr>

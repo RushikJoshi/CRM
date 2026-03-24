@@ -212,14 +212,18 @@ export default function UserFormPage() {
   }, [apiBase, isSuperAdmin, currentUser?.companyId]);
 
   useEffect(() => {
+    if (isSuperAdmin) return; // Super admin doesn't have a company pipeline
     (async () => {
       try {
-        const res = await API.get("/pipelines?limit=100");
-        const data = res.data?.data || res.data || [];
-        setPipelines(Array.isArray(data) ? data : []);
-      } catch (_) {}
+        // ONE PIPELINE PER COMPANY — GET /pipeline returns a single object
+        const res = await API.get("/pipeline");
+        const pl = res.data?.data;
+        setPipelines(pl ? [pl] : []); // Wrap in array for the select dropdown
+      } catch (_) {
+        setPipelines([]);
+      }
     })();
-  }, []);
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     if (!isEdit) {

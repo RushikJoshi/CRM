@@ -12,6 +12,7 @@ function Deals() {
     const navigate = useNavigate();
     const toast = useToast();
     const [deals, setDeals] = useState([]);
+    const [pipeline, setPipeline] = useState(null);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ companyId: "", stage: "" });
     const [taskDeal, setTaskDeal] = useState(null);
@@ -21,6 +22,22 @@ function Deals() {
     const role = currentUser?.role;
     const isSuperAdmin = role === "super_admin";
     const apiBase = isSuperAdmin ? "/super-admin/deals" : "/deals";
+
+    const fetchPipeline = async () => {
+        try {
+            // ONE PIPELINE PER COMPANY — GET /pipeline returns a single object
+            const res = await API.get("/pipeline");
+            const data = res.data?.data || null;
+
+            console.log("PIPELINE DATA:", data);
+            console.log("STAGES COUNT:", data?.stages?.length || 0);
+
+            setPipeline(data);
+        } catch (err) {
+            console.error("PIPELINE FETCH ERROR:", err);
+            toast.error("No pipeline found for this company. Contact Super Admin.");
+        }
+    };
 
     const fetchDeals = async () => {
         setLoading(true);
@@ -36,9 +53,16 @@ function Deals() {
         }
     };
 
-    const handleMoveDeal = async (id, newStage) => {
+    useEffect(() => {
+        if (!isSuperAdmin) fetchPipeline();
+    }, []);
+
+    const handleMoveDeal = async (id, newStage, newStageId) => {
         try {
-            await API.put(`${apiBase}/${id}/stage`, { stage: newStage });
+            await API.put(`${apiBase}/${id}/stage`, { 
+                stage: newStage,
+                stageId: newStageId 
+            });
             toast.success(`Deal moved to ${newStage}`);
             fetchDeals();
         } catch (err) {
@@ -68,27 +92,20 @@ function Deals() {
     const getDetailPath = (id) => (id ? `${base}/deals/${id}` : `${base}/deals`);
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700 pb-16">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                <div>
-                    <h1 className="text-xl font-semibold text-gray-800">Deal Pipeline</h1>
-                    <p className="text-sm text-gray-500 mt-0.5">Manage your sales pipeline and deal stages</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => navigate(getFormPath())}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500 text-white text-sm font-medium rounded-xl shadow-sm hover:bg-indigo-600 transition-colors"
-                    >
-                        <FiPlus size={18} />
-                        Add New Deal
-                    </button>
+        <div className="p-6 space-y-6 animate-in fade-in duration-700 pb-20">
+            {/* Top Action Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border shadow-sm">
+                <div className="flex-1 min-w-[300px]">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest px-3 py-2 bg-gray-50 rounded-lg border border-gray-100">
+                        Sales Pipeline
+                    </span>
                 </div>
             </div>
 
 
             {loading ? (
                 <div className="h-[400px] flex flex-col items-center justify-center gap-4 bg-gray-50 rounded-xl border border-gray-200">
-                    <div className="w-10 h-10 border-2 border-gray-200 border-t-indigo-500 rounded-full animate-spin" />
+                    <div className="w-10 h-10 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
                     <p className="text-sm text-gray-500">Loading deals...</p>
                 </div>
             ) : (
@@ -96,6 +113,7 @@ function Deals() {
                     <div className="min-w-0">
                         <DealPipeline
                             deals={deals}
+                            stages={pipeline?.stages}
                             onEdit={(d) => navigate(getFormPath(d._id))}
                             onMove={handleMoveDeal}
                             onDelete={handleDelete}

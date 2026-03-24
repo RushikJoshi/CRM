@@ -7,7 +7,7 @@ import AddTaskModal from "../components/AddTaskModal";
 import BulkUpdateModal from "../components/BulkUpdateModal";
 import LeadImportModal from "../components/LeadImportModal";
 import Pagination from "../components/Pagination";
-import { FiPlus, FiSearch, FiFilter, FiUpload } from "react-icons/fi";
+import { FiPlus, FiSearch, FiFilter, FiUpload, FiX, FiDownload } from "react-icons/fi";
 import { useToast } from "../context/ToastContext";
 import { getCurrentUser } from "../context/AuthContext";
 
@@ -19,8 +19,7 @@ function Leads() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const pageSize = 20;
-    const [viewLead, setViewLead] = useState(null);
+    const pageSize = 10;
     const [assignLead, setAssignLead] = useState(null);
     const [taskLead, setTaskLead] = useState(null);
     const [importLead, setImportLead] = useState(false);
@@ -32,12 +31,13 @@ function Leads() {
     const isSuperAdmin = currentUser?.role === "super_admin";
     const apiBase = isSuperAdmin ? "/super-admin/leads" : "/leads";
 
+    const role = currentUser?.role;
+
     const formBase = (() => {
-        const path = window.location.pathname;
-        if (path.startsWith("/superadmin")) return "/superadmin/leads";
-        if (path.startsWith("/company")) return "/company/leads";
-        if (path.startsWith("/branch")) return "/branch/leads";
-        if (path.startsWith("/sales")) return "/sales/leads";
+        if (role === 'super_admin') return "/superadmin/leads";
+        if (role === 'company_admin') return "/company/leads";
+        if (role === 'branch_manager') return "/branch/leads";
+        if (role === 'sales') return "/sales/leads";
         return "/leads";
     })();
 
@@ -78,6 +78,38 @@ function Leads() {
         }
     };
 
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const handleExportCSV = () => {
+        const selectedLeads = leads.filter(l => selectedIds.includes(l._id));
+        const headers = ["Name", "Email", "Phone", "Company", "Status", "Value", "Assigned To"];
+        const rows = selectedLeads.map(l => [
+            l.name || "N/A",
+            l.email || "N/A",
+            l.phone || "N/A",
+            l.companyName || "N/A",
+            l.status?.name || l.status || "N/A",
+            l.value || 0,
+            l.assignedTo?.name || "Unassigned"
+        ]);
+
+        const csvContent = [
+            headers.join(","),
+            ...rows.map(r => r.join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Leads_Export_${new Date().toLocaleDateString()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setSelectedIds([]);
+    };
+
     const handleBulkAction = async (ids, action, resetSelection) => {
         if (action === 'delete') {
             if (!window.confirm(`Are you sure you want to delete ${ids.length} leads?`)) return;
@@ -98,87 +130,77 @@ function Leads() {
     useEffect(() => { fetchLeads(); }, [search, statusFilter, page]);
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700 pb-20">
-            {/* Simple & Clean Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 pointer-events-none" />
-                <div className="relative z-10">
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-1">Leads List</h1>
-                    <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest opacity-70 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-                        Manage and track your potential customers
-                    </p>
+        <div className="space-y-6">
+            {/* Unified Action Bar */}
+            <div className="flex items-center gap-4 bg-white p-3 rounded-[var(--r-md)] border border-[var(--border)] shadow-sm">
+                <div className="relative group w-64 shrink-0">
+                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--txt4)] group-focus-within:text-[var(--indigo)] transition-colors" size={14} />
+                    <input
+                        type="text"
+                        placeholder="Search leads..."
+                        className="w-full h-[32px] pl-9 pr-3 bg-[var(--surface2)] border border-[var(--border2)] rounded-[var(--r)] text-[13px] outline-none focus:border-[var(--indigo)] focus:ring-[3px] focus:ring-[rgba(99,102,241,.08)] transition-all"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 relative z-10 w-full lg:w-auto">
-                    {/* Search Field */}
-                    <div className="relative group flex-1 lg:w-64">
-                        <FiSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-sky-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Search leads..."
-                            className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 text-sm shadow-sm placeholder-gray-300"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                {selectedIds.length > 0 ? (
+                    <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-200">
+                        <div className="h-4 w-px bg-[var(--border2)] mx-2" />
+                        <span className="text-[11px] font-bold text-[var(--indigo)] bg-[var(--indigo-l)] px-2.5 py-1 rounded-md uppercase tracking-wider">{selectedIds.length} Selected</span>
+                        <button onClick={handleExportCSV} className="crm-btn-secondary h-[32px] text-[11px] px-3">Export</button>
+                        <button onClick={() => handleBulkAction(selectedIds, 'assign_user', () => setSelectedIds([]))} className="crm-btn-secondary h-[32px] text-[11px] px-3">Reassign</button>
+                        <button onClick={() => handleBulkAction(selectedIds, 'delete', () => setSelectedIds([]))} className="crm-btn-secondary h-[32px] text-[11px] px-3 text-[var(--danger)] hover:bg-[var(--danger-l)]">Delete</button>
+                        <button onClick={() => setSelectedIds([])} className="p-1.5 text-[var(--txt4)] hover:text-[var(--txt2)]"><FiX size={14} /></button>
                     </div>
-
-                    {/* Filter Field - Fixed Overlap */}
-                    <div className="relative group w-full lg:w-48">
-                        <FiFilter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-sky-500 transition-colors" />
-                        <select
-                            className="w-full pl-12 pr-10 py-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-sky-500/5 focus:border-sky-200 transition-all font-bold text-gray-700 text-sm appearance-none cursor-pointer shadow-sm"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                            <option value="">All Leads</option>
-                            <option value="new">New</option>
-                            <option value="contacted">Contacted</option>
-                            <option value="qualified">Qualified</option>
-                            <option value="proposal">Proposal</option>
-                            <option value="negotiation">Negotiation</option>
-                            <option value="closed won">Won</option>
-                            <option value="closed lost">Lost</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300">
-                            <FiFilter size={14} />
+                ) : (
+                    <>
+                        <div className="relative">
+                            <select
+                                className="h-[32px] pl-3 pr-8 bg-[var(--surface2)] border border-[var(--border2)] rounded-[var(--r)] text-[12px] font-bold text-[var(--txt2)] outline-none focus:border-[var(--indigo)] transition-all appearance-none cursor-pointer"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="">All Status</option>
+                                <option value="new">New</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="qualified">Qualified</option>
+                                <option value="proposal">Proposal</option>
+                                <option value="negotiation">Negotiation</option>
+                                <option value="closed won">Won</option>
+                                <option value="closed lost">Lost</option>
+                            </select>
+                            <FiFilter size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--txt4)] pointer-events-none" />
                         </div>
-                    </div>
 
-                    {/* Import Lead Button (Manager Only) */}
-                    {(currentUser?.role === "branch_manager" || currentUser?.role === "company_admin") && (
-                        <button
-                            onClick={() => setImportLead(true)}
-                            className="flex items-center justify-center gap-3 px-6 py-3.5 bg-white text-gray-700 font-black rounded-2xl border border-gray-200 hover:bg-gray-50 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest min-w-[150px] shadow-sm"
-                        >
-                            <FiUpload size={18} strokeWidth={3} />
-                            Import CSV
-                        </button>
-                    )}
+                        <div className="flex-1" />
 
-                    {/* Add Lead Button */}
-                    <button
-                        onClick={() => navigate(`${formBase}/create`)}
-                        className="flex items-center justify-center gap-3 px-8 py-3.5 bg-sky-500 text-white font-black rounded-2xl shadow-lg shadow-sky-500/20 hover:bg-sky-600 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest min-w-[180px]"
-                    >
-                        <FiPlus size={20} strokeWidth={3} />
-                        Add New Lead
-                    </button>
-                </div>
+                        {(role === "branch_manager" || role === "company_admin" || role === "super_admin") && (
+                            <button
+                                onClick={() => setImportLead(true)}
+                                className="crm-btn-secondary h-[32px] gap-2 px-3 text-[11px] font-bold"
+                            >
+                                <FiUpload size={14} />
+                                IMPORT CSV
+                            </button>
+                        )}
+                    </>
+                )}
             </div>
 
-
+            {/* Table Section */}
             {loading ? (
-                <div className="h-[500px] bg-white rounded-[40px] border border-[#E5EAF2] flex flex-col items-center justify-center space-y-6 shadow-sm overflow-hidden relative">
-                    <div className="absolute inset-0 bg-blue-500/[0.02] animate-pulse" />
-                    <div className="w-16 h-16 border-[6px] border-blue-50 border-t-blue-500 rounded-full animate-spin shadow-lg relative z-10" />
-                    <p className="text-[#A0AEC0] font-black uppercase tracking-[0.4em] text-[11px] relative z-10">Loading Leads...</p>
+                <div className="crm-card p-20 flex flex-col items-center justify-center space-y-4">
+                    <div className="w-8 h-8 border-3 border-[var(--indigo-l)] border-t-[var(--indigo)] rounded-full animate-spin" />
+                    <p className="text-[var(--txt3)] text-[11px] font-bold uppercase tracking-widest">Loading Leads...</p>
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="crm-card p-0 overflow-hidden">
                         <LeadTable
                             leads={leads}
+                            selectedIds={selectedIds}
+                            setSelectedIds={setSelectedIds}
                             onEdit={(l) => navigate(`${formBase}/${l._id}/edit`)}
                             onDelete={handleDelete}
                             onConvert={handleConvert}
@@ -192,35 +214,33 @@ function Leads() {
                 </div>
             )}
 
+            {/* Modals */}
             <LeadAssignModal
                 isOpen={Boolean(assignLead)}
                 onClose={() => setAssignLead(null)}
                 lead={assignLead}
                 onAssigned={fetchLeads}
             />
-
             <AddTaskModal
                 isOpen={Boolean(taskLead)}
                 onClose={() => setTaskLead(null)}
                 onSuccess={fetchLeads}
                 lead={taskLead}
             />
-
             <BulkUpdateModal
                 isOpen={bulkActionInfo.open}
                 onClose={() => setBulkActionInfo({ ...bulkActionInfo, open: false })}
                 ids={bulkActionInfo.ids}
                 action={bulkActionInfo.action}
                 onUpdated={() => {
+                    bulkActionInfo.reset?.();
                     fetchLeads();
-                    if (bulkActionInfo.reset) bulkActionInfo.reset();
                 }}
             />
-
             <LeadImportModal
                 isOpen={importLead}
                 onClose={() => setImportLead(false)}
-                onImported={fetchLeads}
+                onSuccess={fetchLeads}
             />
         </div>
     );

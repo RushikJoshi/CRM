@@ -141,13 +141,13 @@ export default function DealFormPage() {
 
     const inputCls = (field) =>
         `w-full pl-14 pr-6 py-5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none font-black text-[#1A202C] text-sm transition-all
-     focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 shadow-sm placeholder-[#CBD5E0]
+     focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-blue-300 shadow-sm placeholder-[#CBD5E0]
      ${errors[field] ? "border-red-200 focus:border-red-300 focus:ring-red-500/5" : ""}`;
 
     if (fetching) {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] space-y-6">
-                <div className="w-16 h-16 border-[6px] border-blue-50 border-t-blue-500 rounded-full animate-spin shadow-lg" />
+                <div className="w-16 h-16 border-[6px] border-teal-50 border-t-teal-600 rounded-full animate-spin shadow-lg" />
                 <p className="text-[#A0AEC0] font-black uppercase tracking-[0.3em] text-[11px]">Loading Deal Data...</p>
             </div>
         );
@@ -157,14 +157,14 @@ export default function DealFormPage() {
         <div className="w-full space-y-10 pb-24 animate-in fade-in duration-1000">
             {/* Header */}
             <div className="bg-white rounded-[32px] border border-[#E5EAF2] shadow-sm p-10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-teal-600/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
                 <button onClick={() => navigate(-1)}
-                    className="flex items-center gap-3 text-[11px] font-black text-[#A0AEC0] hover:text-blue-600 transition-all mb-8 group uppercase tracking-widest relative z-10">
+                    className="flex items-center gap-3 text-[11px] font-black text-[#A0AEC0] hover:text-teal-700 transition-all mb-8 group uppercase tracking-widest relative z-10">
                     <FiArrowLeft size={16} strokeWidth={3} className="group-hover:-translate-x-1 transition-transform" />
                     Cancel & Return
                 </button>
                 <div className="flex items-center gap-6 relative z-10">
-                    <div className="w-16 h-16 bg-blue-600 text-white rounded-[24px] flex items-center justify-center shadow-xl shadow-blue-500/20 group-hover:rotate-6 transition-transform">
+                    <div className="w-16 h-16 bg-teal-700 text-white rounded-[24px] flex items-center justify-center shadow-xl shadow-teal-600/20 group-hover:rotate-6 transition-transform">
                         <FiTrendingUp size={30} strokeWidth={2.5} />
                     </div>
                     <div>
@@ -182,13 +182,13 @@ export default function DealFormPage() {
                 {/* Deal Intelligence */}
                 <div className="md:col-span-2 bg-white rounded-[40px] border border-[#E5EAF2] shadow-sm p-12 space-y-10 relative overflow-hidden">
                     <h2 className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.35em] flex items-center gap-3 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" /> Deal Details
+                        <div className="w-2 h-2 rounded-full bg-teal-600" /> Deal Details
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-3 md:col-span-2">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Deal Title *</label>
                             <div className="relative group">
-                                <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <input name="title" className={inputCls("title")} placeholder="Enter deal name..."
                                     value={formData.title} onChange={handleChange} />
                             </div>
@@ -198,7 +198,7 @@ export default function DealFormPage() {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Deal Value *</label>
                             <div className="relative group">
-                                <div className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-blue-600 flex items-center gap-1">
+                                <div className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-teal-700 flex items-center gap-1">
                                     <span className="text-[12px] opacity-40">₹</span>
                                 </div>
                                 <input name="value" type="number" className={inputCls("value").replace("pl-14", "pl-14")} placeholder="Enter amount..."
@@ -210,7 +210,7 @@ export default function DealFormPage() {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Deal Stage *</label>
                             <div className="relative group">
-                                <FiTarget size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiTarget size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <select name="stage" className={inputCls("stage").replace("pl-14", "pl-14 py-5 appearance-none")} value={formData.stage} onChange={handleChange}>
                                     <option value="New">New Opportunity</option>
                                     <option value="Qualified">Qualified</option>
@@ -253,13 +253,13 @@ export default function DealFormPage() {
                 {/* Association Matrix */}
                 <div className="md:col-span-2 bg-white rounded-[40px] border border-[#E5EAF2] shadow-sm p-12 space-y-10 relative overflow-hidden">
                     <h2 className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.35em] flex items-center gap-3 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" /> Assignment & Links
+                        <div className="w-2 h-2 rounded-full bg-teal-600" /> Assignment & Links
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Select Company *</label>
                             <div className="relative group">
-                                <FiBriefcase size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiBriefcase size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <select name="companyId" className={inputCls("companyId").replace("pl-14", "pl-12 py-5 appearance-none")} value={formData.companyId} onChange={handleChange}>
                                     <option value="">Choose Company...</option>
                                     {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
@@ -271,7 +271,7 @@ export default function DealFormPage() {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Select Lead *</label>
                             <div className="relative group">
-                                <FiFlag size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiFlag size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <select name="leadId" className={inputCls("leadId").replace("pl-14", "pl-12 py-5 appearance-none")} value={formData.leadId} onChange={handleChange} disabled={!formData.companyId}>
                                     <option value="">Choose Lead...</option>
                                     {leads.map(l => <option key={l._id} value={l._id}>{l.name}</option>)}
@@ -283,7 +283,7 @@ export default function DealFormPage() {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Assigned Owner *</label>
                             <div className="relative group">
-                                <FiUser size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiUser size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <select name="assignedTo" className={inputCls("assignedTo").replace("pl-14", "pl-12 py-5 appearance-none")} value={formData.assignedTo} onChange={handleChange} disabled={!formData.companyId}>
                                     <option value="">Choose User...</option>
                                     {users.map(u => <option key={u._id} value={u._id}>{u.name} ({u.role.replace('_', ' ')})</option>)}
@@ -300,7 +300,7 @@ export default function DealFormPage() {
                         Cancel
                     </button>
                     <button type="submit" disabled={loading}
-                        className="flex-[2] flex items-center justify-center gap-4 py-5 bg-blue-600 text-white font-black rounded-[24px] hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-blue-600/20 disabled:opacity-50 duration-300">
+                        className="flex-[2] flex items-center justify-center gap-4 py-5 bg-teal-700 text-white font-black rounded-[24px] hover:bg-teal-800 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-teal-700/20 disabled:opacity-50 duration-300">
                         {loading ? (
                             <div className="w-5 h-5 border-[3px] border-white/40 border-t-white rounded-full animate-spin" />
                         ) : (

@@ -1,6 +1,7 @@
 import React from "react";
 import LeftSection from "./LeftSection";
 import LoginForm from "./LoginForm";
+import logo from "../../assets/logos/edupathpro_logo.png";
 
 /**
  * LoginPage — Full-width split screen layout
@@ -16,14 +17,14 @@ const LoginPage = () => {
             </div>
 
             {/* ── Mobile-only brand bar ── */}
-            <div className="lg:hidden flex items-center gap-4 px-6 py-6 bg-gradient-to-r from-[#1D4ED8] to-[#1E40AF] text-white">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center font-black text-base border border-white/15">
-                    GT
+            <div className="lg:hidden flex items-center gap-4 px-6 py-6 bg-slate-900 text-white">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
+                    <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                 </div>
                 <div className="min-w-0">
-                    <p className="font-black text-white leading-none truncate">Gitakshmi Technologies</p>
-                    <p className="text-blue-100 text-[10px] font-bold tracking-[0.25em] uppercase mt-1">
-                        Smart CRM
+                    <p className="font-black text-white leading-none truncate text-lg tracking-tight">EduPathpro</p>
+                    <p className="text-slate-400 text-[10px] font-black tracking-[0.25em] uppercase mt-1">
+                        Smart Platform
                     </p>
                 </div>
             </div>

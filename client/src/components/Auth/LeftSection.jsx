@@ -1,59 +1,42 @@
 import React from "react";
-import logo from "../../assets/tech logo white.png";
+import { FiLayout } from "react-icons/fi";
+import logo from "../../assets/logos/edupathpro_logo.png";
 
-/**
- * Left marketing panel – aligned with the blue reference login design.
- * Blue gradient, subtle grid, Gitakshmi branding, Smart CRM text.
- */
 const LeftSection = () => {
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center px-10 lg:px-16 xl:px-20 text-white text-center relative overflow-hidden bg-gradient-to-br from-[#1D4ED8] via-[#1E40AF] to-[#020617]">
-            {/* Background grid */}
-            <div className="absolute inset-0 opacity-25">
-                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <pattern id="login-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-                            <path d="M 48 0 L 0 0 0 48" fill="none" stroke="white" strokeWidth="0.4" opacity="0.35" />
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#login-grid)" />
-                </svg>
-            </div>
+        <div className="w-full h-full flex flex-col items-center justify-center px-10 text-white relative overflow-hidden bg-gradient-to-br from-[#1e40af] to-[#1e3a8a]">
+            {/* Subtle Texture Overlay */}
+            <div className="absolute inset-0 opacity-10" 
+                 style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+            
+            <div className="absolute top-[-20%] right-[-20%] w-[80%] h-[80%] bg-blue-400 rounded-full blur-[150px] opacity-20 animate-pulse" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-600 rounded-full blur-[120px] opacity-30" />
 
-            {/* Soft glows */}
-            <div className="absolute -top-32 -left-32 w-80 h-80 bg-blue-400 rounded-full opacity-20 blur-3xl" />
-            <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-indigo-500 rounded-full opacity-20 blur-3xl" />
-
-            {/* Content */}
-            <div className="relative z-10 w-full max-w-xl flex flex-col gap-10 items-center">
-                {/* Brand / logo */}
-                <div className="flex flex-col gap-3">
-                    {logo ? (
-                        <img
-                            src={logo}
-                            alt="Gitakshmi Technologies"
-                            className="w-64 lg:w-72 h-auto object-contain"
-                        />
-                    ) : (
-                        <p className="text-3xl font-black tracking-tight mb-1">
-                            Gitakshmi <span className="font-semibold">Technologies</span>
-                        </p>
-                    )}
+            <div className="relative z-10 w-full max-w-lg flex flex-col items-center text-center">
+                {/* Logo Section */}
+                <div className="mb-16 flex flex-col items-center">
+                   <div className="flex flex-col items-center">
+                      <div className="w-20 h-20 bg-white/10 rounded-3xl p-4 border border-white/20 backdrop-blur-md mb-6 flex items-center justify-center shadow-2xl">
+                         <img src={logo} alt="EduPathpro" className="w-full h-full object-contain" />
+                      </div>
+                      <h1 className="text-[54px] font-black tracking-tighter leading-none mb-1">EduPathpro</h1>
+                      <div className="flex items-center gap-3 w-full mb-2">
+                         <div className="h-[2px] flex-1 bg-white/40" />
+                         <span className="text-[12px] font-black uppercase tracking-[0.4em] text-white/80 whitespace-nowrap px-2">Powered by Gitakshmi Group</span>
+                         <div className="h-[2px] flex-1 bg-white/40" />
+                      </div>
+                   </div>
                 </div>
+                
+                <h1 className="text-[64px] font-black tracking-tight leading-tight mb-6">
+                    Smart CRM
+                </h1>
+                
+                <p className="text-blue-100 text-lg max-w-md mx-auto leading-relaxed font-medium">
+                    Manage your business easily with our simple CRM. Track your leads, deals, and customers all in one place.
+                </p>
 
-                {/* Section label + headline + description (matches reference) */}
-                <div className="space-y-4 max-w-md">
-                    <p className="text-[10px] font-semibold tracking-[0.6em] uppercase text-blue-100/80">
-                        {/* Technologies */}
-                    </p>
-                    <h1 className="text-4xl sm:text-5xl lg:text-[2.9rem] font-black tracking-tight leading-tight">
-                        Smart CRM
-                    </h1>
-                    <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed">
-                        Manage your business easily with our simple CRM. Track your leads, deals, and customers
-                        all in one place.
-                    </p>
-                </div>
+                <div className="mt-16 w-16 h-1 bg-white/20 rounded-full" />
             </div>
         </div>
     );

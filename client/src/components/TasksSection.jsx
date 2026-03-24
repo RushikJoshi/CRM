@@ -165,7 +165,7 @@ const TasksSection = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) => {
     const getPriorityColor = (p) => {
         if (p === "High") return "text-red-500 bg-red-50 border-red-100";
         if (p === "Medium") return "text-amber-500 bg-amber-50 border-amber-100";
-        return "text-blue-500 bg-blue-50 border-blue-100";
+        return "text-teal-600 bg-teal-50 border-teal-100";
     };
 
     return (
@@ -178,7 +178,7 @@ const TasksSection = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) => {
                 <button
                     type="button"
                     onClick={() => { setShowModal(true); resetForm(); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl font-semibold text-xs uppercase tracking-wider hover:bg-indigo-100 transition-all border border-indigo-100"
+                    className="flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-700 rounded-xl font-semibold text-xs uppercase tracking-wider hover:bg-teal-100 transition-all border border-teal-100"
                 >
                     <FiPlus size={16} /> Schedule Activity
                 </button>
@@ -194,7 +194,7 @@ const TasksSection = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) => {
                             <select
                                 value={formData.activityType}
                                 onChange={(e) => setFormData({ ...formData, activityType: e.target.value })}
-                                className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 outline-none"
                             >
                                 {ACTIVITY_TYPES.map((t) => (
                                     <option key={t} value={t}>{t}</option>
@@ -207,7 +207,7 @@ const TasksSection = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) => {
                                 type="datetime-local"
                                 value={formData.dueDate}
                                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 outline-none"
                             />
                         </div>
                     </div>
@@ -218,7 +218,7 @@ const TasksSection = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) => {
                             placeholder="Log a note..."
                             value={formData.summary}
                             onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                            className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 outline-none"
                         />
                     </div>
                     <div className="space-y-2">
@@ -226,7 +226,7 @@ const TasksSection = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) => {
                         <select
                             value={formData.assignedTo}
                             onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-                            className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            className="w-full px-3 py-2.5 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 outline-none"
                         >
                             <option value="">Current user (default)</option>
                             {users.map((u) => (
@@ -242,7 +242,7 @@ const TasksSection = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) => {
                                     key={p}
                                     type="button"
                                     onClick={() => setFormData({ ...formData, priority: p })}
-                                    className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${formData.priority === p ? "bg-indigo-500 text-white border-indigo-500" : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"}`}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${formData.priority === p ? "bg-teal-600 text-white border-teal-600" : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"}`}
                                 >
                                     {p}
                                 </button>
@@ -250,7 +250,7 @@ const TasksSection = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) => {
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-                        <button type="button" onClick={handleSchedule} className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors">
+                        <button type="button" onClick={handleSchedule} className="px-4 py-2.5 bg-teal-700 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition-colors">
                             Schedule
                         </button>
                         <button type="button" onClick={handleScheduleAndMarkDone} className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors">
@@ -286,7 +286,7 @@ const TasksSection = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) => {
                                     </h4>
                                     <div className="flex flex-wrap items-center gap-3 mt-1.5">
                                         {task.activityType && (
-                                            <span className="text-[9px] font-semibold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded">
+                                            <span className="text-[9px] font-semibold text-teal-700 uppercase tracking-wider bg-teal-50 px-2 py-0.5 rounded">
                                                 {task.activityType}
                                             </span>
                                         )}

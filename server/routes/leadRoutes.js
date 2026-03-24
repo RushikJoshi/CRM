@@ -29,6 +29,7 @@ router.get("/:id", auth, requireRole("branch_manager", "sales", "company_admin",
 router.post("/import", auth, requireRole("branch_manager", "company_admin"), checkCompanyAccess, upload.single("file"), importLeads);
 router.patch("/bulk", auth, requireRole("branch_manager", "company_admin"), checkCompanyAccess, bulkUpdateLeads);
 router.put("/:id", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, updateLead);
+router.patch("/:id", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, updateLead);
 router.patch("/:id/stage", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, updateLeadStage);
 router.post("/:id/lost", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, markLeadLost);
 router.delete("/:id", auth, requireRole("company_admin", "super_admin"), deleteLead);

@@ -83,7 +83,7 @@ const AddTaskModal = ({ isOpen, onClose, onSuccess, lead, deal, customer }) => {
                             value={formData.title}
                             onChange={e => setFormData({ ...formData, title: e.target.value })}
                             placeholder="What needs to be done?"
-                            className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 font-bold text-sm text-gray-700 transition-all shadow-inner"
+                            className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-500 font-bold text-sm text-gray-700 transition-all shadow-inner"
                         />
                     </div>
 
@@ -96,7 +96,7 @@ const AddTaskModal = ({ isOpen, onClose, onSuccess, lead, deal, customer }) => {
                                 required
                                 value={formData.dueDate}
                                 onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
-                                className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 font-bold text-sm text-gray-700 transition-all shadow-inner"
+                                className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-500 font-bold text-sm text-gray-700 transition-all shadow-inner"
                             />
                         </div>
 
@@ -106,7 +106,7 @@ const AddTaskModal = ({ isOpen, onClose, onSuccess, lead, deal, customer }) => {
                             <select
                                 value={formData.leadId}
                                 onChange={e => setFormData({ ...formData, leadId: e.target.value })}
-                                className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 font-bold text-sm text-gray-700 appearance-none transition-all shadow-inner"
+                                className="w-full px-5 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-500 font-bold text-sm text-gray-700 appearance-none transition-all shadow-inner"
                             >
                                 <option value="">Independent Task</option>
                                 {leads.map(lead => (
@@ -125,7 +125,7 @@ const AddTaskModal = ({ isOpen, onClose, onSuccess, lead, deal, customer }) => {
                                     key={p}
                                     type="button"
                                     onClick={() => setFormData({ ...formData, priority: p })}
-                                    className={`flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${formData.priority === p ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20' : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'}`}
+                                    className={`flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${formData.priority === p ? 'bg-teal-700 text-white border-teal-700 shadow-lg shadow-teal-600/20' : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'}`}
                                 >
                                     {p}
                                 </button>

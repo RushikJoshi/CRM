@@ -61,8 +61,8 @@ const PasswordStrength = ({ password }) => {
     ];
     const score = checks.filter(c => c.pass).length;
     const labels = ["", "Weak", "Fair", "Good", "Strong"];
-    const colors = ["", "bg-red-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
-    const textColors = ["", "text-red-600", "text-yellow-600", "text-blue-600", "text-green-600"];
+    const colors = ["", "bg-red-500", "bg-yellow-500", "bg-teal-600", "bg-green-500"];
+    const textColors = ["", "text-red-600", "text-yellow-600", "text-teal-700", "text-green-600"];
 
     return (
         <div className="mt-3 space-y-2">

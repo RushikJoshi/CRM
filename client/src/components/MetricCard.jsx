@@ -20,7 +20,7 @@ const MetricCard = ({
       className={`
         w-full text-left bg-[#FFFFFF] rounded-xl border border-[#E5E7EB]
         p-6 transition-all duration-200
-        ${onClick ? "hover:border-[#2563EB]/30 hover:shadow-crm-card cursor-pointer" : ""}
+        ${onClick ? "hover:border-[#0D9488]/30 hover:shadow-crm-card cursor-pointer" : ""}
         ${className}
       `}
     >

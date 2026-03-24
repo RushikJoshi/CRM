@@ -68,12 +68,12 @@ export default function ConvertInquiryFormPage() {
 
     const inputCls = (field) =>
         `w-full pl-14 pr-12 py-5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none font-black text-[#1A202C] text-sm transition-all
-     focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 shadow-sm appearance-none cursor-pointer`;
+     focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-blue-300 shadow-sm appearance-none cursor-pointer`;
 
     if (fetching) {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] space-y-6">
-                <div className="w-16 h-16 border-[6px] border-blue-50 border-t-blue-500 rounded-full animate-spin shadow-lg" />
+                <div className="w-16 h-16 border-[6px] border-teal-50 border-t-teal-600 rounded-full animate-spin shadow-lg" />
                 <p className="text-[#A0AEC0] font-black uppercase tracking-[0.3em] text-[11px]">Loading Data...</p>
             </div>
         );
@@ -101,14 +101,14 @@ export default function ConvertInquiryFormPage() {
         <div className="w-full space-y-10 pb-24 animate-in fade-in duration-1000">
             {/* Header */}
             <div className="bg-white rounded-[32px] border border-[#E5EAF2] shadow-sm p-10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-teal-600/5 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
                 <button onClick={() => navigate(-1)}
-                    className="flex items-center gap-3 text-[11px] font-black text-[#A0AEC0] hover:text-blue-600 transition-all mb-8 group uppercase tracking-widest relative z-10">
+                    className="flex items-center gap-3 text-[11px] font-black text-[#A0AEC0] hover:text-teal-700 transition-all mb-8 group uppercase tracking-widest relative z-10">
                     <FiArrowLeft size={16} strokeWidth={3} className="group-hover:-translate-x-1 transition-transform" />
                     Reset & Return
                 </button>
                 <div className="flex items-center gap-6 relative z-10">
-                    <div className="w-16 h-16 bg-blue-600 text-white rounded-[24px] flex items-center justify-center shadow-xl shadow-blue-500/20 group-hover:rotate-6 transition-transform">
+                    <div className="w-16 h-16 bg-teal-700 text-white rounded-[24px] flex items-center justify-center shadow-xl shadow-teal-600/20 group-hover:rotate-6 transition-transform">
                         <FiTrendingUp size={30} strokeWidth={2.5} />
                     </div>
                     <div>
@@ -125,13 +125,13 @@ export default function ConvertInquiryFormPage() {
             <div className="bg-white rounded-[40px] border border-[#E5EAF2] shadow-sm overflow-hidden w-full">
                 <div className="p-12 space-y-10">
                     {/* Summary Box */}
-                    <div className="p-8 bg-blue-50/30 border border-blue-100 rounded-[32px] space-y-5 relative group">
+                    <div className="p-8 bg-teal-50/30 border border-teal-100 rounded-[32px] space-y-5 relative group">
                         <div className="absolute top-4 right-8">
-                            <FiInfo className="text-blue-400 opacity-20 group-hover:opacity-60 transition-opacity" size={40} />
+                            <FiInfo className="text-teal-400 opacity-20 group-hover:opacity-60 transition-opacity" size={40} />
                         </div>
-                        <div className="flex items-center justify-between border-b border-blue-100 pb-4">
-                            <span className="text-[11px] font-black text-blue-600 uppercase tracking-[0.25em] flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" /> Inquiry Person
+                        <div className="flex items-center justify-between border-b border-teal-100 pb-4">
+                            <span className="text-[11px] font-black text-teal-700 uppercase tracking-[0.25em] flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse" /> Inquiry Person
                             </span>
                             <span className="text-lg font-black text-[#1A202C]">{inquiry.name}</span>
                         </div>
@@ -142,7 +142,7 @@ export default function ConvertInquiryFormPage() {
 
                     {/* Meta Info */}
                     <div className="p-6 bg-[#F4F7FB] border border-[#E5EAF2] rounded-[24px] flex gap-5">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-teal-700 shadow-sm shrink-0">
                             <FiCheckCircle size={20} strokeWidth={3} />
                         </div>
                         <div className="space-y-1">
@@ -157,7 +157,7 @@ export default function ConvertInquiryFormPage() {
                     <div className="space-y-4">
                         <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Assign To</label>
                         <div className="relative group">
-                            <FiShield className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors z-10" />
+                            <FiShield className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                             <select
                                 className={inputCls("assignedTo")}
                                 value={assignedTo}
@@ -182,7 +182,7 @@ export default function ConvertInquiryFormPage() {
                             Cancel
                         </button>
                         <button onClick={handleConvert} disabled={loading}
-                            className="flex-[2] flex items-center justify-center gap-4 py-5 bg-blue-600 text-white font-black rounded-[24px] hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-blue-600/20 disabled:opacity-50 duration-300">
+                            className="flex-[2] flex items-center justify-center gap-4 py-5 bg-teal-700 text-white font-black rounded-[24px] hover:bg-teal-800 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-teal-700/20 disabled:opacity-50 duration-300">
                             {loading ? (
                                 <div className="w-5 h-5 border-[3px] border-white/40 border-t-white rounded-full animate-spin" />
                             ) : (

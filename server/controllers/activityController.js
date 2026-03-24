@@ -101,14 +101,14 @@ exports.getActivityTimeline = async (req, res) => {
             Activity.find(activityMatch).populate("userId", "name").populate("mentionedUserId", "name").sort({ createdAt: -1 }).limit(100)
         ]);
 
-        const timeline = [
-            ...leads.map(l => ({ type: 'lead', title: `Lead: ${l.name}`, date: l.createdAt, id: l._id })),
-            ...deals.map(d => ({ type: 'deal', title: `Deal: ${d.title} (${d.stage})`, date: d.updatedAt, id: d._id })),
-            ...calls.map(c => ({ type: 'call', title: `Call ${c.status}: ${c.title}`, date: c.startDate || c.createdAt, id: c._id })),
-            ...meetings.map(m => ({ type: 'meeting', title: `Meeting ${m.status}: ${m.title}`, date: m.startDate || m.createdAt, id: m._id })),
-            ...todos.map(t => ({ type: 'task', title: `Task ${t.status}: ${t.title}`, date: t.updatedAt || t.createdAt, id: t._id })),
-            ...notes.map(n => ({ type: 'note', title: `Note: ${n.title}`, date: n.createdAt, id: n._id })),
-            ...messages.map(msg => ({ type: 'message', title: `${msg.type.toUpperCase()} ${msg.status}`, date: msg.createdAt, id: msg._id })),
+        let timeline = [
+            ...leads.map(l => ({ type: 'lead', title: `Lead: ${l.name}`, date: l.createdAt, id: l._id, leadId: l._id })),
+            ...deals.map(d => ({ type: 'deal', title: `Deal: ${d.title} (${d.stage})`, date: d.updatedAt, id: d._id, dealId: d._id })),
+            ...calls.map(c => ({ type: 'call', title: `Call ${c.status}: ${c.title}`, date: c.startDate || c.createdAt, id: c._id, leadId: c.leadId })),
+            ...meetings.map(m => ({ type: 'meeting', title: `Meeting ${m.status}: ${m.title}`, date: m.startDate || m.createdAt, id: m._id, leadId: m.leadId })),
+            ...todos.map(t => ({ type: 'task', title: `Task ${t.status}: ${t.title}`, date: t.updatedAt || t.createdAt, id: t._id, leadId: t.leadId })),
+            ...notes.map(n => ({ type: 'note', title: `Note: ${n.title}`, date: n.createdAt, id: n._id, leadId: n.leadId })),
+            ...messages.map(msg => ({ type: 'message', title: `${msg.type.toUpperCase()} ${msg.status}`, date: msg.createdAt, id: msg._id, leadId: msg.leadId })),
             ...logActivities.map(a => ({
                 type: a.type,
                 title: a.title || a.note,
@@ -116,10 +116,16 @@ exports.getActivityTimeline = async (req, res) => {
                 date: a.createdAt || a.updatedAt,
                 id: a._id,
                 user: a.userId?.name,
+                leadId: a.leadId,
                 mentionedUser: a.mentionedUserId?.name,
                 attachments: a.attachments || []
             }))
         ].filter(item => item.date); // Ensure valid dates
+
+        // FILTER BY TYPE IF REQUESTED
+        if (req.query.type) {
+            timeline = timeline.filter(item => item.type === req.query.type);
+        }
 
         timeline.sort((a, b) => new Date(b.date) - new Date(a.date));
 

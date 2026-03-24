@@ -15,6 +15,18 @@ const SessionGuard = ({ children }) => {
         return <Navigate to="/login" replace />;
     }
 
+    // Subscription check: only for non-superadmin users
+    const user = session.user;
+    if (user.role !== "super_admin" && user.subscription && pathname !== "/subscription-expired") {
+      const now = new Date();
+      const isExpired = (user.subscription.endDate && new Date(user.subscription.endDate) < now) || 
+                        (user.subscription.status === "expired");
+      
+      if (isExpired) {
+         return <Navigate to="/subscription-expired" replace />;
+      }
+    }
+
     return children;
 };
 

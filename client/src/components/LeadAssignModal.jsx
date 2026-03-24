@@ -62,7 +62,7 @@ const LeadAssignModal = ({ isOpen, onClose, lead, onAssigned }) => {
             <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-300">
                 <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl shadow-sm">
+                        <div className="p-3 bg-teal-50 text-teal-700 rounded-2xl shadow-sm">
                             <FiUserPlus size={24} />
                         </div>
                         <div>
@@ -76,8 +76,8 @@ const LeadAssignModal = ({ isOpen, onClose, lead, onAssigned }) => {
                 </div>
 
                 <div className="p-8 space-y-6">
-                    <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-white border border-blue-100 flex items-center justify-center font-black text-blue-600 text-sm">
+                    <div className="p-4 bg-teal-50/50 border border-teal-100 rounded-2xl flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-teal-100 flex items-center justify-center font-black text-teal-700 text-sm">
                             {lead?.name?.charAt(0)}
                         </div>
                         <div>
@@ -89,9 +89,9 @@ const LeadAssignModal = ({ isOpen, onClose, lead, onAssigned }) => {
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Select User</label>
                         <div className="relative group">
-                            <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                            <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
                             <select
-                                className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all font-black text-gray-700 text-sm appearance-none cursor-pointer"
+                                className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-500 transition-all font-black text-gray-700 text-sm appearance-none cursor-pointer"
                                 value={selectedUser}
                                 onChange={(e) => setSelectedUser(e.target.value)}
                                 disabled={fetching}
@@ -113,7 +113,7 @@ const LeadAssignModal = ({ isOpen, onClose, lead, onAssigned }) => {
                     <button
                         onClick={handleAssign}
                         disabled={loading || fetching}
-                        className="flex-[2] flex items-center justify-center gap-2 py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 active:scale-95 transition-all text-xs uppercase tracking-widest shadow-xl shadow-blue-500/20 disabled:opacity-50"
+                        className="flex-[2] flex items-center justify-center gap-2 py-4 bg-teal-700 text-white font-black rounded-2xl hover:bg-teal-800 active:scale-95 transition-all text-xs uppercase tracking-widest shadow-xl shadow-teal-600/20 disabled:opacity-50"
                     >
                         {loading ? <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <><FiCheck size={18} /> Confirm</>}
                     </button>

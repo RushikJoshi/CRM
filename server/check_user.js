@@ -1,5 +1,7 @@
-require("dotenv").config();
 const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+dotenv.config();
+
 const User = require("./models/User");
 
 async function checkUser() {
@@ -7,16 +9,20 @@ async function checkUser() {
         await mongoose.connect(process.env.MONGO_URI);
         console.log("Connected to DB");
 
-        const user = await User.findOne({ email: "super@admin.com" });
-        if (user) {
-            console.log("Super Admin found:", user);
+        const id = "69b2827d77ece7ae84cd0568";
+        const user = await User.findById(id);
+        if (!user) {
+            console.log("User NOT found!");
         } else {
-            console.log("Super Admin NOT found");
+            console.log("User:", user.name);
+            console.log("  Role:", user.role);
+            console.log("  CompanyId:", user.companyId);
         }
+
+        process.exit(0);
     } catch (err) {
-        console.error("Error:", err);
-    } finally {
-        await mongoose.disconnect();
+        console.error("ERROR:", err);
+        process.exit(1);
     }
 }
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   DndContext,
   DragOverlay,
@@ -9,8 +9,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { FiTrendingUp, FiPlus } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { FiTrendingUp, FiPlus, FiRefreshCw, FiSettings } from "react-icons/fi";
 import { motion } from "framer-motion";
 import API from "../../services/api";
 import { useToast } from "../../context/ToastContext";
@@ -18,10 +17,6 @@ import LeadPipelineColumn from "./LeadPipelineColumn";
 import LeadPipelineCard from "./LeadPipelineCard";
 import ConvertLeadModal from "../ConvertLeadModal";
 import { getCurrentUser } from "../../context/AuthContext";
-
-const LEAD_STAGES = ["new", "qualified", "proposition", "won"];
-
-const skeletonCols = new Array(4).fill(0);
 
 export default function LeadPipelineBoard() {
   const toast = useToast();
@@ -32,7 +27,8 @@ export default function LeadPipelineBoard() {
   const user = getCurrentUser();
   const canManagePipeline = user?.role === "company_admin" && basePath === "/company";
 
-  const [grouped, setGrouped] = useState(null);
+  const [pipeline, setPipeline] = useState(null);
+  const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeLead, setActiveLead] = useState(null);
   const [pendingWonLead, setPendingWonLead] = useState(null);
@@ -43,87 +39,55 @@ export default function LeadPipelineBoard() {
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   );
 
-  const fetchPipeline = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
       const res = await API.get("/leads/pipeline");
-      setGrouped(res.data?.data && typeof res.data.data === "object" ? res.data.data : {});
+      if (res.data?.success) {
+        setPipeline(res.data.pipeline);
+        setLeads(res.data.leads || []);
+      }
     } catch (err) {
       console.error(err);
-      setGrouped({});
-      if (typeof toast?.error === "function") toast.error("Failed to load lead pipeline.");
+      toast.error("Failed to load lead pipeline.");
     }
   }, [toast]);
 
   useEffect(() => {
     setLoading(true);
-    fetchPipeline()
-      .catch((e) => {
-        console.error(e);
-        if (typeof toast?.error === "function") toast.error("Failed to load lead pipeline.");
-      })
-      .finally(() => setLoading(false));
-  }, [fetchPipeline, toast]);
-
-  const getLeadStage = useCallback(
-    (leadId) => {
-      if (!grouped || typeof grouped !== "object") return null;
-      const id = leadId != null ? String(leadId) : null;
-      if (!id) return null;
-      for (const stage of LEAD_STAGES) {
-        const list = grouped[stage] || [];
-        if (list.some((l) => l && String(l._id) === id)) return stage;
-      }
-      return null;
-    },
-    [grouped]
-  );
-
-  const findLead = useCallback(
-    (leadId) => {
-      if (!grouped || typeof grouped !== "object") return null;
-      const id = leadId != null ? String(leadId) : null;
-      if (!id) return null;
-      for (const stage of LEAD_STAGES) {
-        const list = grouped[stage] || [];
-        const found = list.find((l) => l && String(l._id) === id);
-        if (found) return found;
-      }
-      return null;
-    },
-    [grouped]
-  );
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
 
   const onDragStart = useCallback(
     (event) => {
       const leadId = event.active?.id;
-      const lead = findLead(leadId);
-      setActiveLead(lead);
+      const l = leads.find(item => String(item._id) === String(leadId));
+      setActiveLead(l);
     },
-    [findLead]
+    [leads]
   );
 
-  const optimisticMove = useCallback((leadId, toStageKey) => {
-    const id = leadId != null ? String(leadId) : null;
-    if (!id) return;
-    setGrouped((prev) => {
-      if (!prev) return prev;
-      const next = { ...prev };
-      let moved = null;
-      for (const stage of LEAD_STAGES) {
-        const list = next[stage] || [];
-        const idx = list.findIndex((l) => l && String(l._id) === id);
-        if (idx !== -1) {
-          [moved] = list.splice(idx, 1);
-          next[stage] = [...list];
-          break;
-        }
-      }
-      if (!moved) return prev;
-      const targetList = next[toStageKey] || [];
-      next[toStageKey] = [...targetList, { ...moved, stage: toStageKey, stageUpdatedAt: new Date() }];
-      return next;
+  const grouped = useMemo(() => {
+    if (!pipeline?.stages || !leads) return null;
+    const map = {};
+    pipeline.stages.forEach(s => {
+      map[s.name] = [];
     });
-  }, []);
+    leads.forEach(l => {
+      const sName = l.stage || "New";
+      const match = pipeline.stages.find(s => 
+        s.name.toLowerCase() === sName.toLowerCase() || 
+        s._id === sName
+      );
+      const key = match ? match.name : (pipeline.stages[0]?.name || "New");
+      if (map[key]) map[key].push(l);
+    });
+    return map;
+  }, [pipeline, leads]);
+
+  const findLead = useCallback(
+    (leadId) => leads?.find(l => String(l._id) === String(leadId)),
+    [leads]
+  );
 
   const onDragOver = useCallback((event) => {
     const el = scrollRef.current;
@@ -141,36 +105,43 @@ export default function LeadPipelineBoard() {
   const onDragEnd = useCallback(
     async (event) => {
       const { active, over } = event;
+      if (!over) {
+        setActiveLead(null);
+        return;
+      }
+
       const leadId = active.id;
       const lead = findLead(leadId);
       setActiveLead(null);
-      if (!over) return;
 
-      const overId = over.id;
       const overType = over.data?.current?.type;
+      const overId = over.id;
+      const overLead = over.data?.current?.lead;
+      
+      // LOGIC: If we drop on a column, overId is the stage name.
+      // If we drop on a card, overLead.stage contains the stage name.
+      const targetStage = overType === "stage" ? overId : overLead?.stage;
+      
+      if (!targetStage || targetStage === lead?.stage) return;
 
-      const fromStageKey = getLeadStage(leadId);
-      const toStageKey = overType === "stage" ? overId : getLeadStage(overId);
+      // Update local state for immediate feedback
+      setLeads(prev => prev.map(l => String(l._id) === String(leadId) ? { ...l, stage: targetStage } : l));
 
-      if (!toStageKey || !fromStageKey) return;
-      if (toStageKey === fromStageKey && overType === "stage") return;
-
-      optimisticMove(leadId, toStageKey);
-
-      if (toStageKey === "won") {
+      if (targetStage.toLowerCase() === "won") {
         setPendingWonLead({ leadId, lead });
         return;
       }
 
       try {
-        await API.patch(`/leads/${leadId}/stage`, { status: toStageKey });
+        await API.patch(`/leads/${leadId}/stage`, { status: targetStage });
       } catch (e) {
-        console.error(e);
-        toast.error("Failed to move lead. Reverting.");
-        await fetchPipeline();
+        console.error("DRAG ERROR:", e);
+        const msg = e.response?.data?.message || e.message || "Failed to move lead.";
+        toast.error(`${msg} Reverting.`);
+        await fetchData();
       }
     },
-    [findLead, fetchPipeline, getLeadStage, optimisticMove, toast]
+    [findLead, fetchData, toast]
   );
 
   const handleConvertLead = useCallback(
@@ -181,7 +152,7 @@ export default function LeadPipelineBoard() {
         await API.post(`/leads/${lead._id}/convert`);
         toast.success("Lead converted to Deal & Customer.");
         setPendingWonLead(null);
-        await fetchPipeline();
+        await fetchData();
       } catch (e) {
         console.error(e);
         toast.error(e.response?.data?.message || "Failed to convert lead.");
@@ -189,7 +160,7 @@ export default function LeadPipelineBoard() {
         setConvertLoading(false);
       }
     },
-    [fetchPipeline, toast]
+    [fetchData, toast]
   );
 
   const handleJustMarkWon = useCallback(
@@ -200,91 +171,38 @@ export default function LeadPipelineBoard() {
         await API.patch(`/leads/${lead._id}/stage`, { status: "won" });
         toast.success("Lead marked as Won.");
         setPendingWonLead(null);
-        await fetchPipeline();
+        await fetchData();
       } catch (e) {
         console.error(e);
         toast.error("Failed to update. Reverting.");
-        await fetchPipeline();
+        await fetchData();
         setPendingWonLead(null);
       } finally {
         setConvertLoading(false);
       }
     },
-    [fetchPipeline, toast]
+    [fetchData, toast]
   );
 
   const handleCloseConvertModal = useCallback(() => {
     if (convertLoading) return;
     setPendingWonLead(null);
-    fetchPipeline();
-  }, [convertLoading, fetchPipeline]);
+    fetchData();
+  }, [convertLoading, fetchData]);
 
-  if (loading && grouped == null) {
+  if (loading && !pipeline) {
     return (
-      <div className="space-y-8 pb-20">
-        <div className="bg-white dark:bg-slate-950/40 border border-gray-100 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
-          <div className="h-6 w-56 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse" />
-          <div className="mt-3 h-3 w-80 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse" />
-        </div>
-        <div className="flex gap-6 overflow-x-auto pb-8 p-2">
-          {skeletonCols.map((_, i) => (
-            <div key={i} className="min-w-[320px] max-w-[320px]">
-              <div className="bg-white dark:bg-slate-950/40 border border-gray-100 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-100 dark:border-slate-800">
-                  <div className="h-4 w-40 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse" />
-                  <div className="mt-3 h-3 w-28 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse" />
-                </div>
-                <div className="p-4 space-y-3">
-                  <div className="h-28 bg-gray-100 dark:bg-slate-800 rounded-2xl animate-pulse" />
-                  <div className="h-28 bg-gray-100 dark:bg-slate-800 rounded-2xl animate-pulse" />
-                </div>
-              </div>
-            </div>
-          ))}
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-[var(--border)] rounded-md animate-pulse" />
+        <div className="flex gap-4 overflow-hidden">
+          {[1, 2, 3, 4].map(i => <div key={i} className="flex-1 min-w-[240px] h-[500px] bg-[var(--surface2)] rounded-[var(--r-md)] animate-pulse" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-700 pb-20">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-950/40 p-8 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-40 -mr-10 -mt-10 pointer-events-none" />
-        <div className="relative z-10">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Pipeline</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Sales pipeline kanban board</p>
-          {grouped && typeof grouped === "object" && (
-            <p className="text-xs text-gray-400 mt-1">
-              {Object.values(grouped).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0)} leads across {LEAD_STAGES.length} stages
-            </p>
-          )}
-        </div>
-        <div className="relative z-10 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => fetchPipeline()}
-            className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 text-xs font-medium hover:bg-gray-50"
-          >
-            Refresh
-          </button>
-          {canManagePipeline && (
-            <button
-              type="button"
-              onClick={() => navigate(`${basePath}/pipeline/settings`)}
-              className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 text-xs font-medium hover:bg-gray-50"
-            >
-              Settings
-            </button>
-          )}
-          <Link
-            to={`${basePath}/leads/create`}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 shadow-sm"
-          >
-            <FiPlus size={18} /> Add Lead
-          </Link>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-[calc(100vh-140px)]">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -295,13 +213,15 @@ export default function LeadPipelineBoard() {
       >
         <div
           ref={scrollRef}
-          className="flex flex-nowrap overflow-x-auto pb-8 gap-6 min-h-[62vh] snap-x snap-mandatory scroll-smooth p-2"
+          className="flex-1 flex flex-nowrap overflow-hidden gap-3 pb-2"
         >
-          {LEAD_STAGES.map((stageKey) => (
+          {/* RENDER ALL STAGES DYNAMICALLY FROM DB */}
+          {pipeline?.stages?.map((stage) => (
             <LeadPipelineColumn
-              key={stageKey}
-              stageKey={stageKey}
-              leads={grouped && typeof grouped === "object" ? grouped[stageKey] || [] : []}
+              key={stage.name}
+              stageKey={stage.name}
+              color={stage.color}
+              leads={grouped ? (grouped[stage.name] || []) : []}
               onViewLead={(lead) => lead?._id && navigate(`${basePath}/leads/${lead._id}`)}
             />
           ))}
@@ -309,9 +229,7 @@ export default function LeadPipelineBoard() {
 
         <DragOverlay dropAnimation={{ duration: 180, easing: "ease-out" }}>
           {activeLead && activeLead._id != null ? (
-            <motion.div initial={{ scale: 0.98 }} animate={{ scale: 1 }}>
-              <LeadPipelineCard lead={activeLead} isOverlay />
-            </motion.div>
+            <LeadPipelineCard lead={activeLead} isOverlay />
           ) : null}
         </DragOverlay>
       </DndContext>

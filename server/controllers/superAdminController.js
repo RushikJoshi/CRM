@@ -3,8 +3,12 @@ const User = require("../models/User");
 const Lead = require("../models/Lead");
 const Deal = require("../models/Deal");
 const Branch = require("../models/Branch");
+const Plan = require("../models/Plan");
+const SystemLog = require("../models/SystemLog");
 const bcrypt = require("bcryptjs");
 const { seedMasterDataForCompany } = require("../utils/masterSeeder");
+const { createDefaultPipeline } = require("./pipelineController");
+
 
 /* ================= COMPANIES ================= */
 
@@ -52,10 +56,37 @@ exports.createCompany = async (req, res, next) => {
       });
     }
 
-    // B. Create Company
-    const newCompany = await Company.create({ name, email, phone, website, industry, address });
+    // B. Get or Create Demo Plan
+    let demoPlan = await Plan.findOne({ name: "Demo", price: 0 });
+    if (!demoPlan) {
+      demoPlan = await Plan.create({
+        name: "Demo",
+        duration: 7,
+        price: 0,
+        features: ["Basic CRM access", "Limited leads", "Limited deals"],
+        isActive: true
+      });
+    }
 
-    // C. Create Company Admin User
+    // C. Create Company with Demo Plan
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + demoPlan.duration);
+
+    const newCompany = await Company.create({
+      name,
+      email,
+      phone,
+      website,
+      industry,
+      address,
+      planId: demoPlan._id,
+      startDate,
+      endDate,
+      subscriptionStatus: "active"
+    });
+
+    // D. Create Company Admin User
     const hashedPassword = await bcrypt.hash(adminPassword || "Company@123", 10);
     const newUser = await User.create({
       name: adminName || `${name} Admin`,
@@ -67,6 +98,10 @@ exports.createCompany = async (req, res, next) => {
 
     // D. Seed default master data for the new company
     await seedMasterDataForCompany(newCompany._id, newUser._id);
+
+    // E. Create default pipeline — ONE pipeline per company, guaranteed
+    await createDefaultPipeline(newCompany._id, newUser._id);
+    console.log("COMPANY CREATED:", newCompany._id, "with default pipeline.");
 
     res.status(201).json({
       success: true,
@@ -98,6 +133,81 @@ exports.deleteCompany = async (req, res, next) => {
     res.json({ success: true, message: "Company and all associated data purged successfully" });
   } catch (error) {
     console.error("DELETE COMPANY ERROR:", error);
+    next(error);
+  }
+};
+
+/* ================= PLANS ================= */
+
+// Get All Plans
+exports.getAllPlans = async (req, res, next) => {
+  try {
+    const plans = await Plan.find().sort({ createdAt: -1 });
+    res.json({ success: true, data: plans });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Create Plan
+exports.createPlan = async (req, res, next) => {
+  try {
+    const newPlan = await Plan.create(req.body);
+    res.status(201).json({ success: true, data: newPlan });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Update Plan
+exports.updatePlan = async (req, res, next) => {
+  try {
+    const updated = await Plan.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Delete Plan
+exports.deletePlan = async (req, res, next) => {
+  try {
+    await Plan.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: "Plan deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Assign Plan to Company (Renewal/Manual Assignment)
+exports.assignPlanToCompany = async (req, res, next) => {
+  try {
+    const { companyId, planId, startDate, customEndDate } = req.body;
+    
+    const plan = await Plan.findById(planId);
+    if (!plan) return res.status(404).json({ success: false, message: "Plan not found" });
+
+    const sDate = startDate ? new Date(startDate) : new Date();
+    let eDate;
+    
+    if (customEndDate) {
+      eDate = new Date(customEndDate);
+    } else {
+      eDate = new Date(sDate);
+      eDate.setDate(sDate.getDate() + plan.duration);
+    }
+
+    const updatedCompany = await Company.findByIdAndUpdate(companyId, {
+      planId,
+      startDate: sDate,
+      endDate: eDate,
+      subscriptionStatus: "active"
+    }, { new: true });
+
+    if (!updatedCompany) return res.status(404).json({ success: false, message: "Company not found" });
+
+    res.json({ success: true, message: "Plan assigned successfully", data: updatedCompany });
+  } catch (error) {
     next(error);
   }
 };
@@ -380,6 +490,34 @@ exports.getPlatformStats = async (req, res, next) => {
         storageUsage: "0 MB",
         recentCompanies
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/* ================= SYSTEM LOGS ================= */
+
+exports.getSystemLogs = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const logs = await SystemLog.find()
+      .populate("userId", "name email")
+      .populate("companyId", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit * 1);
+
+    const total = await SystemLog.countDocuments();
+
+    res.json({
+      success: true,
+      data: logs,
+      total,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
     next(error);

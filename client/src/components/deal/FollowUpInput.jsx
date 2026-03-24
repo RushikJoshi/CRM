@@ -81,7 +81,7 @@ export default function FollowUpInput({ dealId, onAdded }) {
       <button
         type="submit"
         disabled={saving || !note.trim()}
-        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <FiPlus size={14} />
         {saving ? "Saving..." : "Add Activity"}

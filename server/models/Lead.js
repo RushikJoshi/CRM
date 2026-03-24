@@ -30,24 +30,9 @@ const leadSchema = new mongoose.Schema(
     },
     stage: {
       type: String,
-      // NOTE: we keep legacy stage keys for backward compatibility/migration.
-      enum: [
-        // New Odoo-style keys
-        "new",
-        "qualified",
-        "proposition",
-        "negotiation",
-        "won",
-        // Legacy keys (to be migrated)
-        "new_lead",
-        "attempted_contact",
-        "contacted",
-        "prospect",
-        "proposal",
-        "lost",
-      ],
-      default: "new"
+      default: "New"
     },
+
     stageUpdatedAt: {
       type: Date,
       default: null

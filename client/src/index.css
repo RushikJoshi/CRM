@@ -1,28 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Design system: minimal SaaS – Indigo/Gray theme */
 @layer base {
   :root {
-    --crm-bg: #F9FAFB; /* gray-50 */
-    --crm-surface: #FFFFFF;
-    --crm-border: #E5E7EB; /* gray-200 */
-    --crm-primary: #6366F1; /* indigo-500 */
-    --crm-primary-hover: #4F46E5; /* indigo-600 */
-    --crm-success: #22C55E;
-    --crm-warning: #F59E0B;
-    --crm-danger: #EF4444;
-    --crm-text: #1F2937; /* gray-800 */
-    --crm-text-muted: #6B7280; /* gray-500 */
-    --sidebar-width: 240px;
-    --sidebar-collapsed: 72px;
-    --topbar-height: 56px;
+    /* Sidebar — Bordio-style soft lavender */
+    --sb-bg:       #f8f7ff;
+    --sb-bg2:      #f0effe;
+    --sb-border:   #e6e4f9;
+    --sb-text:     #8c8ab5;
+    --sb-text-act: #3730a3;
+    --sb-hover:    rgba(99,102,241,.08);
+    --sb-active:   rgba(99,102,241,.13);
+    --sb-active-b: #6366f1;
+    --sb-width:    224px;
+    --sb-collapsed: 52px;
+
+    /* Content area */
+    --bg:          #f5f6fb;
+    --surface:     #ffffff;
+    --surface2:    #f9fafc;
+    --border:      #e8eaf2;
+    --border2:     #d4d8e8;
+
+    /* Typography */
+    --txt:         #0d1117;
+    --txt2:        #374151;
+    --txt3:        #6b7280;
+    --txt4:        #9ca3af;
+
+    /* Brand / Accent — Indigo */
+    --indigo:      #6366f1;
+    --indigo-d:    #4f46e5;
+    --indigo-l:    #eef2ff;
+    --indigo-m:    #e0e7ff;
+    --indigo-b:    #c7d2fe;
+
+    /* Semantic colors */
+    --success:     #059669;   --success-l: #ecfdf5;
+    --warning:     #d97706;   --warning-l: #fffbeb;
+    --danger:      #dc2626;   --danger-l:  #fef2f2;
+    --info:        #2563eb;   --info-l:    #eff6ff;
+
+    /* Border radii */
+    --r-sm: 4px;
+    --r:    6px;
+    --r-md: 8px;
+    --r-lg: 12px;
+
+    /* Shadows */
+    --sh-sm: 0 1px 2px rgba(0,0,0,.06);
+    --sh:    0 1px 3px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.04);
+    --sh-md: 0 4px 16px rgba(0,0,0,.10);
+    --sh-lg: 0 8px 32px rgba(0,0,0,.14);
+
+    /* Layout */
+    --tb-h: 52px;
   }
 
   body {
-    @apply bg-gray-50 text-gray-800;
-    font-family: "Inter", system-ui, sans-serif;
+    @apply bg-[#f5f6fb] text-[#0d1117] overflow-x-hidden min-h-screen text-[13px];
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -30,52 +70,60 @@
 
 @layer components {
   .crm-card {
-    @apply bg-white border border-gray-200 rounded-xl shadow-sm;
-  }
-
-  .crm-card-hover {
-    @apply crm-card hover:shadow-crm-card;
+    @apply bg-white border border-[#e8eaf2] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,.08),0_2px_8px_rgba(0,0,0,.04)];
   }
 
   .crm-btn-primary {
-    @apply px-4 py-2.5 text-white rounded-xl font-semibold text-sm transition-colors duration-150;
-    @apply bg-indigo-500 hover:bg-indigo-600;
+    @apply h-[32px] px-[14px] bg-[#6366f1] text-white rounded-[6px] font-medium text-[12.5px] transition-all duration-150 cursor-pointer shadow-[0_1px_3px_rgba(99,102,241,.35)] hover:bg-[#4f46e5] active:scale-95 flex items-center justify-center gap-2;
   }
 
   .crm-btn-secondary {
-    @apply px-4 py-2.5 bg-white border border-gray-200 text-gray-800 hover:bg-gray-50 rounded-xl font-semibold text-sm transition-colors duration-150;
+    @apply h-[32px] px-[14px] bg-white border border-[#d4d8e8] text-[#374151] rounded-[6px] font-medium text-[12.5px] transition-all duration-150 cursor-pointer shadow-sm hover:bg-gray-50 active:scale-95 flex items-center justify-center gap-2;
   }
 
   .crm-table-header {
-    @apply bg-gray-50 border-b border-gray-200 text-gray-500 text-xs font-semibold uppercase tracking-wider px-4 py-3 sticky top-0 z-10;
+    @apply bg-[#f9fafc] border-b border-[#e8eaf2] text-[#6b7280] text-[11px] font-semibold uppercase tracking-[0.07em] px-4 py-[9px] sticky top-0 z-10;
   }
 
   .crm-table-row {
-    @apply border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150;
+    @apply border-b border-[#e8eaf2] hover:bg-[#fafbff] transition-colors duration-150;
   }
 
-  /* Deprecated: glass header. Use plain header with border-bottom. */
-
   .canvas-card {
-    @apply bg-white border border-gray-200 rounded-xl shadow-sm;
+    @apply bg-white border border-[#e8eaf2] rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,.08),0_2px_8px_rgba(0,0,0,.04)];
   }
 }
 
 /* Scrollbar: minimal */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-[#E5E7EB] rounded-full hover:bg-[#D1D5DB] transition-colors;
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }
 
 input::-ms-reveal,
 input::-ms-clear {
   display: none !important;
+}
+
+/* Page entrance animation */
+.animate-page-in {
+  animation: pagein 0.2s ease forwards;
+}
+
+@keyframes pagein {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

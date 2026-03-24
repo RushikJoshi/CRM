@@ -2,6 +2,8 @@ const Company = require("../models/Company");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Plan = require("../models/Plan");
+const SystemLog = require("../models/SystemLog");
 const { seedMasterDataForCompany } = require("../utils/masterSeeder");
 
 // ============================
@@ -26,11 +28,31 @@ exports.registerCompany = async (req, res) => {
       });
     }
 
-    // Create company
+    // B. Get or Create Demo Plan
+    let demoPlan = await Plan.findOne({ name: "Demo", price: 0 });
+    if (!demoPlan) {
+      demoPlan = await Plan.create({
+        name: "Demo",
+        duration: 7,
+        price: 0,
+        features: ["Basic CRM access", "Limited leads", "Limited deals"],
+        isActive: true
+      });
+    }
+
+    // C. Create company with Demo Plan
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + demoPlan.duration);
+
     const company = await Company.create({
       name: companyName,
       email,
-      phone: phone || ""
+      phone: phone || "",
+      planId: demoPlan._id,
+      startDate,
+      endDate,
+      subscriptionStatus: "active"
     });
 
     // Hash password
@@ -118,18 +140,42 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      {
-        id: user._id,
-        role: user.role,
-        companyId: user.companyId,
-        branchId: user.branchId || null
-      },
+      { id: user._id, role: user.role, companyId: user.companyId, branchId: user.branchId || null },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "10h" }
     );
+
+    // [New] LOG Login Activity
+    try {
+      await SystemLog.create({
+        userId: user._id,
+        companyId: user.companyId,
+        action: "login",
+        ipAddress: req.headers["x-forwarded-for"] || req.socket.remoteAddress || "local",
+        userAgent: req.headers["user-agent"] || "",
+        location: "Detected via IP", // In a real app, you'd use a geoIP service here
+        status: "success"
+      });
+    } catch (logErr) {
+      console.error("Error creating system log:", logErr);
+    }
 
     const baseUrl = process.env.BASE_URL || "http://localhost:5000";
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+    // Fetch subscription info
+    let subscription = null;
+    if (user.companyId) {
+        const company = await Company.findById(user.companyId).select("planId startDate endDate subscriptionStatus");
+        if (company) {
+            subscription = {
+                planId: company.planId,
+                startDate: company.startDate,
+                endDate: company.endDate,
+                status: company.subscriptionStatus
+            };
+        }
+    }
 
     // ✅ Never return password hash to frontend
     const safeUser = {
@@ -139,7 +185,8 @@ exports.login = async (req, res) => {
       role: user.role,
       companyId: user.companyId || null,
       branchId: user.branchId || null,
-      status: user.status
+      status: user.status,
+      subscription
     };
 
     res.json({
@@ -166,7 +213,24 @@ exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ success: true, data: user });
+
+    let subscription = null;
+    if (user.companyId) {
+        const company = await Company.findById(user.companyId).select("planId startDate endDate subscriptionStatus");
+        if (company) {
+            subscription = {
+                planId: company.planId,
+                startDate: company.startDate,
+                endDate: company.endDate,
+                status: company.subscriptionStatus
+            };
+        }
+    }
+
+    const userData = user.toObject();
+    userData.subscription = subscription;
+
+    res.json({ success: true, data: userData });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -45,6 +45,7 @@ const Billing = lazy(() => import("./pages/platform/Billing"));
 const UsageAnalytics = lazy(() => import("./pages/platform/UsageAnalytics"));
 const SystemLogs = lazy(() => import("./pages/platform/SystemLogs"));
 const ApiKeys = lazy(() => import("./pages/platform/ApiKeys"));
+const EmailTemplates = lazy(() => import("./pages/EmailTemplates"));
 
 // ── Lazy-loaded Full-page Form Pages ─────────────────────────────────────────
 const CompanyFormPage = lazy(() => import("./pages/forms/CompanyFormPage"));
@@ -58,7 +59,9 @@ const DealDetailPage = lazy(() => import("./pages/DealDetailPage"));
 const ContactFormPage = lazy(() => import("./pages/forms/ContactFormPage"));
 const InquiryFormPage = lazy(() => import("./pages/forms/InquiryFormPage"));
 const ConvertInquiryFormPage = lazy(() => import("./pages/forms/ConvertInquiryFormPage"));
+const CustomerFormPage = lazy(() => import("./pages/forms/CustomerFormPage"));
 const Profile = lazy(() => import("./pages/Profile"));
+const SubscriptionExpired = lazy(() => import("./pages/SubscriptionExpired"));
 
 // ── Page loading fallback ─────────────────────────────────────────────────────
 const PageLoader = () => (
@@ -100,6 +103,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<SmartRedirect />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/subscription-expired" element={<SubscriptionExpired />} />
 
         {/* ════════════════════════════════════
             SUPER ADMIN ROUTES (Platform only – no CRM sales data)
@@ -150,7 +154,9 @@ function App() {
           <Route path="/company/contacts/create" element={<ContactFormPage />} />
           <Route path="/company/contacts/:id/edit" element={<ContactFormPage />} />
           <Route path="/company/customers" element={<Customers />} />
+          <Route path="/company/customers/create" element={<CustomerFormPage />} />
           <Route path="/company/customers/:id" element={<CustomerDetails />} />
+          <Route path="/company/customers/:id/edit" element={<CustomerFormPage />} />
           <Route path="/company/inquiries" element={<Inquiries />} />
           <Route path="/company/inquiries/create" element={<InquiryFormPage />} />
           <Route path="/company/inquiries/:id/edit" element={<InquiryFormPage />} />
@@ -169,6 +175,8 @@ function App() {
           <Route path="/company/leaderboard" element={<Leaderboard />} />
           <Route path="/company/planner" element={<SalesPlanner />} />
           <Route path="/company/automation" element={<Automation />} />
+          <Route path="/company/calendar" element={<Calendar />} />
+          <Route path="/company/email-templates" element={<EmailTemplates />} />
           <Route path="/company/settings" element={<Settings />} />
         </Route>
 
@@ -194,7 +202,9 @@ function App() {
           <Route path="/branch/contacts/create" element={<ContactFormPage />} />
           <Route path="/branch/contacts/:id/edit" element={<ContactFormPage />} />
           <Route path="/branch/customers" element={<Customers />} />
+          <Route path="/branch/customers/create" element={<CustomerFormPage />} />
           <Route path="/branch/customers/:id" element={<CustomerDetails />} />
+          <Route path="/branch/customers/:id/edit" element={<CustomerFormPage />} />
           <Route path="/branch/inquiries" element={<Inquiries />} />
           <Route path="/branch/inquiries/create" element={<InquiryFormPage />} />
           <Route path="/branch/inquiries/:id/edit" element={<InquiryFormPage />} />
@@ -211,6 +221,8 @@ function App() {
           <Route path="/branch/branch-analytics" element={<BranchAnalytics />} />
           <Route path="/branch/leaderboard" element={<Leaderboard />} />
           <Route path="/branch/planner" element={<SalesPlanner />} />
+          <Route path="/branch/calendar" element={<Calendar />} />
+          <Route path="/branch/email-templates" element={<EmailTemplates />} />
           <Route path="/branch/settings" element={<Settings />} />
         </Route>
 
@@ -234,7 +246,9 @@ function App() {
           <Route path="/sales/contacts/create" element={<ContactFormPage />} />
           <Route path="/sales/contacts/:id/edit" element={<ContactFormPage />} />
           <Route path="/sales/customers" element={<Customers />} />
+          <Route path="/sales/customers/create" element={<CustomerFormPage />} />
           <Route path="/sales/customers/:id" element={<CustomerDetails />} />
+          <Route path="/sales/customers/:id/edit" element={<CustomerFormPage />} />
           <Route path="/sales/inquiries" element={<Inquiries />} />
           <Route path="/sales/inquiries/create" element={<InquiryFormPage />} />
           <Route path="/sales/inquiries/:id/edit" element={<InquiryFormPage />} />
@@ -246,6 +260,8 @@ function App() {
           <Route path="/sales/pipeline" element={<DealPipelinePage />} />
           <Route path="/sales/pipeline/settings" element={<PipelineSettings />} />
           <Route path="/sales/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/sales/calendar" element={<Calendar />} />
+          <Route path="/sales/email-templates" element={<EmailTemplates />} />
           <Route path="/sales/settings" element={<Settings />} />
         </Route>
 

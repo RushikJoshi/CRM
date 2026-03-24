@@ -15,7 +15,7 @@ const ContactsPage = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const pageSize = 20;
+    const pageSize = 10;
 
     const currentUser = getCurrentUser();
     const role = currentUser?.role;
@@ -23,8 +23,10 @@ const ContactsPage = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const res = await API.get(`/crm/contacts?search=${search}`);
-            setData(res.data?.data || res.data || []);
+            const res = await API.get(`/crm/contacts?search=${encodeURIComponent(search)}&page=${page}&limit=${pageSize}`);
+            setData(res.data?.data || (Array.isArray(res.data) ? res.data : []));
+            setTotalPages(res.data?.totalPages ?? 1);
+            setTotal(res.data?.total ?? 0);
         } catch (err) {
             console.error(err);
         } finally {
@@ -53,100 +55,89 @@ const ContactsPage = () => {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700 pb-10">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-8 rounded-2xl border border-gray-100 shadow-sm transition-all hover:shadow-xl hover:shadow-green-500/5">
-                <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Contacts</h1>
-                    <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mt-1 opacity-75">Manage your individual contacts here.</p>
+        <div className="p-6 space-y-6 animate-in fade-in duration-700 pb-20">
+            {/* Top Action Bar */}
+            <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl border shadow-sm transition-all duration-300">
+                <div className="w-64 relative">
+                    <input
+                        type="text"
+                        placeholder="Search contacts..."
+                        className="w-full px-4 py-2 bg-gray-50 border border-transparent rounded-lg outline-none focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium text-gray-700 text-sm font-bold"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
                 </div>
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="relative group w-full lg:w-64">
-                        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Search contacts..."
-                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-xl outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                    <button
-                        onClick={() => navigate(getFormPath())}
-                        className="flex items-center gap-3 px-6 py-4 bg-green-500 text-white font-black rounded-xl shadow-xl shadow-green-500/20 hover:bg-green-600 hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest"
-                    >
-                        <FiPlus size={20} />
-                        Add Contact
-                    </button>
+
+                <div className="flex items-center gap-3">
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-50/50">
-                            <tr className="border-b border-gray-100">
-                                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Name</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Company</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Contact Info</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {data.map((item) => (
-                                <tr key={item._id} className="hover:bg-green-50/30 transition-all group animate-in fade-in duration-500">
-                                    <td className="px-8 py-5">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 group-hover:bg-green-50 group-hover:border-green-100 transition-colors shadow-sm">
-                                                <FiUser size={18} className="text-gray-400 group-hover:text-green-500 transition-colors" />
-                                            </div>
-                                            <span className="font-black text-gray-900 tracking-tight">{item.name}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-5">
-                                        <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                            <FiBriefcase size={10} className="text-green-500" />
-                                            {item.customerId?.name || "Independent"}
-                                        </span>
-                                    </td>
-                                    <td className="px-8 py-5 space-y-2">
-                                        <p className="text-sm font-bold text-gray-700 flex items-center gap-2.5">
-                                            <FiMail className="text-gray-300 group-hover:text-green-500 transition-colors" size={14} />
-                                            {item.email || "No email"}
-                                        </p>
-                                        <p className="text-[11px] font-black text-gray-400 flex items-center gap-2.5">
-                                            <FiPhone className="text-gray-300 group-hover:text-green-500 transition-colors" size={14} />
-                                            {item.phone || "No phone"}
-                                        </p>
-                                    </td>
-                                    <td className="px-8 py-5 text-right">
-                                        <div className="flex items-center justify-end gap-3 translate-x-2 group-hover:translate-x-0 transition-transform">
-                                            <button
-                                                onClick={() => navigate(getFormPath(item._id))}
-                                                className="p-2.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all hover:scale-110 active:scale-95"
-                                                title="Edit"
-                                            >
-                                                <FiEdit2 size={16} />
-                                            </button>
-
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+            {loading ? (
+                <div className="bg-white rounded-xl border shadow-sm p-12 flex flex-col items-center justify-center space-y-4">
+                    <div className="w-10 h-10 border-4 border-teal-50 border-t-teal-600 rounded-full animate-spin" />
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Loading Contacts...</p>
                 </div>
-                {data.length === 0 && !loading && (
-                    <div className="p-24 text-center flex flex-col items-center">
-                        <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center text-gray-200 text-3xl mb-6 shadow-inner ring-4 ring-gray-50/50">
-                            <FiUser />
+            ) : (
+                <div className="space-y-4">
+                    <div className="bg-white rounded-xl border shadow-sm p-4 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-gray-50 border-b border-gray-100">
+                                        <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Name</th>
+                                        <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Company</th>
+                                        <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Contact Info</th>
+                                        <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50 bg-white">
+                                    {data.map((item) => (
+                                        <tr 
+                                            key={item._id} 
+                                            onClick={() => navigate(getFormPath(item._id))}
+                                            className="hover:bg-gray-50 transition-colors cursor-pointer group"
+                                        >
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-bold text-gray-900 text-sm group-hover:text-teal-600 transition-colors">{item.name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                                    {item.customerId?.name || "Independent"}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-gray-700">{item.email || "No email"}</span>
+                                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{item.phone || "No phone"}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => navigate(getFormPath(item._id))}
+                                                        className="p-2 text-gray-400 hover:text-teal-600 transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <FiEdit2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {data.length === 0 && !loading && (
+                                        <tr>
+                                            <td colSpan={4} className="px-4 py-24 text-center text-gray-400 text-xs font-bold uppercase tracking-widest">No contacts found</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
-                        <p className="text-gray-300 font-black uppercase tracking-[0.2em] italic text-xs">No contacts found.</p>
                     </div>
-                )}
-            </div>
-            {totalPages > 1 && (
-                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} total={total} pageSize={pageSize} />
+                </div>
             )}
+            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} total={total} pageSize={pageSize} />
         </div>
     );
 };

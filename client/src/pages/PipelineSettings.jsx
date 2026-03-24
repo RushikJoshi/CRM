@@ -56,23 +56,32 @@ export default function PipelineSettings() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  const canManage = user?.role === "company_admin";
+  const canManage = false; // Only manageable via Super Admin panel
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const pipelinesRes = await API.get("/pipeline");
-      const first = Array.isArray(pipelinesRes.data?.data) ? pipelinesRes.data.data[0] : null;
-      if (!first?._id) {
+      // GET /pipeline returns a SINGLE pipeline object — NOT an array
+      const res = await API.get("/pipeline");
+      const pl = res.data?.data || null;
+
+      if (!pl?._id) {
         setPipeline(null);
         setStages([]);
+        console.log("PIPELINE: Not configured for this company yet.");
         return;
       }
-      setPipeline(first);
-      const stagesRes = await API.get(`/pipeline/${first._id}/stages`);
-      setStages(Array.isArray(stagesRes.data?.data) ? stagesRes.data.data : []);
+
+      setPipeline(pl);
+      const sorted = Array.isArray(pl.stages)
+        ? [...pl.stages].sort((a, b) => (a.order || 0) - (b.order || 0))
+        : [];
+      setStages(sorted);
+
+      console.log("PIPELINE FETCHED:", pl._id);
+      console.log("TOTAL STAGES:", sorted.length);
     } catch (e) {
-      console.error(e);
+      console.error("PIPELINE SETTINGS FETCH ERROR:", e);
       toast.error("Failed to load pipeline settings.");
     } finally {
       setLoading(false);

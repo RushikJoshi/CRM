@@ -7,10 +7,10 @@ import API from "../services/api";
 import Pagination from "./Pagination";
 
 const ICON_MAP = {
-    lead: { icon: <FiUser />, color: "bg-blue-100 text-blue-600 border-blue-200" },
+    lead: { icon: <FiUser />, color: "bg-teal-100 text-teal-700 border-teal-200" },
     deal: { icon: <FiLayers />, color: "bg-emerald-100 text-emerald-600 border-emerald-200" },
     call: { icon: <FiPhone />, color: "bg-green-100 text-green-600 border-green-200" },
-    meeting: { icon: <FiCalendar />, color: "bg-indigo-100 text-indigo-600 border-indigo-200" },
+    meeting: { icon: <FiCalendar />, color: "bg-teal-100 text-teal-700 border-teal-200" },
     task: { icon: <FiCheckCircle />, color: "bg-orange-100 text-orange-600 border-orange-200" },
     note: { icon: <FiFileText />, color: "bg-amber-100 text-amber-600 border-amber-200" },
     message: { icon: <FiMessageSquare />, color: "bg-pink-100 text-pink-600 border-pink-200" },
@@ -87,7 +87,7 @@ const ActivityTimeline = ({ leadId, customerId, dealId, pageSize = PAGE_SIZE }) 
         <div className="space-y-4">
             <div className="relative pl-8 space-y-6 animate-in fade-in duration-700">
                 {/* Vertical Line */}
-                <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-emerald-500/20 via-blue-500/20 to-transparent" />
+                <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-emerald-500/20 via-teal-600/20 to-transparent" />
 
                 {paginated.map((activity, index) => {
                 const config = ICON_MAP[activity.type] || ICON_MAP.system;

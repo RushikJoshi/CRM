@@ -3,11 +3,11 @@ import { FiPhone, FiCalendar, FiFileText, FiMail, FiMessageSquare, FiInfo } from
 
 const TYPE_CONFIG = {
   call: { icon: FiPhone, label: "Call", color: "bg-gray-100 text-gray-700 border-gray-200" },
-  meeting: { icon: FiCalendar, label: "Meeting", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  meeting: { icon: FiCalendar, label: "Meeting", color: "bg-teal-50 text-teal-700 border-teal-200" },
   note: { icon: FiFileText, label: "Note", color: "bg-gray-100 text-gray-700 border-gray-200" },
   email: { icon: FiMail, label: "Email", color: "bg-gray-100 text-gray-700 border-gray-200" },
   message: { icon: FiMessageSquare, label: "Message", color: "bg-gray-100 text-gray-700 border-gray-200" },
-  deal_stage_changed: { icon: FiInfo, label: "Stage", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  deal_stage_changed: { icon: FiInfo, label: "Stage", color: "bg-teal-50 text-teal-700 border-teal-200" },
   task: { icon: FiFileText, label: "Task", color: "bg-gray-100 text-gray-700 border-gray-200" },
 };
 

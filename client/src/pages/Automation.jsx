@@ -11,7 +11,7 @@ import { getCurrentUser } from "../context/AuthContext";
 // ─── Constants ──────────────────────────────────────────────────────────────
 const TRIGGERS = [
     { value: "lead_created", label: "New Lead Created", icon: <FiZap />, color: "bg-green-100 text-green-700", description: "When a new lead is added to the CRM" },
-    { value: "deal_stage_changed", label: "Deal Stage Changed", icon: <FiArrowRight />, color: "bg-blue-100 text-blue-700", description: "When a deal moves to a different stage" },
+    { value: "deal_stage_changed", label: "Deal Stage Changed", icon: <FiArrowRight />, color: "bg-teal-100 text-teal-800", description: "When a deal moves to a different stage" },
     { value: "meeting_scheduled", label: "Meeting Scheduled", icon: <FiClock />, color: "bg-purple-100 text-purple-700", description: "When a new meeting is booked" },
     { value: "task_overdue", label: "Task Overdue", icon: <FiAlertCircle />, color: "bg-red-100 text-red-700", description: "When a task crosses its due date" },
 ];
@@ -19,7 +19,7 @@ const TRIGGERS = [
 const ACTION_TYPES = [
     { value: "create_notification", label: "Send Notification", icon: <FiBell />, color: "bg-orange-100 text-orange-700" },
     { value: "create_task", label: "Create Task", icon: <FiCheck />, color: "bg-green-100 text-green-700" },
-    { value: "assign_to_user", label: "Assign to User", icon: <FiUser />, color: "bg-blue-100 text-blue-700" },
+    { value: "assign_to_user", label: "Assign to User", icon: <FiUser />, color: "bg-teal-100 text-teal-800" },
     { value: "assign_to_branch", label: "Assign to Branch", icon: <FiTag />, color: "bg-purple-100 text-purple-700" },
 ];
 
@@ -30,14 +30,14 @@ const STATUS_COLORS = {
 
 const TRIGGER_ICON_MAP = {
     lead_created: <FiZap className="text-green-600" />,
-    deal_stage_changed: <FiArrowRight className="text-blue-600" />,
+    deal_stage_changed: <FiArrowRight className="text-teal-700" />,
     meeting_scheduled: <FiClock className="text-purple-600" />,
     task_overdue: <FiAlertCircle className="text-red-600" />,
 };
 
 const TRIGGER_COLORS = {
     lead_created: "bg-green-50 border-green-200",
-    deal_stage_changed: "bg-blue-50 border-blue-200",
+    deal_stage_changed: "bg-teal-50 border-teal-200",
     meeting_scheduled: "bg-purple-50 border-purple-200",
     task_overdue: "bg-red-50 border-red-200",
 };

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import BranchTable from "../components/BranchTable";
 import Pagination from "../components/Pagination";
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiSearch } from "react-icons/fi";
 import { useToast } from "../context/ToastContext";
 import { getCurrentUser } from "../context/AuthContext";
 
@@ -87,30 +87,62 @@ function Branches() {
     useEffect(() => { fetchCompanies(); }, []);
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700 pb-16">
-            <div className="flex justify-end mb-4">
-                <button
-                    onClick={() => navigate(`${formBase}/create`)}
-                    className="flex items-center justify-center gap-3 px-8 py-3.5 bg-sky-500 text-white font-black rounded-2xl shadow-lg shadow-sky-500/20 hover:bg-sky-600 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest min-w-[180px]"
-                >
-                    <FiPlus size={20} strokeWidth={3} />
-                    Add New Branch
-                </button>
+        <div className="p-6 space-y-6 animate-in fade-in duration-700">
+            {/* Top Action Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border shadow-sm">
+                <div className="flex-1 min-w-[300px] relative group">
+                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" />
+                    <input
+                        type="text"
+                        placeholder="Search branches..."
+                        className="w-full pl-12 pr-4 py-2 bg-gray-50 border border-transparent rounded-lg outline-none focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium text-gray-700 text-sm"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    {isSuperAdmin && (
+                        <select
+                            className="bg-gray-100 border-none rounded-lg px-3 py-2 text-xs font-bold text-gray-600 outline-none focus:ring-2 focus:ring-teal-500/20"
+                            value={selectedCompany}
+                            onChange={(e) => setSelectedCompany(e.target.value)}
+                        >
+                            <option value="">All Companies</option>
+                            {companies.map((c) => (
+                                <option key={c._id} value={c._id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                    <select
+                        className="bg-gray-100 border-none rounded-lg px-3 py-2 text-xs font-bold text-gray-600 outline-none focus:ring-2 focus:ring-teal-500/20"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
             </div>
 
             {loading ? (
-                <div className="h-[400px] flex flex-col items-center justify-center space-y-6 bg-white/50 rounded-[40px] border border-gray-100 border-dashed animate-pulse">
-                    <div className="w-12 h-12 border-[4px] border-sky-50 border-t-sky-500 rounded-full animate-spin shadow-lg"></div>
-                    <p className="text-gray-400 font-black uppercase tracking-widest text-[11px]">Loading branches...</p>
+                <div className="bg-white rounded-xl border shadow-sm p-12 flex flex-col items-center justify-center space-y-4">
+                    <div className="w-10 h-10 border-4 border-teal-50 border-t-teal-600 rounded-full animate-spin" />
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Loading Branches...</p>
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <BranchTable
-                        branches={branches}
-                        onEdit={(b) => navigate(`${formBase}/${b._id}/edit`)}
-                        onDelete={handleDelete}
-                        onToggleStatus={handleToggleStatus}
-                    />
+                    <div className="bg-white rounded-xl border shadow-sm p-4 overflow-hidden">
+                        <BranchTable
+                            branches={branches}
+                            onEdit={(b) => navigate(`${formBase}/${b._id}/edit`)}
+                            onDelete={handleDelete}
+                            onToggleStatus={handleToggleStatus}
+                        />
+                    </div>
                     <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} total={total} pageSize={pageSize} />
                 </div>
             )}

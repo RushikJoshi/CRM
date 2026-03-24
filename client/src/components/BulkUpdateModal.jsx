@@ -77,10 +77,10 @@ const BulkUpdateModal = ({ isOpen, onClose, ids, action, onUpdated }) => {
                     {action === "update_status" && (
                         <div className="space-y-4">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <FiFlag className="text-blue-500" /> Choose New Status
+                                <FiFlag className="text-teal-600" /> Choose New Status
                             </label>
                             <select
-                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all font-bold text-gray-700 appearance-none cursor-pointer"
+                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-500 transition-all font-bold text-gray-700 appearance-none cursor-pointer"
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
                             >
@@ -99,10 +99,10 @@ const BulkUpdateModal = ({ isOpen, onClose, ids, action, onUpdated }) => {
                     {action === "assign_user" && (
                         <div className="space-y-4">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <FiUser className="text-indigo-500" /> Select User to Assign
+                                <FiUser className="text-teal-600" /> Select User to Assign
                             </label>
                             <select
-                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all font-bold text-gray-700 appearance-none cursor-pointer"
+                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-500 transition-all font-bold text-gray-700 appearance-none cursor-pointer"
                                 value={selectedUser}
                                 onChange={(e) => setSelectedUser(e.target.value)}
                             >

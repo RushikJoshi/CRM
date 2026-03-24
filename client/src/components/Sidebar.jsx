@@ -1,11 +1,11 @@
 import React, { useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-    FiLayout,
+    FiGrid,
     FiBriefcase,
-    FiGitPullRequest,
+    FiGitBranch,
     FiUsers,
-    FiTarget,
+    FiTrendingUp,
     FiPieChart,
     FiSettings,
     FiLogOut,
@@ -28,11 +28,14 @@ import {
     FiActivity,
     FiKey,
     FiFileText,
+    FiX,
+    FiMail,
+    FiSend
 } from "react-icons/fi";
-import { FaIndianRupeeSign } from "react-icons/fa6";
 import { AuthContext, getCurrentUser } from "../context/AuthContext";
+import logo from "/src/assets/logos/edupathpro_logo.png";
 
-const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
+const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { logout } = useContext(AuthContext);
@@ -47,64 +50,62 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
         return "";
     })();
 
-    const platformMenuItems = [
-        { name: "Dashboard", icon: <FiLayout />, path: "/dashboard" },
-        { name: "Companies", icon: <FiBriefcase />, path: "/companies" },
-        { name: "Subscriptions", icon: <FiCreditCard />, path: "/subscriptions" },
-        { name: "Plans", icon: <FiPackage />, path: "/plans" },
-        { name: "Platform Users", icon: <FiUsers />, path: "/users" },
-        { name: "All Inquiries", icon: <FiInbox />, path: "/inquiries" },
-        { name: "Billing", icon: <FiCreditCard />, path: "/billing" },
-        { name: "Usage Analytics", icon: <FiActivity />, path: "/usage-analytics" },
-        { name: "System Logs", icon: <FiFileText />, path: "/system-logs" },
-        { name: "API Keys", icon: <FiKey />, path: "/api-keys" },
-        { name: "Settings", icon: <FiSettings />, path: "/settings" },
-    ];
-
-    const fullMenuItems = [
-        { name: "Dashboard", icon: <FiLayout />, path: "/dashboard", roles: ["company_admin", "branch_manager", "sales"] },
-        { name: "Planner", icon: <FiCalendar />, path: "/planner", roles: ["branch_manager", "sales"] },
+    const menuGroups = role === "super_admin" ? [
         {
-            name: "Inquiries",
-            icon: <FiInbox />,
-            path: "/inquiries",
-            roles: ["company_admin", "branch_manager", "sales"],
-            labelMap: {
-                company_admin: "All Inquiries",
-                branch_manager: "Branch Inquiries",
-                sales: "My Inquiries",
-            },
+            label: "Overview",
+            items: [{ name: "Dashboard", icon: <FiGrid />, path: "/dashboard" }]
         },
-        { name: "Master", icon: <FiDatabase />, path: "/master", roles: ["company_admin"] },
-        { name: "Branches", icon: <FiGitPullRequest />, path: "/branches", roles: ["company_admin"] },
-        { name: "Users", icon: <FiUsers />, path: "/users", roles: ["company_admin", "branch_manager"] },
-        { name: "Leads", icon: <FiTarget />, path: "/leads", roles: ["company_admin", "branch_manager", "sales"], labelMap: { sales: "My Leads" } },
-        { name: "Prospects", icon: <FiZap />, path: "/prospects", roles: ["company_admin", "branch_manager", "sales"] },
-        { name: "Accounts", icon: <FiUserCheck />, path: "/customers", roles: ["company_admin", "branch_manager", "sales"] },
-        { name: "Contacts", icon: <FiUser />, path: "/contacts", roles: ["branch_manager"] },
-        { name: "Deals", icon: <FaIndianRupeeSign />, path: "/deals", roles: ["company_admin", "branch_manager", "sales"], labelMap: { sales: "My Deals" } },
-        { name: "Pipeline", icon: <FiTarget />, path: "/pipeline", roles: ["company_admin", "branch_manager", "sales"] },
-        { name: "Calls", icon: <FiPhone />, path: "/calls", roles: ["branch_manager", "sales"] },
-        { name: "Meetings", icon: <FiCalendar />, path: "/meetings", roles: ["branch_manager", "sales"] },
-        { name: "Tasks", icon: <FiCheckSquare />, path: "/todos", roles: ["branch_manager", "sales"] },
-        { name: "Targets", icon: <FiFlag />, path: "/targets", roles: ["branch_manager", "company_admin"] },
-        { name: "Analytics", icon: <FiBarChart2 />, path: "/branch-analytics", roles: ["branch_manager", "company_admin"] },
-        { name: "Leaderboard", icon: <FiAward />, path: "/leaderboard", roles: ["branch_manager", "company_admin"] },
-        { name: "Calendar", icon: <FiCalendar />, path: "/calendar", roles: ["branch_manager", "sales"] },
-        { name: "Reports", icon: <FiPieChart />, path: "/reports", roles: ["company_admin", "branch_manager"] },
-        { name: "Automation", icon: <FiCpu />, path: "/automation", roles: ["company_admin"] },
-        { name: "Settings", icon: <FiSettings />, path: "/settings", roles: ["company_admin", "branch_manager"] },
+        {
+            label: "Management",
+            items: [
+                { name: "Companies", icon: <FiBriefcase />, path: "/companies" },
+                { name: "Subscriptions", icon: <FiCreditCard />, path: "/subscriptions" },
+                { name: "Plans", icon: <FiPackage />, path: "/plans" },
+                { name: "Platform Users", icon: <FiUsers />, path: "/users" }
+            ]
+        },
+        {
+            label: "Insights",
+            items: [
+                { name: "Analytics", icon: <FiActivity />, path: "/usage-analytics" },
+                { name: "System Logs", icon: <FiFileText />, path: "/system-logs" }
+            ]
+        }
+    ] : [
+        {
+            label: "Overview",
+            items: [{ name: "Dashboard", icon: <FiGrid />, path: "/dashboard", roles: ["company_admin", "branch_manager", "sales"] }]
+        },
+        {
+            label: "Operations",
+            items: [
+                { name: "Branches", icon: <FiGitBranch />, path: "/branches", roles: ["company_admin"] },
+                { name: "Users", icon: <FiUsers />, path: "/users", roles: ["company_admin", "branch_manager"] },
+                { name: "Leads", icon: <FiTrendingUp />, path: "/leads", roles: ["company_admin", "branch_manager", "sales"], labelMap: { sales: "My Leads" } },
+                { name: "Prospects", icon: <FiZap />, path: "/prospects", roles: ["company_admin", "branch_manager", "sales"] },
+                { name: "Accounts", icon: <FiUserCheck />, path: "/customers", roles: ["company_admin", "branch_manager", "sales"] }
+            ]
+        },
+        {
+            label: "Sales & Work",
+            items: [
+                { name: "Pipeline", icon: <FiBarChart2 />, path: "/pipeline", roles: ["company_admin", "branch_manager", "sales"] },
+                { name: "Activity", icon: <FiActivity />, path: "/activities", roles: ["company_admin", "branch_manager", "sales"] },
+                { name: "Calendar", icon: <FiCalendar />, path: "/calendar", roles: ["company_admin", "branch_manager", "sales"] },
+                { name: "Email Templates", icon: <FiMail />, path: "/email-templates", roles: ["company_admin", "branch_manager", "sales"] },
+                { name: "Tasks", icon: <FiCheckSquare />, path: "/tasks", roles: ["company_admin", "branch_manager", "sales"] },
+                { name: "Calls", icon: <FiPhone />, path: "/calls", roles: ["company_admin", "branch_manager", "sales"] },
+                { name: "Meetings", icon: <FiCalendar />, path: "/meetings", roles: ["company_admin", "branch_manager", "sales"] }
+            ]
+        },
+        {
+            label: "Analytics",
+            items: [
+                { name: "Reports", icon: <FiPieChart />, path: "/reports", roles: ["company_admin", "branch_manager"] },
+                { name: "Targets", icon: <FiFlag />, path: "/targets", roles: ["company_admin", "branch_manager"] }
+            ]
+        }
     ];
-
-    const menuItems = role === "super_admin"
-        ? platformMenuItems.map((item) => ({ ...item, path: `${rolePrefix}${item.path}` }))
-        : fullMenuItems
-            .filter((item) => item.roles.includes(role))
-            .map((item) => ({
-                ...item,
-                name: item.labelMap?.[role] ?? item.name,
-                path: item.path === "/dashboard" ? `${rolePrefix}/dashboard` : `${rolePrefix}${item.path}`,
-            }));
 
     const handleLogout = () => {
         logout();
@@ -112,84 +113,116 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen }) => {
     };
 
     return (
-        <aside
-            className={`fixed top-0 z-[70] h-full bg-[#FFFFFF] transition-all duration-300 flex flex-col border-r border-[#E5E7EB] ${
-                isCollapsed ? "w-sidebar-collapsed" : "w-sidebar"
-            } ${isMobileOpen ? "left-0" : "-left-80 lg:left-0"}`}
-        >
-            {/* Brand */}
-            <div className={`flex flex-col items-center border-b border-[#E5E7EB] ${isCollapsed ? "py-6 px-0" : "py-8 px-6"}`}>
-                <div className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : "w-full"}`}>
-                    <div className="w-10 h-10 rounded-xl bg-[#2563EB] text-white flex items-center justify-center font-semibold text-lg shrink-0">
-                        {role?.charAt(0).toUpperCase() || "C"}
+        <>
+            {/* Mobile Backdrop */}
+            {isMobileOpen && (
+                <div 
+                    className="fixed inset-0 z-[80] bg-black/20 backdrop-blur-sm lg:hidden"
+                    onClick={() => setIsMobileOpen(false)}
+                />
+            )}
+
+            <aside
+                className={`fixed lg:relative z-[90] lg:z-10 h-full bg-[var(--sb-bg)] transition-all duration-300 flex flex-col border-r border-[var(--sb-border)] ${
+                    isCollapsed ? "w-[var(--sb-collapsed)]" : "w-[var(--sb-width)]"
+                } ${isMobileOpen ? "left-0" : "-left-80 lg:left-0"}`}
+            >
+                {/* Logo Section */}
+                <div className={`flex items-center border-b border-[var(--sb-border)] h-[var(--tb-h)] min-h-[var(--tb-h)] ${isCollapsed ? "justify-center" : "px-5 justify-between"}`}>
+                    <div className="flex items-center gap-3">
+                        <img 
+                            src={logo} 
+                            alt="EduPathpro" 
+                            className="w-8 h-8 object-contain shrink-0" 
+                        />
+                        <div className="flex flex-col">
+                            {!isCollapsed && (
+                                <span className="text-[14px] font-black text-[#0F172A] tracking-tighter leading-none">EduPathpro</span>
+                            )}
+                            {!isCollapsed && (
+                                <span className="text-[8px] font-black uppercase tracking-[0.05em] text-slate-400 mt-0.5 leading-none">by Gitakshmi Group</span>
+                            )}
+                        </div>
                     </div>
                     {!isCollapsed && (
-                        <div className="min-w-0">
-                            <p className="text-lg font-bold text-[#111827] tracking-tight">CRM</p>
-                            <p className="text-xs text-[#6B7280] font-medium mt-0.5">{role?.replace("_", " ") ?? ""}</p>
-                        </div>
-                    )}
-                </div>
-                {!isCollapsed && (
-                    <button
-                        type="button"
-                        onClick={() => setIsCollapsed(true)}
-                        className="mt-4 p-2 rounded-lg text-[#6B7280] hover:bg-[#EFF6FF] hover:text-[#111827] transition-colors"
-                        aria-label="Collapse sidebar"
-                    >
-                        <FiChevronLeft size={18} />
-                    </button>
-                )}
-                {isCollapsed && (
-                    <button
-                        type="button"
-                        onClick={() => setIsCollapsed(false)}
-                        className="mt-4 p-2 rounded-lg text-[#6B7280] hover:bg-[#EFF6FF] hover:text-[#111827] transition-colors"
-                        aria-label="Expand sidebar"
-                    >
-                        <FiChevronRight size={18} />
-                    </button>
-                )}
-            </div>
-
-            {/* Nav */}
-            <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-0.5">
-                {menuItems.map((item) => {
-                    const isActive = location.pathname === item.path;
-                    return (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`group flex items-center gap-3 rounded-lg py-2.5 px-3 transition-all duration-150 ${
-                                isActive
-                                    ? "bg-[#EEF2FF] text-[#2563EB] font-semibold"
-                                    : "text-[#6B7280] hover:bg-[#F3F4FF] hover:text-[#111827] font-medium"
-                            } ${isCollapsed ? "justify-center" : ""}`}
+                        <button
+                            onClick={() => setIsCollapsed(true)}
+                            className="p-1.5 rounded-md text-[var(--sb-text)] hover:bg-[var(--sb-hover)] transition-colors opacity-60 hover:opacity-100 hidden lg:block"
                         >
-                            <span className="shrink-0 text-[1.1rem] opacity-90">{item.icon}</span>
-                            {!isCollapsed && <span className="truncate text-sm">{item.name}</span>}
-                            {isCollapsed && (
-                                <span className="absolute left-full ml-2 px-3 py-2 bg-[#111827] text-white text-xs font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-lg">
-                                    {item.name}
-                                </span>
-                            )}
-                        </Link>
-                    );
-                })}
-            </nav>
+                            <FiChevronLeft size={16} />
+                        </button>
+                    )}
+                    {/* Mobile Close Button */}
+                    <button 
+                        onClick={() => setIsMobileOpen(false)}
+                        className="lg:hidden p-1.5 rounded-md text-[var(--sb-text)]"
+                    >
+                        <FiX size={18} />
+                    </button>
+                </div>
 
-            {/* Logout */}
-            <div className="p-3 border-t border-[#E5E7EB]">
-                <button
-                    type="button"
-                    onClick={handleLogout}
-                    className={`w-full flex items-center gap-3 rounded-lg py-2.5 px-3 text-[#6B7280] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-colors font-medium text-sm ${isCollapsed ? "justify-center" : ""}`}
-                >
-                    <FiLogOut size={18} className="shrink-0" />
-                    {!isCollapsed && <span>Logout</span>}
-                </button>
-            </div>
-        </aside>
+                {isCollapsed && (
+                    <div className="flex justify-center py-4 border-b border-[var(--sb-border)]">
+                        <button
+                            onClick={() => setIsCollapsed(false)}
+                            className="p-1.5 rounded-md text-[var(--sb-text)] hover:bg-[var(--sb-hover)] transition-colors opacity-60 hover:opacity-100"
+                        >
+                            <FiChevronRight size={16} />
+                        </button>
+                    </div>
+                )}
+
+                {/* Nav Groups */}
+                <nav className="flex-1 overflow-y-auto pt-4 pb-12 px-2.5 custom-scrollbar">
+                    {menuGroups.map((group, groupIdx) => {
+                        const filteredItems = group.items.filter(item => !item.roles || item.roles.includes(role));
+                        if (filteredItems.length === 0) return null;
+
+                        return (
+                            <div key={groupIdx} className="mb-6 last:mb-0">
+                                {!isCollapsed && (
+                                    <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[.09em] text-[var(--sb-text)] opacity-70">
+                                        {group.label}
+                                    </div>
+                                )}
+                                <div className="space-y-0.5">
+                                    {filteredItems.map((item) => {
+                                        const fullPath = item.path === "/dashboard" ? `${rolePrefix}/dashboard` : `${rolePrefix}${item.path}`;
+                                        const isActive = location.pathname === fullPath || (fullPath !== '/' && location.pathname.startsWith(fullPath));
+                                        return (
+                                            <Link
+                                                key={item.path}
+                                                to={fullPath}
+                                                onClick={() => setIsMobileOpen(false)}
+                                                className={`relative group flex items-center gap-2.5 rounded-[6px] py-2 px-3 transition-all duration-150 overflow-hidden ${
+                                                    isActive
+                                                        ? "bg-[var(--sb-active)] text-[var(--sb-text-act)] font-semibold"
+                                                        : "text-[var(--sb-text)] hover:bg-[var(--sb-hover)] hover:text-[var(--txt2)]"
+                                                } ${isCollapsed ? "justify-center px-0 w-8 h-8 mx-auto" : ""}`}
+                                            >
+                                                {isActive && !isCollapsed && (
+                                                    <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[var(--indigo)] rounded-r-full" />
+                                                )}
+                                                <span className={`shrink-0 transition-opacity ${isActive ? "opacity-100" : "opacity-55"}`}>
+                                                    {React.cloneElement(item.icon, { size: 16, strokeWidth: isActive ? 2.5 : 2 })}
+                                                </span>
+                                                {!isCollapsed && <span className="text-[13px] truncate">{item.labelMap?.[role] || item.name}</span>}
+                                                {isCollapsed && (
+                                                    <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-[var(--txt)] text-white text-[11px] font-medium rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-lg">
+                                                        {item.labelMap?.[role] || item.name}
+                                                    </span>
+                                                )}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </nav>
+
+            </aside>
+        </>
     );
 };
 

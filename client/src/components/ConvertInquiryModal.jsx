@@ -78,11 +78,11 @@ const ConvertInquiryModal = ({ isOpen, onClose, inquiry, onSuccess }) => {
                     </div>
 
                     {/* Information Box */}
-                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3">
-                        <FiInfo className="text-blue-500 shrink-0 mt-0.5" size={16} />
+                    <div className="p-4 bg-teal-50 border border-teal-100 rounded-2xl flex gap-3">
+                        <FiInfo className="text-teal-600 shrink-0 mt-0.5" size={16} />
                         <div className="space-y-1">
-                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">What happens next?</p>
-                            <p className="text-[11px] text-blue-500 font-bold leading-normal">
+                            <p className="text-[10px] font-black text-teal-700 uppercase tracking-widest">What happens next?</p>
+                            <p className="text-[11px] text-teal-600 font-bold leading-normal">
                                 This will create a new Lead. The inquiry will be marked as 'converted'.
                             </p>
                         </div>

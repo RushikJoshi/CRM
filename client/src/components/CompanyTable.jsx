@@ -20,14 +20,14 @@ const CompanyTable = ({ companies, onEdit, onDelete, onStatusChange }) => {
                             companies.map((company) => (
                                 <tr
                                     key={company._id}
-                                    className="hover:bg-sky-50/30 transition-all group animate-in fade-in duration-500"
+                                    className="hover:bg-teal-50/30 transition-all group animate-in fade-in duration-500"
                                 >
                                     <td className="px-8 py-5">
                                         <div
                                             className="flex items-center cursor-pointer"
                                             onClick={() => navigate(`/superadmin/companies/${company._id}`)}
                                         >
-                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-50 to-sky-100/50 flex items-center justify-center text-sky-600 font-black mr-4 group-hover:scale-110 group-hover:bg-[#38BDF8] group-hover:text-white transition-all shadow-sm">
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-50 to-teal-100/50 flex items-center justify-center text-teal-600 font-black mr-4 group-hover:scale-110 group-hover:bg-[#38BDF8] group-hover:text-white transition-all shadow-sm">
                                                 {company.name.charAt(0)}
                                             </div>
                                             <div>

@@ -14,15 +14,7 @@ exports.createDeal = async (req, res) => {
       createdBy: req.user.id
     });
 
-    // If stageId is provided, sync the legacy stage string for system compatibility
-    if (req.body.stageId) {
-      const Stage = require("../models/Stage");
-      const stageObj = await Stage.findById(req.body.stageId);
-      if (stageObj) {
-        deal.stage = stageObj.name;
-        await deal.save();
-      }
-    }
+    // Stage and stageId are passed from frontend
 
     await runAutomation("deal_created", req.user.companyId, { record: deal, userId: req.user.id, ...deal.toObject() });
 
@@ -119,24 +111,16 @@ exports.updateStage = async (req, res) => {
     const previousDeal = await Deal.findOne(query).lean();
     if (!previousDeal) return res.status(404).json({ success: false, message: "Deal not found" });
 
-    const updateData = { ...req.body };
-    let newStageName = req.body.stage || null;
-
-    // Legacy support: if stageId is passed, find the name and update the 'stage' string
-    if (req.body.stageId) {
-      const Stage = require("../models/Stage");
-      const stageObj = await Stage.findById(req.body.stageId);
-      if (stageObj) {
-        updateData.stage = stageObj.name;
-        newStageName = stageObj.name;
-      }
-    }
+    const { stage, stageId } = req.body;
+    if (!stage) return res.status(400).json({ success: false, message: "New stage is required" });
 
     const deal = await Deal.findOneAndUpdate(
       query,
-      updateData,
+      { stage, stageId: stageId || undefined },
       { new: true }
     );
+
+    if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
 
     // Enterprise Audit Logging (timeline)
     await logChange({
@@ -155,35 +139,30 @@ exports.updateStage = async (req, res) => {
       objectId: deal._id,
       companyId: req.user.companyId,
       branchId: deal.branchId || null,
-      changes: { previousStage: previousDeal.stage, newStage: newStageName || deal.stage },
+      changes: { previousStage: previousDeal.stage, newStage: stage },
       description: `Deal stage updated: ${deal.title}`,
       req
     });
 
-    if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
-
     // Create activity for stage change
     try {
       const Activity = require("../models/Activity");
-      const previousStageName = previousDeal.stage || null;
-      const finalNewStageName = newStageName || deal.stage;
-
       await Activity.create({
         dealId: deal._id,
         userId: req.user.id,
         companyId: req.user.companyId,
         type: "deal_stage_changed",
-        note: `Deal stage changed from '${previousStageName || "Unknown"}' to '${finalNewStageName || "Unknown"}'.`,
-        previousStage: previousStageName,
-        newStage: finalNewStageName
+        note: `Deal stage changed from '${previousDeal.stage || "Unknown"}' to '${stage || "Unknown"}'.`,
+        previousStage: previousDeal.stage,
+        newStage: stage
       });
     } catch (activityError) {
       console.error("CREATE DEAL STAGE ACTIVITY ERROR:", activityError);
     }
 
     // Notification trigger: Deal Won
-    const stageNameForNotification = (newStageName || deal.stage || "").toLowerCase();
-    if (stageNameForNotification === "won" || stageNameForNotification === "closed won") {
+    const stageNameLow = (stage || "").toLowerCase();
+    if (stageNameLow === "won" || stageNameLow === "closed won") {
       const { createNotification } = require("../utils/notificationService");
       await createNotification({
         userId: deal.assignedTo || deal.createdBy,
@@ -194,12 +173,11 @@ exports.updateStage = async (req, res) => {
       });
     }
 
-    const previousStageName = previousDeal.stage || null;
     await runAutomation("deal_stage_changed", req.user.companyId, {
       record: deal,
       userId: req.user.id,
-      previousStage: previousStageName,
-      newStage: newStageName || deal.stage,
+      previousStage: previousDeal.stage,
+      newStage: stage,
       ...deal.toObject()
     });
 

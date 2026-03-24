@@ -24,14 +24,14 @@ function KanbanColumn({ stage, deals }) {
           "rounded-3xl shadow-sm",
           "flex flex-col",
           "transition-all duration-200",
-          isOver ? "ring-4 ring-blue-500/10 border-blue-200 dark:border-blue-500/30" : "",
+          isOver ? "ring-4 ring-teal-600/10 border-teal-200 dark:border-teal-600/30" : "",
         ].join(" ")}
       >
         <div className="p-6 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="font-black text-gray-900 dark:text-slate-50 text-sm uppercase tracking-widest flex items-center gap-2">
-                <FiTarget size={16} className="text-blue-500" />
+                <FiTarget size={16} className="text-teal-600" />
                 <span className="truncate">{stage.name}</span>
               </p>
               <p className="mt-2 text-[10px] font-black text-gray-400 dark:text-slate-400 uppercase tracking-widest">

@@ -96,12 +96,12 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl border border-[#E5EAF2] overflow-hidden animate-in zoom-in-95 duration-500 relative">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-teal-600/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
 
                 {/* Header */}
                 <div className="px-10 py-8 bg-white flex items-center justify-between border-b border-[#F0F2F5] relative z-10">
                     <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 bg-blue-600 text-white rounded-[20px] flex items-center justify-center shadow-xl shadow-blue-500/20 transform rotate-3">
+                        <div className="w-14 h-14 bg-teal-700 text-white rounded-[20px] flex items-center justify-center shadow-xl shadow-teal-600/20 transform rotate-3">
                             <FiShield size={28} strokeWidth={2.5} />
                         </div>
                         <div>
@@ -124,12 +124,12 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Persona Name</label>
                             <div className="relative group">
-                                <FiUser size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiUser size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <input
                                     required
                                     name="name"
                                     type="text"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
+                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
                                     placeholder="Full Legal Name"
                                     value={formData.name}
                                     onChange={handleChange}
@@ -141,12 +141,12 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Communication Link</label>
                             <div className="relative group">
-                                <FiMail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiMail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <input
                                     required
                                     name="email"
                                     type="email"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
+                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
                                     placeholder="name@example.com"
                                     value={formData.email}
                                     onChange={handleChange}
@@ -160,12 +160,12 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
                                 {editingData ? "Secure Reset Vector" : "Security Lock Key"}
                             </label>
                             <div className="relative group">
-                                <FiLock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors" />
+                                <FiLock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
                                 <input
                                     required={!editingData}
                                     name="password"
                                     type="password"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
+                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
                                     placeholder="••••••••"
                                     value={formData.password}
                                     onChange={handleChange}
@@ -177,10 +177,10 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Authorization Grade</label>
                             <div className="relative group">
-                                <FiShield size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors z-10" />
+                                <FiShield size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                                 <select
                                     name="role"
-                                    className="w-full pl-14 pr-12 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
+                                    className="w-full pl-14 pr-12 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
                                     value={formData.role}
                                     onChange={handleChange}
                                 >
@@ -197,10 +197,10 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
                             <div className="space-y-3">
                                 <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Entity Parent</label>
                                 <div className="relative group">
-                                    <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-blue-600 transition-colors z-10" />
+                                    <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                                     <select
                                         name="companyId"
-                                        className="w-full pl-14 pr-12 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
+                                        className="w-full pl-14 pr-12 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
                                         value={formData.companyId}
                                         onChange={handleChange}
                                     >
@@ -216,10 +216,10 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
                             <div className="space-y-3">
                                 <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Operational Hub</label>
                                 <div className="relative group">
-                                    <FiLayers size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#Clean5E0] group-focus-within:text-blue-600 transition-colors z-10" />
+                                    <FiLayers size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#Clean5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                                     <select
                                         name="branchId"
-                                        className="w-full pl-14 pr-12 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
+                                        className="w-full pl-14 pr-12 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
                                         value={formData.branchId}
                                         onChange={handleChange}
                                     >
@@ -232,9 +232,9 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
                     </div>
 
                     {/* Status Alert */}
-                    <div className="p-6 bg-blue-50/50 rounded-[32px] border border-blue-100 flex items-start gap-5">
-                        <div className="p-3 bg-white rounded-xl shadow-sm border border-blue-100">
-                            <FiInfo className="text-blue-600" size={20} />
+                    <div className="p-6 bg-teal-50/50 rounded-[32px] border border-teal-100 flex items-start gap-5">
+                        <div className="p-3 bg-white rounded-xl shadow-sm border border-teal-100">
+                            <FiInfo className="text-teal-700" size={20} />
                         </div>
                         <div>
                             <p className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em]">System Propagation</p>
@@ -255,7 +255,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
                         </button>
                         <button
                             type="submit"
-                            className="flex-[2] flex items-center justify-center gap-4 py-5 bg-blue-600 text-white font-black rounded-[24px] hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-blue-600/20 duration-300"
+                            className="flex-[2] flex items-center justify-center gap-4 py-5 bg-teal-700 text-white font-black rounded-[24px] hover:bg-teal-800 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-teal-700/20 duration-300"
                         >
                             <FiPlus size={20} strokeWidth={4} />
                             {editingData ? "Commit Updates" : "Authorize Node"}

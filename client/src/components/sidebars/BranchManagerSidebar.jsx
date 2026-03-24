@@ -41,7 +41,7 @@ const BranchManagerSidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }) 
       isCollapsed={isCollapsed}
       onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
       onLogout={logout}
-      logoLabel="Horizon CRM"
+      logoLabel="EduPath Pro"
     />
   );
 };

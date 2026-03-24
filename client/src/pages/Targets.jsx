@@ -356,7 +356,7 @@ const TargetsPage = () => {
             {isMgr && targets.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                        { label: "Team Members", value: targets.length, icon: <FiUsers />, color: "bg-blue-50 text-blue-600" },
+                        { label: "Team Members", value: targets.length, icon: <FiUsers />, color: "bg-teal-50 text-teal-700" },
                         { label: "Targets On Track", value: targets.filter(t => pct(t.achievement.revenueAchieved, t.revenueTarget) >= 60).length, icon: <FiCheck />, color: "bg-green-50 text-green-600" },
                         { label: "Needs Attention", value: targets.filter(t => pct(t.achievement.revenueAchieved, t.revenueTarget) < 40 && t.revenueTarget > 0).length, icon: <FiAlertCircle />, color: "bg-red-50 text-red-600" },
                         { label: "Targets Achieved", value: targets.filter(t => pct(t.achievement.revenueAchieved, t.revenueTarget) >= 100).length, icon: <FiAward />, color: "bg-purple-50 text-purple-600" },

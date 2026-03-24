@@ -59,7 +59,7 @@ const InquiryDetailsModal = ({ isOpen, onClose, inquiry }) => {
                             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{inquiry.status}</span>
                         </div>
                         <div className="px-4 py-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2">
-                            <FiCalendar className="text-blue-500" />
+                            <FiCalendar className="text-teal-600" />
                             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
                                 {new Date(inquiry.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
                             </span>
@@ -86,7 +86,7 @@ const InquiryDetailsModal = ({ isOpen, onClose, inquiry }) => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div className="space-y-1.5">
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <FiMessageSquare size={12} className="text-blue-500" /> Course / Need
+                                <FiMessageSquare size={12} className="text-teal-600" /> Course / Need
                             </p>
                             <p className="text-sm font-bold text-gray-700">{inquiry.course || "General"}</p>
                         </div>
@@ -98,15 +98,15 @@ const InquiryDetailsModal = ({ isOpen, onClose, inquiry }) => {
                         </div>
                         <div className="space-y-1.5">
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <FiGlobe size={12} className="text-blue-500" /> Source
+                                <FiGlobe size={12} className="text-teal-600" /> Source
                             </p>
                             <p className="text-sm font-bold text-gray-700">{inquiry.source || "Other"}</p>
                         </div>
                         <div className="space-y-1.5">
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                <FiGlobe size={12} className="text-blue-500" /> Website
+                                <FiGlobe size={12} className="text-teal-600" /> Website
                             </p>
-                            <p className="text-sm font-bold text-blue-600 truncate">{inquiry.website || "N/A"}</p>
+                            <p className="text-sm font-bold text-teal-700 truncate">{inquiry.website || "N/A"}</p>
                         </div>
                     </div>
 

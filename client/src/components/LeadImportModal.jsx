@@ -53,7 +53,7 @@ const LeadImportModal = ({ isOpen, onClose, onImported }) => {
                 {/* Header */}
                 <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center shadow-sm border border-sky-100">
+                        <div className="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center shadow-sm border border-teal-100">
                             <FiUpload size={24} />
                         </div>
                         <div>
@@ -68,17 +68,17 @@ const LeadImportModal = ({ isOpen, onClose, onImported }) => {
 
                 <div className="p-10 space-y-8">
                     {/* Instructions */}
-                    <div className="bg-blue-50/50 border border-blue-100 rounded-3xl p-6 space-y-4">
-                        <div className="flex items-center gap-3 text-blue-600">
+                    <div className="bg-teal-50/50 border border-teal-100 rounded-3xl p-6 space-y-4">
+                        <div className="flex items-center gap-3 text-teal-700">
                             <FiAlertCircle size={20} />
                             <span className="text-xs font-black uppercase tracking-widest">CSV Format Requirements</span>
                         </div>
                         <ul className="space-y-2">
-                            <li className="text-[11px] font-bold text-blue-800 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                            <li className="text-[11px] font-bold text-teal-800 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-teal-500" />
                                 Columns: <strong>name, email, phone, company, value</strong>
                             </li>
-                            <li className="text-[11px] text-blue-600/70 font-medium italic">
+                            <li className="text-[11px] text-teal-700/70 font-medium italic">
                                 * Name is mandatory. Other fields are optional.
                             </li>
                         </ul>
@@ -87,7 +87,7 @@ const LeadImportModal = ({ isOpen, onClose, onImported }) => {
                     {/* File Drop Area */}
                     <div
                         className={`relative border-2 border-dashed rounded-[2rem] p-10 flex flex-col items-center justify-center transition-all cursor-pointer bg-gray-50 hover:bg-white
-                        ${file ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200 hover:border-sky-300'}`}
+                        ${file ? 'border-emerald-200 bg-emerald-50/10' : 'border-gray-200 hover:border-teal-300'}`}
                     >
                         <input
                             type="file"

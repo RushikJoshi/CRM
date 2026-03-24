@@ -15,11 +15,9 @@ const LoginForm = () => {
         e.preventDefault();
         setError("");
 
-        // Client-side validation before hitting API
         if (!email.trim()) { setError("Please enter your email."); return; }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Please enter a real email."); return; }
-        if (!password) { setError("Enter your password."); return; }
-        if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Please enter a valid email address."); return; }
+        if (!password) { setError("Please enter your password."); return; }
 
         setLoading(true);
         try {
@@ -27,134 +25,92 @@ const LoginForm = () => {
             const { token, user } = res.data;
 
             if (!token || !user?.role) {
-                setError("Error on our end. Try again or contact support.");
+                setError("Authentication failed. Please try again.");
                 return;
             }
 
-            // ✅ Store under role-specific key — does NOT clear other roles' sessions
             login(token, user);
-
-            // Redirect to role home
             window.location.replace(ROLE_HOME[user.role] || "/login");
         } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                "Incorrect email or password."
-            );
+            setError(err.response?.data?.message || "Invalid credentials. Please check your email and password.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="flex flex-col justify-center h-full py-12">
-            {/* Mobile logo */}
-            <div className="flex items-center gap-3 mb-10 lg:hidden">
-                <div className="w-9 h-9 bg-[#1D4ED8] rounded-lg flex items-center justify-center font-black text-white text-xs">
-                    GT
+        <div className="flex flex-col justify-center h-full max-w-[360px] mx-auto">
+            {/* Logo for mobile */}
+            <div className="flex flex-col mb-10 lg:hidden">
+                <h1 className="text-[32px] font-black text-[#1e40af] leading-none mb-1">Gitakshmi</h1>
+                <div className="flex items-center gap-2">
+                    <div className="h-[1px] flex-1 bg-blue-900/20" />
+                    <span className="text-[8px] font-black uppercase tracking-[0.3em] text-blue-900/60">Technologies</span>
+                    <div className="h-[1px] flex-1 bg-blue-900/20" />
                 </div>
-                <span className="font-black text-gray-900 text-base tracking-tight">Gitakshmi Technologies</span>
             </div>
 
-            {/* Heading */}
-            <div className="mb-14">
-                <h2 className="text-3xl xl:text-4xl font-black text-gray-900 tracking-tight">Welcome</h2>
-                <p className="text-gray-500 font-medium mt-2 text-sm">Sign in to continue.</p>
+            <div className="mb-10">
+                <h2 className="text-[32px] font-black text-gray-900 tracking-tight leading-none">Welcome</h2>
+                <p className="text-gray-500 mt-2 text-[14px] font-bold">Sign in to continue.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                {/* Error Banner */}
                 {error && (
-                    <div className="flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-bold animate-in slide-in-from-top-2 duration-300">
-                        <FiAlertCircle size={18} className="shrink-0 mt-0.5 text-red-500" />
+                    <div className="flex items-start gap-3 p-3.5 bg-red-50 border border-red-100 rounded-xl text-red-700 text-[13px] font-medium animate-in fade-in duration-300">
+                        <FiAlertCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
                         <span>{error}</span>
                     </div>
                 )}
 
-                {/* Email */}
                 <div className="space-y-2">
-                    <label className="text-xs font-black text-gray-500 uppercase tracking-[0.25em]">
-                        Email Address
-                    </label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email address</label>
                     <div className="relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200">
-                            <FiMail size={20} />
-                        </div>
+                        <FiMail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2563eb] transition-colors" />
                         <input
                             type="email"
-                            autoComplete="email"
-                            placeholder="name@company.com"
+                            placeholder="name@gitakshmilabs.com"
                             value={email}
                             onChange={e => { setEmail(e.target.value); setError(""); }}
-                            className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-gray-800 placeholder-gray-300 outline-none
-                                focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
-                                hover:border-gray-200 transition-all duration-300 shadow-sm"
+                            className="w-full pl-11 pr-4 py-3.5 bg-blue-50/50 border border-blue-100/50 rounded-xl text-[14px] font-medium outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm"
                         />
                     </div>
                 </div>
 
-                {/* Password */}
                 <div className="space-y-2">
-                    <label className="text-xs font-black text-gray-500 uppercase tracking-[0.25em]">
-                        Password
-                    </label>
+                    <div className="flex justify-between items-center ml-1">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Password</label>
+                    </div>
                     <div className="relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200">
-                            <FiLock size={20} />
-                        </div>
+                        <FiLock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2563eb] transition-colors" />
                         <input
                             type={showPass ? "text" : "password"}
-                            autoComplete="current-password"
-                            placeholder="Password"
+                            placeholder="••••••••"
                             value={password}
                             onChange={e => { setPassword(e.target.value); setError(""); }}
-                            className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-gray-800 placeholder-gray-300 outline-none
-                                focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
-                                hover:border-gray-200 transition-all duration-300 shadow-sm"
+                            className="w-full pl-11 pr-11 py-3.5 bg-blue-50/50 border border-blue-100/50 rounded-xl text-[14px] font-medium outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm"
                         />
-                        <button
-                            type="button"
-                            tabIndex={-1}
-                            onClick={() => setShowPass(!showPass)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                            {showPass ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                        <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                            {showPass ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                         </button>
                     </div>
                 </div>
 
-                {/* Submit */}
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-sm text-white
-                        bg-gradient-to-r from-[#2563EB] to-[#1D4ED8]
-                        shadow-md shadow-blue-500/30
-                        hover:from-[#1D4ED8] hover:to-[#1E3A8A]
-                        hover:scale-[1.01] active:scale-[0.98]
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                        transition-all duration-200 mt-4"
+                    className="w-full h-12 flex items-center justify-center gap-2.5 rounded-xl font-black text-[14px] text-white bg-[#2563eb] hover:bg-[#1d4ed8] shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all disabled:opacity-50"
                 >
-                    {loading ? (
-                        <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    ) : (
-                        <>
-                            Sign in
-                            <FiArrowRight size={17} />
-                        </>
-                    )}
+                    {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Sign in <FiArrowRight size={16} /></>}
                 </button>
             </form>
 
-
-            {/* Footer text */}
-            <div className="mt-10 pt-8 border-t border-[#E5E7EB]">
-                <p className="text-center text-[9px] text-[#9CA3AF] font-semibold uppercase tracking-[0.35em]">
-                    Secured by Gitakshmi Encryption Protocols
-                </p>
+            <div className="mt-20 flex flex-col items-center">
+                <span className="text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] text-center">
+                    SECURED BY GITAKSHMI <br className="lg:hidden" /> ENCRYPTION PROTOCOLS
+                </span>
             </div>
         </div>
-
     );
 };
 

@@ -66,6 +66,11 @@ API.interceptors.response.use(
         }
       }
     }
+
+    if (err.response?.status === 403 && err.response?.data?.isExpired) {
+        window.location.replace("/subscription-expired");
+    }
+
     return Promise.reject(err);
   }
 );

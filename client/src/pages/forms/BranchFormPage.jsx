@@ -42,7 +42,7 @@ const TIMEZONES = [
 ];
 
 const inputCls = (errors, field) =>
-  `w-full px-3 py-2 bg-white border rounded-lg text-sm text-[#111827] placeholder-[#9CA3AF] outline-none transition-all focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] ${
+  `w-full px-3 py-2 bg-white border rounded-lg text-sm text-[#111827] placeholder-[#9CA3AF] outline-none transition-all focus:ring-2 focus:ring-[#0D9488]/20 focus:border-[#0D9488] ${
     errors[field] ? "border-[#EF4444]" : "border-[#E5E7EB]"
   }`;
 
@@ -383,7 +383,7 @@ export default function BranchFormPage() {
   if (fetching) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="w-12 h-12 border-4 border-[#E5E7EB] border-t-[#2563EB] rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-[#E5E7EB] border-t-[#0D9488] rounded-full animate-spin" />
         <p className="text-sm text-[#6B7280]">Loading branch...</p>
       </div>
     );
@@ -402,7 +402,7 @@ export default function BranchFormPage() {
             <FiArrowLeft size={16} /> Back
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-[#F0FDF4] text-[#0D9488] flex items-center justify-center">
               <FiLayers size={18} />
             </div>
             <div>
@@ -430,9 +430,9 @@ export default function BranchFormPage() {
                         <div
                           className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${
                             active
-                              ? "bg-[#2563EB] text-white border-[#2563EB]"
+                              ? "bg-[#0D9488] text-white border-[#0D9488]"
                               : done
-                              ? "bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]"
+                              ? "bg-[#F0FDF4] text-[#0D9488] border-[#CCFBF1]"
                               : "bg-white text-[#6B7280] border-[#E5E7EB]"
                           }`}
                         >
@@ -445,7 +445,7 @@ export default function BranchFormPage() {
                       {idx < STEPS.length - 1 && (
                         <div className="mt-3 h-1 w-full bg-[#E5E7EB] rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-[#2563EB] transition-all"
+                            className="h-full bg-[#0D9488] transition-all"
                             style={{ width: idx < step ? "100%" : "0%" }}
                           />
                         </div>
@@ -593,7 +593,7 @@ export default function BranchFormPage() {
                     <input name="longitude" type="text" placeholder="72.8777" value={formData.longitude} onChange={handleChange} className={inputCls(errors, "longitude")} />
                   </div>
                   <div className="sm:col-span-2 pt-1">
-                    <a href={`https://www.google.com/maps?q=${formData.latitude || "0"},${formData.longitude || "0"}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2563EB] hover:underline">Open in Google Maps</a>
+                    <a href={`https://www.google.com/maps?q=${formData.latitude || "0"},${formData.longitude || "0"}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#0D9488] hover:underline">Open in Google Maps</a>
                   </div>
                 </div>
               </div>
@@ -656,7 +656,7 @@ export default function BranchFormPage() {
                 <button
                   type="button"
                   onClick={goNext}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] shadow-sm text-sm"
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#0D9488] text-white font-semibold hover:bg-[#0F766E] shadow-sm text-sm"
                 >
                   Next →
                 </button>
@@ -664,7 +664,7 @@ export default function BranchFormPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#0D9488] text-white font-semibold hover:bg-[#0F766E] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
                 >
                   {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSave size={16} />}
                   Submit

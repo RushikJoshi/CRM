@@ -4,11 +4,12 @@ import {
     FiBriefcase, FiUsers, FiTrendingUp, FiCheckCircle, FiArrowLeft,
     FiMail, FiPhone, FiGlobe, FiMapPin, FiEdit2,
     FiLayers, FiCalendar, FiBarChart2, FiExternalLink, FiRefreshCw,
-    FiActivity, FiShield, FiAlertCircle
+    FiActivity, FiShield, FiAlertCircle, FiSettings
 } from "react-icons/fi";
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import API from "../../services/api";
 import { useToast } from "../../context/ToastContext";
+import CompanyPipelines from "../../components/superadmin/CompanyPipelines";
 
 const CompanyDetailPage = () => {
     const { id } = useParams();
@@ -27,7 +28,7 @@ const CompanyDetailPage = () => {
     const fetchCompanyData = async () => {
         setLoading(true);
         try {
-            // Fetch company details (from companies list, filtered by id)
+            // Fetch company details
             const [companiesRes, usersRes, branchesRes, leadsRes, dealsRes] = await Promise.all([
                 API.get(`/super-admin/companies`),
                 API.get(`/super-admin/users?companyId=${id}`),
@@ -50,7 +51,7 @@ const CompanyDetailPage = () => {
             setLeads(leadsData);
             setDeals(dealsData);
 
-            const wonDeals = dealsData.filter(d => d.stage === "closed_won");
+            const wonDeals = dealsData.filter(d => d.stage === "closed_won" || d.stage === "Won");
             const revenue = wonDeals.reduce((sum, d) => sum + (d.value || 0), 0);
             const convRate = leadsData.length > 0 ? ((wonDeals.length / leadsData.length) * 100).toFixed(1) : 0;
 
@@ -123,10 +124,11 @@ const CompanyDetailPage = () => {
         { id: "branches", label: `Branches (${stats?.totalBranches ?? 0})`, icon: <FiLayers size={15} /> },
         { id: "leads", label: `Leads (${stats?.totalLeads ?? 0})`, icon: <FiTrendingUp size={15} /> },
         { id: "deals", label: `Deals (${stats?.totalDeals ?? 0})`, icon: <FiCheckCircle size={15} /> },
+        { id: "pipelines", label: "Pipelines", icon: <FiSettings size={15} /> },
     ];
 
     const statCards = [
-        { label: "Users", value: stats?.totalUsers ?? 0, icon: <FiUsers />, color: "text-blue-600", bg: "bg-blue-50" },
+        { label: "Users", value: stats?.totalUsers ?? 0, icon: <FiUsers />, color: "text-teal-700", bg: "bg-teal-50" },
         { label: "Branches", value: stats?.totalBranches ?? 0, icon: <FiLayers />, color: "text-purple-600", bg: "bg-purple-50" },
         { label: "Leads", value: stats?.totalLeads ?? 0, icon: <FiTrendingUp />, color: "text-green-600", bg: "bg-green-50" },
         { label: "Deals", value: stats?.totalDeals ?? 0, icon: <FiCheckCircle />, color: "text-orange-600", bg: "bg-orange-50" },
@@ -189,7 +191,7 @@ const CompanyDetailPage = () => {
                                     {company.status || "active"}
                                 </span>
                                 {company.industry && (
-                                    <span className="text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-200">
+                                    <span className="text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-widest bg-teal-50 text-teal-700 border border-blue-200">
                                         {company.industry}
                                     </span>
                                 )}
@@ -312,8 +314,8 @@ const CompanyDetailPage = () => {
                                     <p className="text-gray-400 font-bold text-sm">No users in this company</p>
                                 </div>
                             ) : users.map(u => (
-                                <div key={u._id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-black flex-shrink-0">
+                                <div key={u._id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-teal-50 transition-colors">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-teal-700 flex items-center justify-center font-black flex-shrink-0">
                                         {u.name?.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -321,7 +323,7 @@ const CompanyDetailPage = () => {
                                         <p className="text-xs text-gray-400 font-medium">{u.email}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg font-black uppercase tracking-widest">{u.role?.replace('_', ' ')}</span>
+                                        <span className="text-[10px] px-2.5 py-1 bg-blue-100 text-teal-800 rounded-lg font-black uppercase tracking-widest">{u.role?.replace('_', ' ')}</span>
                                         {u.branchId && (
                                             <span className="text-[10px] px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg font-black uppercase tracking-widest">{u.branchId?.name}</span>
                                         )}
@@ -418,6 +420,10 @@ const CompanyDetailPage = () => {
                                 </div>
                             ))}
                         </div>
+                    )}
+                    {/* ── Pipelines Tab ── */}
+                    {activeTab === "pipelines" && (
+                        <CompanyPipelines companyId={id} />
                     )}
                 </div>
             </div>

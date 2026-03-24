@@ -32,7 +32,7 @@ export default function Profile() {
     <div className="space-y-6 pb-8">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-teal-700 text-white flex items-center justify-center font-bold shadow-sm">
             {initials}
           </div>
           <div className="min-w-0">
@@ -45,7 +45,7 @@ export default function Profile() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-5 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-            <FiUser className="text-indigo-600" />
+            <FiUser className="text-teal-700" />
             <h2 className="text-sm font-semibold text-gray-900">Personal</h2>
           </div>
           <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -61,7 +61,7 @@ export default function Profile() {
         <div className="lg:col-span-7 space-y-6">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-              <FiMail className="text-indigo-600" />
+              <FiMail className="text-teal-700" />
               <h2 className="text-sm font-semibold text-gray-900">Contact</h2>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -76,7 +76,7 @@ export default function Profile() {
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-              <FiShield className="text-indigo-600" />
+              <FiShield className="text-teal-700" />
               <h2 className="text-sm font-semibold text-gray-900">Access</h2>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -91,7 +91,7 @@ export default function Profile() {
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-              <FiGitBranch className="text-indigo-600" />
+              <FiGitBranch className="text-teal-700" />
               <h2 className="text-sm font-semibold text-gray-900">Branch & Company</h2>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -104,7 +104,7 @@ export default function Profile() {
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-              <FiClock className="text-indigo-600" />
+              <FiClock className="text-teal-700" />
               <h2 className="text-sm font-semibold text-gray-900">Meta</h2>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">

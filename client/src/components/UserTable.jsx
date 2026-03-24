@@ -20,81 +20,44 @@ const UserTable = ({ users, onEdit, onDelete, onToggleStatus, onAddNew, onView }
                             users.map((user, i) => (
                                 <tr
                                     key={user._id}
-                                    className="h-14 hover:bg-slate-50/80 transition-colors group animate-in slide-in-from-bottom-2 duration-700"
+                                    onClick={() => onEdit?.(user)}
+                                    className="h-14 hover:bg-slate-50/80 transition-colors group animate-in slide-in-from-bottom-2 duration-700 cursor-pointer"
                                     style={{ animationDelay: `${i * 30}ms` }}
                                 >
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center">
-                                            <div className="w-10 h-10 rounded-xl bg-white border border-[#E5EAF2] text-[#1A202C] flex items-center justify-center text-base font-black mr-4 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-700 transition-all shadow-sm">
-                                                {user.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <span className="font-semibold text-[#1A202C] tracking-tight text-[14px] group-hover:text-blue-600 transition-colors">{user.name}</span>
-                                                <p className="text-[14px] font-normal text-[#A0AEC0] mt-1 lowercase">{user.email}</p>
-                                            </div>
+                                    <td className="px-4 py-2">
+                                        <div>
+                                            <span className="font-bold text-[#1A202C] text-[13px]">{user.name}</span>
+                                            <p className="text-[11px] text-gray-500 font-medium">{user.email}</p>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-xl border shadow-sm transition-all group-hover:scale-110 ${user.role === 'super_admin' ? 'bg-indigo-50 text-indigo-500 border-indigo-100' : 'bg-slate-100/50 text-[#718096] border-[#E5EAF2]'}`}>
-                                                <FiShield size={16} />
-                                            </div>
-                                            <span className="text-[14px] font-normal text-[#1A202C] uppercase tracking-[0.03em]">{user.role.replace('_', ' ')}</span>
-                                        </div>
+                                    <td className="px-4 py-2">
+                                        <span className="text-[11px] font-black text-gray-700 uppercase tracking-widest">{user.role?.replace('_', ' ')}</span>
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-center text-[14px] font-normal text-[#718096] uppercase tracking-[0.03em]">
-                                                <FiBriefcase className="mr-2 text-blue-500 opacity-60" size={12} />
+                                    <td className="px-4 py-2">
+                                        <div className="flex flex-col">
+                                            <span className="text-[11px] font-bold text-gray-600 uppercase tracking-tight">
                                                 {user.companyId?.name || "Global Network"}
-                                            </div>
+                                            </span>
                                             {user.branchId && (
-                                                <div className="flex items-center text-[14px] font-normal text-[#A0AEC0] uppercase tracking-[0.03em]">
-                                                    <FiLayers className="mr-2 text-blue-400 opacity-40" size={12} />
+                                                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-tight">
                                                     {user.branchId?.name}
-                                                </div>
+                                                </span>
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
                                         <button
                                             onClick={() => onToggleStatus(user)}
-                                            className={`inline-flex items-center px-4 py-2 rounded-xl text-[13px] font-semibold uppercase tracking-[0.03em] transition-all shadow-sm border ${user.status === 'inactive' ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'
+                                            className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border transition-colors ${user.status === 'inactive' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-teal-50 text-teal-700 border-teal-100'
                                                 }`}
                                         >
-                                            {user.status === 'inactive' ? <FiXCircle className="mr-2" /> : <FiCheckCircle className="mr-2" />}
                                             {user.status || 'active'}
                                         </button>
                                     </td>
-                                    <td className="px-4 py-3 text-right w-[160px]">
-                                        <div className="flex items-center justify-end gap-2 flex-nowrap whitespace-nowrap">
-                                            <button
-                                                type="button"
-                                                onClick={() => onView?.(user)}
-                                                className="w-10 h-10 flex items-center justify-center bg-white border border-[#E5EAF2] text-[#94A3B8] rounded-[14px] hover:text-slate-700 hover:bg-slate-50 hover:border-slate-200 transition-colors shadow-sm"
-                                                title="View"
-                                                aria-label="View user"
-                                            >
-                                                <FiEye size={18} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => onEdit(user)}
-                                                className="w-10 h-10 flex items-center justify-center bg-white border border-[#E5EAF2] text-[#94A3B8] rounded-[14px] hover:text-blue-600 hover:bg-slate-50 hover:border-blue-200 transition-colors shadow-sm"
-                                                title="Edit Profile"
-                                                aria-label="Edit user"
-                                            >
-                                                <FiEdit2 size={18} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => onDelete?.(user._id)}
-                                                className="w-10 h-10 flex items-center justify-center bg-white border border-[#E5EAF2] text-[#94A3B8] rounded-[14px] hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors shadow-sm"
-                                                title="Delete"
-                                                aria-label="Delete user"
-                                            >
-                                                <FiTrash2 size={18} />
-                                            </button>
+                                    <td className="px-4 py-2 text-right w-[160px]" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex items-center justify-end gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                            <button onClick={() => onEdit(user)} className="hover:text-indigo-600 transition-colors">EDIT</button>
+                                            <button onClick={() => onDelete?.(user._id)} className="hover:text-red-600 transition-colors">DELETE</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -111,7 +74,7 @@ const UserTable = ({ users, onEdit, onDelete, onToggleStatus, onAddNew, onView }
                                             <button
                                                 type="button"
                                                 onClick={onAddNew}
-                                                className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold uppercase tracking-widest transition-colors"
+                                                className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold uppercase tracking-widest transition-colors"
                                             >
                                                 Add New User
                                             </button>

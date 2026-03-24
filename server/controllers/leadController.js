@@ -3,10 +3,46 @@ const Deal = require("../models/Deal");
 const Customer = require("../models/Customer");
 const Contact = require("../models/Contact");
 const Todo = require("../models/Todo");
+const Pipeline = require("../models/Pipeline"); // DYNAMIC PIPELINE
 const { runAutomation } = require("../utils/automationEngine");
 const { calculateLeadScore, assignLeadAutomatically } = require("../utils/leadManagement");
 const { logChange, createAuditEntry } = require("../utils/auditLogger");
 const Activity = require("../models/Activity");
+
+// LEGACY FALLBACK (only used when company has no pipeline configured)
+const LEAD_PIPELINE_STAGES_FALLBACK = ["new", "qualified", "proposition", "won"];
+
+// ── PIPELINE AUTO-HEALER ──────────────────────────────────────────────────────
+const DEFAULT_STAGES = [
+    { name: "New",         order: 1, color: "#0ea5e9", probability: 10 },
+    { name: "Qualified",   order: 2, color: "#8b5cf6", probability: 30 },
+    { name: "Proposal",    order: 3, color: "#f59e0b", probability: 60 },
+    { name: "Won",         order: 4, color: "#10b981", probability: 100 }
+];
+
+async function getCompanyPipelineStages(companyId) {
+    try {
+        // Enforce ONE pipeline per company (no isDefault requirement)
+        let pipeline = await Pipeline.findOne({ companyId }).lean();
+        
+        if (!pipeline) {
+            console.log("PIPELINE NOT FOUND — Auto-creating default for company:", companyId);
+            const created = await Pipeline.create({
+                name: "Main Pipeline",
+                companyId,
+                stages: DEFAULT_STAGES
+            });
+            pipeline = created.toObject();
+        }
+
+        const stages = [...pipeline.stages].sort((a, b) => (a.order || 0) - (b.order || 0));
+        return { stages, pipeline };
+    } catch (err) {
+        console.error("PIPELINE FETCH ERROR:", err.message);
+        throw err;
+    }
+}
+
 
 /* ================= CREATE LEAD ================= */
 exports.createLead = async (req, res) => {
@@ -492,61 +528,53 @@ exports.convertLead = async (req, res) => {
   }
 };
 
-// Odoo-style pipeline stages (kanban columns)
-const LEAD_PIPELINE_STAGES = ["new", "qualified", "proposition", "won"];
 
-const STAGE_DEFAULT_PROBABILITY = {
-  new: 10,
-  qualified: 25,
-  proposition: 50,
-  won: 100,
-};
+
 
 function normalizeLeadStage(stage) {
-  const s = (stage || "new").toString();
-  // New keys already
-  if (LEAD_PIPELINE_STAGES.includes(s)) return s;
-  // Legacy mapping
-  if (s === "new_lead") return "new";
-  if (s === "qualified") return "qualified";
-  if (s === "proposal" || s === "prospect") return "proposition";
-  if (s === "negotiation") return "proposition";
-  if (s === "attempted_contact" || s === "contacted") return "new";
-  if (s === "won") return "won";
-  // If it was "lost" (legacy), keep it as lost marker (not a pipeline stage)
-  if (s === "lost") return "new";
-  return "new";
+  const s = (stage || "New").toString().trim();
+  return s; // Return exactly what is passed (or New) — mapping is handled by Super Admin
 }
 
-/* ================= GET LEADS BY PIPELINE STAGE ================= */
+/* ================= GET LEADS BY PIPELINE (RAW + STRUCTURE) ================= */
 exports.getLeadsPipeline = async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
 
-    let filter = { isDeleted: false };
+    const companyId = req.user.companyId;
+
+    let filter = { isDeleted: false, isLost: { $ne: true } };
     if (req.user.role !== "super_admin") {
-      filter.companyId = req.user.companyId;
+      filter.companyId = companyId;
       if (req.user.role === "branch_manager" && req.user.branchId) filter.branchId = req.user.branchId;
       if (req.user.role === "sales") filter.assignedTo = req.user.id;
     }
 
-    // Lost leads should not appear in the main kanban
-    const leads = await Lead.find({ ...filter, isLost: { $ne: true } })
+    // STEP 1: FETCH / CREATE PIPELINE (Autoritative)
+    const { stages, pipeline } = await getCompanyPipelineStages(companyId);
+
+    // STEP 2: FETCH RAW LEADS
+    const leads = await Lead.find(filter)
       .populate("assignedTo", "name email")
       .sort({ stageUpdatedAt: -1, createdAt: -1 })
       .lean();
 
-    const grouped = {};
-    for (const stage of LEAD_PIPELINE_STAGES) {
-      grouped[stage] = leads.filter((l) => normalizeLeadStage(l.stage) === stage);
-    }
+    console.log("PIPELINE FETCHED:", pipeline._id);
+    console.log("STAGES COUNT:", stages.length);
+    console.log("RAW LEADS FETCHED:", leads.length);
 
-    res.json({ success: true, data: grouped });
+    // Return the single source of truth: Pipeline (to build board) + Leads (to group dynamically)
+    res.json({
+      success: true,
+      pipeline,
+      leads // Raw array — frontend will do the grouping
+    });
   } catch (error) {
     console.error("GET LEADS PIPELINE ERROR:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 /* ================= UPDATE LEAD STAGE (PATCH /api/leads/:id/stage) ================= */
 exports.updateLeadStage = async (req, res) => {
@@ -554,12 +582,47 @@ exports.updateLeadStage = async (req, res) => {
     if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
 
     const { status: newStage } = req.body;
-    if (!newStage || !LEAD_PIPELINE_STAGES.includes(newStage)) {
+    if (!newStage) {
+      return res.status(400).json({ success: false, message: "Stage is required." });
+    }
+
+    // VALIDATE AGAINST DYNAMIC PIPELINE STAGES
+    const { stages: dynamicStages } = await getCompanyPipelineStages(req.user.companyId);
+    const validStages = dynamicStages || [];
+    
+    // LEGACY MAPPING: Handle old stage names (new_lead, etc.)
+    const LEGACY_MAP = {
+      "new_lead": "New",
+      "qualified_lead": "Qualified",
+      "proposition": "Proposal",
+      "new": "New",
+      "won": "Won",
+      "lost": "lost"
+    };
+
+    let mappedStage = newStage;
+    if (LEGACY_MAP[newStage.toLowerCase()]) {
+      mappedStage = LEGACY_MAP[newStage.toLowerCase()];
+    }
+
+    // CASE-INSENSITIVE MATCH
+    const targetStageObj = validStages.find(s => 
+      s.name?.toLowerCase() === mappedStage.toLowerCase() || 
+      s.name?.toLowerCase() === newStage.toLowerCase()
+    );
+
+    if (!targetStageObj) {
+      const validNames = validStages.map(s => s.name || "UNNAMED STAGE").join(", ");
+      console.warn(`[400] Update Lead Stage: Invalid stage '${newStage}'. Valid options: ${validNames}`);
       return res.status(400).json({
         success: false,
-        message: "Invalid or missing stage. Use: new, qualified, proposition, won.",
+        message: `Invalid stage: '${newStage}'. Available: ${validNames || "Empty Pipeline"}.`,
+        debug: { newStage, mappedStage, validStageCount: validStages.length }
       });
     }
+
+    // Always use the EXACT case from the database
+    const exactStageName = targetStageObj.name;
 
     const query = { _id: req.params.id, companyId: req.user.companyId };
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
@@ -569,7 +632,7 @@ exports.updateLeadStage = async (req, res) => {
     if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
 
     const oldStage = normalizeLeadStage(lead.stage);
-    if (oldStage === newStage && lead.isLost !== true) {
+    if (oldStage === exactStageName && lead.isLost !== true) {
       return res.json({ success: true, data: lead });
     }
 
@@ -581,14 +644,17 @@ exports.updateLeadStage = async (req, res) => {
       const prevEntered = lead.stageUpdatedAt || lead.createdAt;
       if (prevEntered) history.push({ stage: oldStage, enteredAt: new Date(prevEntered), exitedAt: now });
     }
-    history.push({ stage: newStage, enteredAt: now, exitedAt: null });
+    history.push({ stage: exactStageName, enteredAt: now, exitedAt: null });
     lead.stageHistory = history;
-    lead.stage = newStage;
+    lead.stage = exactStageName;
     lead.stageUpdatedAt = now;
-    if (typeof STAGE_DEFAULT_PROBABILITY[newStage] === "number") {
-      lead.probability = STAGE_DEFAULT_PROBABILITY[newStage];
+
+    // USE DYNAMIC PROBABILITY FROM PIPELINE
+    if (typeof targetStageObj.probability === "number") {
+      lead.probability = targetStageObj.probability;
     }
-    if (newStage === "won") {
+
+    if (exactStageName.toLowerCase() === "won") {
       lead.status = "Won";
       lead.wonAt = now;
       lead.isLost = false;
@@ -596,6 +662,7 @@ exports.updateLeadStage = async (req, res) => {
       lead.lostReason = "";
       lead.lostNotes = "";
     }
+
     await lead.save();
 
     await Activity.create({
@@ -626,14 +693,20 @@ exports.updateLeadStage = async (req, res) => {
 };
 
 function formatStageLabel(stage) {
+  if (!stage) return "";
+  const s = stage.toString().trim();
   const labels = {
     qualified: "Qualified",
     new: "New",
     proposition: "Proposition",
     won: "Won",
   };
-  return labels[stage] || stage;
+  // If it's a known snake_case or legacy key, format it nicely.
+  // Otherwise, return the dynamic stage name as is.
+  if (labels[s.toLowerCase()]) return labels[s.toLowerCase()];
+  return s.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
+
 
 /* ================= MARK LEAD AS LOST (POST /api/leads/:id/lost) ================= */
 exports.markLeadLost = async (req, res) => {

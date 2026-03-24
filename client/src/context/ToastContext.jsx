@@ -16,14 +16,14 @@ const COLORS = {
     success: "bg-green-50 border-green-200 text-green-800",
     error: "bg-red-50 border-red-200 text-red-800",
     warning: "bg-amber-50 border-amber-200 text-amber-800",
-    info: "bg-blue-50 border-blue-200 text-blue-800",
+    info: "bg-teal-50 border-teal-200 text-teal-800",
 };
 
 const ICON_COLORS = {
     success: "text-green-500",
     error: "text-red-500",
     warning: "text-amber-500",
-    info: "text-blue-500",
+    info: "text-teal-600",
 };
 
 let _id = 0;

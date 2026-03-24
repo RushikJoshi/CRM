@@ -44,7 +44,7 @@ export default function ActivityPanel({ dealId }) {
         <div>
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="w-8 h-8 border-2 border-gray-200 border-t-indigo-500 rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-gray-200 border-t-teal-600 rounded-full animate-spin" />
             </div>
           ) : activities.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-6">No activities yet.</p>

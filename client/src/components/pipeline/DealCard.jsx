@@ -1,5 +1,5 @@
 import React from "react";
-import { FiMenu } from "react-icons/fi";
+import { FiMenu, FiCalendar, FiPlusSquare } from "react-icons/fi";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -31,52 +31,61 @@ export default function DealCard({ deal, onView, onEdit, onAddTask }) {
     deal.leadId?.name ||
     deal.contactId?.name ||
     "—";
-  const value = Number(deal.value || 0).toLocaleString("en-IN");
-  const assignedName = deal.assignedTo?.name || "Unassigned";
-  const initial = (assignedName || "U").charAt(0).toUpperCase();
+  const value = Number(deal.value || 0).toLocaleString("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  });
+  const assignedName = deal.assignedUser?.name || deal.assignedTo?.name || "Unassigned";
+  const initials = (assignedName || "U").split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`mb-3 ${isDragging ? "opacity-60 z-10" : ""}`}
+      className={`mb-3 ${isDragging ? "opacity-60 z-10" : "group/card"}`}
     >
       <div
         className={`
-          bg-white rounded-xl shadow-sm p-3 border border-gray-200
-          hover:shadow-md transition-shadow
-          ${isDragging ? "shadow-lg ring-2 ring-indigo-200" : ""}
+          bg-white rounded-[var(--r-md)] border border-[var(--border2)] p-3
+          hover:shadow-[var(--sh-md)] hover:border-[var(--indigo-b)] transition-all cursor-pointer
+          ${isDragging ? "shadow-lg ring-2 ring-[var(--indigo-l)]" : "shadow-[var(--sh-sm)]"}
         `}
-        onClick={onView ? () => onView(deal) : undefined}
-        onKeyDown={onView ? (e) => e.key === "Enter" && onView(deal) : undefined}
-        role={onView ? "button" : "article"}
-        tabIndex={onView ? 0 : undefined}
+        onClick={() => onView?.(deal)}
       >
         <div className="flex items-start gap-2">
-          <div
-            {...attributes}
-            {...listeners}
-            className="shrink-0 mt-0.5 p-1 rounded-lg text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 cursor-grab active:cursor-grabbing touch-none"
-            onClick={(e) => e.stopPropagation()}
-            aria-label="Drag to move"
-          >
-            <FiMenu size={14} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-gray-800 truncate leading-tight">
-              {deal.title || "Untitled"}
-            </h4>
-            <p className="text-xs text-gray-500 truncate mt-0.5">{companyOrContact}</p>
-            <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-100">
-              <span className="text-xs font-medium text-indigo-600">₹{value}</span>
-              <div
-                className="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[10px] font-medium text-gray-600 shrink-0"
-                title={assignedName}
-              >
-                {initial}
-              </div>
+            <div
+                {...attributes}
+                {...listeners}
+                className="shrink-0 mt-0.5 p-1 rounded-md text-[var(--txt4)] hover:text-[var(--indigo)] hover:bg-[var(--indigo-l)] cursor-grab active:cursor-grabbing touch-none transition-colors"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <FiMenu size={14} />
             </div>
-          </div>
+          
+            <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                    <h4 className="text-[13px] font-bold text-[var(--txt)] truncate leading-tight group-hover/card:text-[var(--indigo)] transition-colors">
+                        {deal.title || "Untitled Deal"}
+                    </h4>
+                </div>
+                
+                <p className="text-[11.5px] text-[var(--txt3)] truncate mb-3">
+                    {companyOrContact}
+                </p>
+
+                <div className="flex items-center justify-between mt-auto pt-2 border-t border-[var(--border)]">
+                    <span className="text-[12px] font-bold text-[var(--txt2)]">
+                        {value}
+                    </span>
+                    
+                    <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[var(--indigo)] to-[var(--indigo-light)] flex items-center justify-center text-white text-[9px] font-bold shadow-sm" title={assignedName}>
+                            {initials}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
       </div>
     </div>

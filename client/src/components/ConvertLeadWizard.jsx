@@ -104,13 +104,13 @@ export default function ConvertLeadWizard({ isOpen, onClose, lead, onConverted }
                 onClick={() => setMode("prospect")}
                 className={`w-full text-left p-4 rounded-2xl border transition-all ${
                   mode === "prospect"
-                    ? "border-indigo-200 bg-indigo-50/60"
+                    ? "border-teal-200 bg-teal-50/60"
                     : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-teal-700 text-white flex items-center justify-center shrink-0">
                       <FiTrendingUp size={18} />
                     </div>
                     <div className="min-w-0">
@@ -126,13 +126,13 @@ export default function ConvertLeadWizard({ isOpen, onClose, lead, onConverted }
                 onClick={() => setMode("deal")}
                 className={`w-full text-left p-4 rounded-2xl border transition-all ${
                   mode === "deal"
-                    ? "border-indigo-200 bg-indigo-50/60"
+                    ? "border-teal-200 bg-teal-50/60"
                     : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-teal-700 text-white flex items-center justify-center shrink-0">
                       <FiBriefcase size={18} />
                     </div>
                     <div className="min-w-0">
@@ -157,7 +157,7 @@ export default function ConvertLeadWizard({ isOpen, onClose, lead, onConverted }
                 type="button"
                 onClick={handleSubmit}
                 disabled={!canConvert || loading}
-                className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 inline-flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-teal-700 text-white text-sm font-semibold hover:bg-teal-700 disabled:opacity-50 inline-flex items-center gap-2"
               >
                 {loading ? (
                   <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />

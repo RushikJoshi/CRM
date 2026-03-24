@@ -11,6 +11,12 @@ router.get("/companies", controller.getAllCompanies);
 router.post("/companies", controller.createCompany);
 router.put("/companies/:id", controller.updateCompany);
 router.delete("/companies/:id", controller.deleteCompany);
+router.post("/companies/assign-plan", controller.assignPlanToCompany);
+
+router.get("/plans", controller.getAllPlans);
+router.post("/plans", controller.createPlan);
+router.put("/plans/:id", controller.updatePlan);
+router.delete("/plans/:id", controller.deletePlan);
 
 router.get("/branches", controller.getAllBranches);
 router.get("/branches/:id", controller.getBranchById);
@@ -31,7 +37,14 @@ router.get("/deals", controller.getAllDeals);
 router.put("/deals/:id", controller.updateDeal);
 router.delete("/deals/:id", controller.deleteDeal);
 
+const pipelineController = require("../controllers/pipelineController");
+
+// ONE PIPELINE PER COMPANY — identified by companyId, not pipeline _id
+router.get("/pipeline/:companyId",  pipelineController.getPipelineByCompanyId);
+router.put("/pipeline/:companyId",  pipelineController.updatePipelineByCompanyId);
+
 router.get("/stats", controller.getStats);
 router.get("/platform-stats", controller.getPlatformStats);
+router.get("/system-logs", controller.getSystemLogs);
 
-module.exports = router;
+module.exports = router;

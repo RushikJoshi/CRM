@@ -39,7 +39,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, total, pageSize = 1
           className="px-3 h-10 inline-flex items-center gap-2 rounded-[10px] border border-[#E0F2FE] transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-white hover:bg-[#E0F7FF] text-[#64748B] hover:text-[#0F172A]"
           aria-label="Previous page"
         >
-          <FiChevronLeft size={20} />
+          <span className="text-sm font-bold">Prev</span>
         </button>
         <div className="flex items-center gap-1.5">
           {pages.map((p, idx) =>
@@ -70,7 +70,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, total, pageSize = 1
           className="px-3 h-10 inline-flex items-center gap-2 rounded-[10px] border border-[#E0F2FE] transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-white hover:bg-[#E0F7FF] text-[#64748B] hover:text-[#0F172A]"
           aria-label="Next page"
         >
-          <FiChevronRight size={20} />
+          <span className="text-sm font-bold">Next</span>
         </button>
       </div>
     </div>
