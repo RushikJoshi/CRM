@@ -196,19 +196,18 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
                                                 key={item.path}
                                                 to={fullPath}
                                                 onClick={() => setIsMobileOpen(false)}
-                                                className={`relative group flex items-center gap-2.5 rounded-[6px] py-2 px-3 transition-all duration-150 overflow-hidden ${
+                                                className={`relative group flex items-center gap-3 rounded-[12px] py-2.5 px-4 transition-all duration-300 overflow-hidden ${
                                                     isActive
-                                                        ? "bg-[var(--sb-active)] text-[var(--sb-text-act)] font-semibold"
-                                                        : "text-[var(--sb-text)] hover:bg-[var(--sb-hover)] hover:text-[var(--txt2)]"
-                                                } ${isCollapsed ? "justify-center px-0 w-8 h-8 mx-auto" : ""}`}
+                                                        ? "bg-gradient-to-r from-[#38BDF8] to-[#818CF8] text-white font-bold shadow-md shadow-cyan-400/20"
+                                                        : "text-[#64748B] hover:bg-slate-50 hover:text-[#1E293B]"
+                                                } ${isCollapsed ? "justify-center px-0 w-10 h-10 mx-auto" : ""}`}
                                             >
-                                                {isActive && !isCollapsed && (
-                                                    <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[var(--indigo)] rounded-r-full" />
-                                                )}
-                                                <span className={`shrink-0 transition-opacity ${isActive ? "opacity-100" : "opacity-55"}`}>
-                                                    {React.cloneElement(item.icon, { size: 16, strokeWidth: isActive ? 2.5 : 2 })}
+                                                <span className={`shrink-0 transition-all duration-300 ${isActive ? "text-white scale-110" : "opacity-60 group-hover:opacity-100"}`}>
+                                                    {React.cloneElement(item.icon, { size: 18, strokeWidth: isActive ? 2.5 : 2 })}
                                                 </span>
-                                                {!isCollapsed && <span className="text-[13px] truncate">{item.labelMap?.[role] || item.name}</span>}
+                                                {!isCollapsed && <span className="text-[14px] truncate tracking-tight">{item.labelMap?.[role] || item.name}</span>}
+
+
                                                 {isCollapsed && (
                                                     <span className="absolute left-full ml-3 px-2.5 py-1.5 bg-[var(--txt)] text-white text-[11px] font-medium rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap shadow-lg">
                                                         {item.labelMap?.[role] || item.name}

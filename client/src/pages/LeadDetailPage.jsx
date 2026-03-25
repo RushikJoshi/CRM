@@ -761,7 +761,8 @@ export default function LeadDetailPage() {
                 <div className="hidden sm:flex items-center text-xs font-bold text-gray-400">
                   <span>Pipeline</span>
                   <FiChevronRight size={14} />
-                  <span className="text-gray-900 truncate max-w-[150px]">{lead.name || "Opportunity"}</span>
+                  <span className="text-gray-900 truncate max-w-[200px]">{lead.customId || lead.name || "Opportunity"}</span>
+
                   <FiChevronRight size={14} />
                   <span className="text-indigo-600 font-black uppercase tracking-widest text-[10px] ml-1">Assigned to: {salesperson}</span>
                   <span className="ml-4 px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[9px] font-black uppercase tracking-widest flex items-center gap-1">

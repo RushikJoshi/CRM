@@ -126,58 +126,109 @@ function Leads() {
         }
     };
 
+    const [activeTask, setActiveTask] = useState(null); // 'import', 'assign', 'bulk', 'task'
+
+    const closeTask = () => setActiveTask(null);
+
     useEffect(() => { setPage(1); }, [search, statusFilter]);
     useEffect(() => { fetchLeads(); }, [search, statusFilter, page]);
 
-    return (
-        <div className="animate-fade-in space-y-6 pb-10">
-            {/* SaaS Header & Action Bar */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-[22px] font-semibold text-slate-900 poppins">Prospect Management</h1>
-                    <p className="text-[13px] text-slate-500 mt-0.5">Track, qualify, and convert lead opportunities through the CRM lifecycle.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    {(role === "branch_manager" || role === "company_admin" || role === "super_admin") && (
-                        <button
-                            onClick={() => setImportLead(true)}
-                            className="btn-saas-secondary h-9 px-4"
-                        >
-                            <FiUpload size={14} className="mr-2" />
-                            Import CSV
-                        </button>
-                    )}
-                </div>
+    if (activeTask === 'import') {
+        return (
+            <div className="animate-fade-in bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[600px]">
+                <LeadImportModal 
+                    isOpen={true} 
+                    onClose={closeTask} 
+                    onImported={() => { fetchLeads(); closeTask(); }} 
+                    isStandalone={true}
+                />
             </div>
+        );
+    }
 
-            <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
+    if (activeTask === 'assign' && assignLead) {
+        return (
+            <div className="animate-fade-in bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[600px]">
+                <LeadAssignModal 
+                    isOpen={true} 
+                    onClose={closeTask} 
+                    lead={assignLead} 
+                    onAssigned={() => { fetchLeads(); closeTask(); }} 
+                    isStandalone={true}
+                />
+            </div>
+        );
+    }
+
+    if (activeTask === 'bulk' && bulkActionInfo.open) {
+        return (
+            <div className="animate-fade-in bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[600px]">
+                <BulkUpdateModal 
+                    isOpen={true} 
+                    onClose={closeTask} 
+                    ids={bulkActionInfo.ids} 
+                    action={bulkActionInfo.action} 
+                    onUpdated={() => { bulkActionInfo.reset?.(); fetchLeads(); closeTask(); }} 
+                    isStandalone={true}
+                />
+            </div>
+        );
+    }
+
+    if (activeTask === 'task' && taskLead) {
+        return (
+            <div className="animate-fade-in bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[600px]">
+                <AddTaskModal 
+                    isOpen={true} 
+                    onClose={closeTask} 
+                    onSuccess={() => { fetchLeads(); closeTask(); }} 
+                    lead={taskLead} 
+                    isStandalone={true}
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="animate-fade-in space-y-3 pb-4">
+            <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
                 <div className="relative group min-w-[240px]">
-                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={12} />
                     <input
                         type="text"
                         placeholder="Search leads by name or email..."
-                        className="w-full h-9 pl-9 pr-3 bg-slate-50 border border-transparent rounded-lg text-[13px] font-medium outline-none focus:bg-white focus:border-indigo-600/20 focus:ring-4 focus:ring-indigo-600/5 transition-all"
+                        className="w-full h-8 pl-9 pr-3 bg-slate-50 border border-transparent rounded-lg text-[12px] font-medium outline-none focus:bg-white focus:border-indigo-600/20 focus:ring-4 focus:ring-indigo-600/5 transition-all"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
 
-                <div className="h-5 w-px bg-slate-100 mx-1" />
+                {(role === "branch_manager" || role === "company_admin" || role === "super_admin") && (
+                    <button
+                        onClick={() => setActiveTask('import')}
+                        className="btn-saas-secondary h-8 px-4 shrink-0 border-dashed text-[11px]"
+                    >
+                        <FiUpload size={12} className="mr-2 opacity-50" />
+                        Import CSV
+                    </button>
+                )}
+
+                <div className="h-4 w-px bg-slate-100 mx-1" />
 
                 {selectedIds.length > 0 ? (
                     <div className="flex items-center gap-2 animate-fade-in">
-                        <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded uppercase tracking-wider">{selectedIds.length} Selected</span>
-                        <button onClick={handleExportCSV} className="btn-saas-secondary h-8 px-3 text-[11px]">Export</button>
-                        <button onClick={() => handleBulkAction(selectedIds, 'assign_user', () => setSelectedIds([]))} className="btn-saas-secondary h-8 px-3 text-[11px]">Reassign</button>
-                        <button onClick={() => handleBulkAction(selectedIds, 'delete', () => setSelectedIds([]))} className="btn-saas-secondary h-8 px-3 text-[11px] text-rose-600 hover:bg-rose-50 border-rose-100">Delete</button>
-                        <button onClick={() => setSelectedIds([])} className="p-1.5 text-slate-400 hover:text-slate-600"><FiX size={14} /></button>
+                        <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-wider">{selectedIds.length} Selected</span>
+                        <button onClick={handleExportCSV} className="btn-saas-secondary h-7 px-2.5 text-[10px]">Export</button>
+                        <button onClick={() => { setBulkActionInfo({ ids: selectedIds, action: 'assign_user', reset: () => setSelectedIds([]) }); setActiveTask('bulk'); }} className="btn-saas-secondary h-7 px-2.5 text-[10px]">Reassign</button>
+                        <button onClick={() => handleBulkAction(selectedIds, 'delete', () => setSelectedIds([]))} className="btn-saas-secondary h-7 px-2.5 text-[10px] text-rose-600 hover:bg-rose-50 border-rose-100">Delete</button>
+                        <button onClick={() => setSelectedIds([])} className="p-1 text-slate-400 hover:text-slate-600"><FiX size={12} /></button>
                     </div>
                 ) : (
                     <div className="flex items-center gap-3">
                         <div className="relative">
-                            <FiFilter size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <FiFilter size={10} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             <select
-                                className="h-9 pl-8 pr-8 bg-slate-50 border border-transparent rounded-lg text-[12px] font-semibold text-slate-700 outline-none focus:bg-white focus:border-indigo-600/20 transition-all appearance-none cursor-pointer min-w-[140px]"
+                                className="h-8 pl-8 pr-8 bg-slate-50 border border-transparent rounded-lg text-[11px] font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-600/20 transition-all appearance-none cursor-pointer min-w-[130px]"
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
@@ -211,8 +262,8 @@ function Leads() {
                         onDelete={handleDelete}
                         onConvert={handleConvert}
                         onView={(l) => l?._id && navigate(`${formBase}/${l._id}`)}
-                        onAssign={(l) => setAssignLead(l)}
-                        onAddTask={(l) => setTaskLead(l)}
+                        onAssign={(l) => { setAssignLead(l); setActiveTask('assign'); }}
+                        onAddTask={(l) => { setTaskLead(l); setActiveTask('task'); }}
                         onBulkAction={handleBulkAction}
                     />
                     <div className="flex items-center justify-between">
@@ -223,35 +274,6 @@ function Leads() {
                     </div>
                 </div>
             )}
-
-            {/* Modals */}
-            <LeadAssignModal
-                isOpen={Boolean(assignLead)}
-                onClose={() => setAssignLead(null)}
-                lead={assignLead}
-                onAssigned={fetchLeads}
-            />
-            <AddTaskModal
-                isOpen={Boolean(taskLead)}
-                onClose={() => setTaskLead(null)}
-                onSuccess={fetchLeads}
-                lead={taskLead}
-            />
-            <BulkUpdateModal
-                isOpen={bulkActionInfo.open}
-                onClose={() => setBulkActionInfo({ ...bulkActionInfo, open: false })}
-                ids={bulkActionInfo.ids}
-                action={bulkActionInfo.action}
-                onUpdated={() => {
-                    bulkActionInfo.reset?.();
-                    fetchLeads();
-                }}
-            />
-            <LeadImportModal
-                isOpen={importLead}
-                onClose={() => setImportLead(false)}
-                onSuccess={fetchLeads}
-            />
         </div>
     );
 }

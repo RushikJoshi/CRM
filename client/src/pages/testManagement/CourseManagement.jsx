@@ -94,17 +94,17 @@ const CourseManagement = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="animate-fade-in space-y-10 pb-10">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Test & Lead Management</h1>
-          <p className="text-gray-500 mt-1">Design automated tests and capture student leads directly into CRM.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-1">
+          <h1 className="text-[28px] font-bold text-slate-800 poppins tracking-tight">Test & Lead Management</h1>
+          <p className="text-[14px] text-slate-400 font-medium">Design automated tests and capture student leads directly into CRM.</p>
         </div>
         {!isFormOpen && (
           <button 
             onClick={() => { resetForm(); setIsFormOpen(true); }}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all duration-200"
+            className="btn-saas-primary gap-2 h-[48px] px-8"
           >
             <FiPlus size={20} /> Create New Course
           </button>
@@ -118,40 +118,40 @@ const CourseManagement = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden mb-12"
+            className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden"
           >
-            <div className="p-8 pb-4 flex justify-between items-center relative overflow-hidden bg-gray-50/50">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-600 to-purple-600"></div>
+            <div className="p-8 pb-4 flex justify-between items-center relative overflow-hidden bg-slate-50/30">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#38BDF8] to-[#818CF8]"></div>
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setIsFormOpen(false)}
-                  className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors"
+                  className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-[#38BDF8] transition-all"
                 >
                   <FiChevronLeft size={20} />
                 </button>
                 <div>
-                    <h2 className="text-2xl font-black text-gray-900">{editId ? 'Modify Course' : 'Create New Course'}</h2>
-                    <p className="text-gray-500 text-sm">Define assessment parameters and company assignment.</p>
+                    <h2 className="text-[20px] font-bold text-slate-800 poppins">{editId ? 'Modify Course' : 'Create New Course'}</h2>
+                    <p className="text-[12px] text-slate-400 font-medium">Define assessment parameters and company assignment.</p>
                 </div>
               </div>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-6">
+            <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
+              <div className="space-y-8">
                 <div>
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Course Title</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Course Title</label>
                   <input 
                     type="text" required
                     placeholder="e.g. Advanced Digital Marketing"
-                    className="w-full bg-gray-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500 font-bold text-gray-800 placeholder:text-gray-300 transition-all"
+                    className="w-full bg-slate-50/50 border border-transparent rounded-2xl p-4 focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 font-bold text-slate-700 placeholder:text-slate-300 transition-all outline-none"
                     value={formData.title} 
                     onChange={e => setFormData({...formData, title: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Description</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Description</label>
                   <textarea 
-                    className="w-full bg-gray-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500 font-medium text-gray-700 placeholder:text-gray-300 transition-all" rows="4"
+                    className="w-full bg-slate-50/50 border border-transparent rounded-2xl p-4 focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 font-medium text-slate-600 placeholder:text-slate-300 transition-all outline-none" rows="4"
                     placeholder="Briefly describe what this test covers..."
                     value={formData.description} 
                     onChange={e => setFormData({...formData, description: e.target.value})}
@@ -159,11 +159,11 @@ const CourseManagement = () => {
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Assign to Company</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Assign to Company</label>
                   <select 
-                    required className="w-full bg-gray-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500 font-bold text-gray-800 appearance-none cursor-pointer"
+                    required className="w-full bg-slate-50/50 border border-transparent rounded-2xl p-4 focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 font-bold text-slate-700 appearance-none cursor-pointer outline-none"
                     value={formData.companyId} 
                     onChange={e => setFormData({...formData, companyId: e.target.value})}
                   >
@@ -172,38 +172,38 @@ const CourseManagement = () => {
                   </select>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-8">
                    <div>
-                     <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Duration (Min)</label>
+                     <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3 ml-1">Duration (Min)</label>
                      <div className="relative">
                         <input 
                             type="number" required
-                            className="w-full bg-gray-50 border-0 rounded-2xl p-4 pr-12 focus:ring-2 focus:ring-indigo-500 font-bold text-gray-800 transition-all"
+                            className="w-full bg-slate-50/50 border border-transparent rounded-2xl p-4 pr-12 focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 font-bold text-slate-700 transition-all outline-none"
                             value={formData.duration} 
                             onChange={e => setFormData({...formData, duration: e.target.value})}
                         />
-                        <FiClock className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300" size={20} />
+                        <FiClock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                      </div>
                    </div>
                    <div className="flex flex-col justify-end pb-1">
                       <div 
                         onClick={() => setFormData({...formData, showResult: !formData.showResult})}
-                        className="flex items-center gap-3 cursor-pointer group bg-gray-50 p-3 rounded-2xl"
+                        className="flex items-center gap-3 cursor-pointer group bg-slate-50/50 p-4 rounded-2xl hover:bg-slate-50 transition-all"
                       >
-                         <div className={`w-10 h-5 rounded-full p-1 transition-all duration-300 ${formData.showResult ? 'bg-indigo-600' : 'bg-gray-200'}`}>
+                         <div className={`w-10 h-5 rounded-full p-1 transition-all duration-300 ${formData.showResult ? 'bg-[#38BDF8]' : 'bg-slate-200'}`}>
                             <div className={`w-3 h-3 bg-white rounded-full transition-transform duration-300 ${formData.showResult ? 'translate-x-5' : 'translate-x-0'}`}></div>
                          </div>
-                         <span className="text-xs font-bold text-gray-700 group-hover:text-indigo-600 transition-colors">Show Results?</span>
+                         <span className="text-[12px] font-bold text-slate-600 group-hover:text-[#38BDF8] transition-colors">Show Results?</span>
                       </div>
                    </div>
                 </div>
                 
-                <div className="bg-gray-50 p-4 rounded-2xl flex items-center justify-between">
+                <div className="bg-slate-50/50 p-5 rounded-2xl flex items-center justify-between border border-transparent hover:border-slate-100 transition-all">
                    <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setFormData({...formData, isActive: !formData.isActive})}>
-                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all ${formData.isActive ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-gray-200'}`}>
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all ${formData.isActive ? 'bg-[#38BDF8] border-[#38BDF8]' : 'bg-white border-slate-200'}`}>
                         {formData.isActive && <FiCheckCircle className="text-white" size={14} />}
                       </div>
-                      <label className="text-sm font-bold text-gray-700 cursor-pointer group-hover:text-indigo-600 transition-colors">Is Course Active?</label>
+                      <label className="text-[13px] font-bold text-slate-600 cursor-pointer group-hover:text-[#38BDF8] transition-colors">Is Course Active?</label>
                    </div>
                 </div>
 
@@ -211,13 +211,13 @@ const CourseManagement = () => {
                   <button 
                     type="button" 
                     onClick={() => setIsFormOpen(false)} 
-                    className="flex-1 py-4 rounded-2xl border-2 border-gray-100 text-gray-500 font-bold hover:bg-gray-50 transition-all"
+                    className="flex-1 h-[52px] rounded-2xl border border-slate-200 text-slate-400 font-bold hover:bg-slate-50 hover:text-slate-600 transition-all"
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit" 
-                    className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 transition-all"
+                    className="flex-1 h-[52px] rounded-2xl bg-gradient-to-r from-[#38BDF8] to-[#818CF8] text-white font-bold shadow-lg shadow-cyan-400/20 hover:scale-[1.02] active:scale-95 transition-all"
                   >
                     {editId ? 'Update Course' : 'Launch Course'}
                   </button>
@@ -234,19 +234,19 @@ const CourseManagement = () => {
           >
             {loading ? (
               <div className="flex flex-col items-center justify-center py-24 gap-4">
-                 <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                 <p className="text-gray-500 font-medium">Fetching courses...</p>
+                 <div className="w-12 h-12 border-4 border-slate-100 border-t-[#38BDF8] rounded-full animate-spin"></div>
+                 <p className="text-[12px] font-bold text-slate-300 uppercase tracking-widest">Fetching courses...</p>
               </div>
             ) : courses.length === 0 ? (
-              <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-16 text-center">
-                  <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <FiBookOpen size={40} className="text-gray-300" />
+              <div className="bg-white rounded-[32px] border border-slate-100 p-20 text-center shadow-sm">
+                  <div className="bg-slate-50/50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8">
+                      <FiBookOpen size={48} className="text-slate-200" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">No courses found</h3>
-                  <p className="text-gray-500 mb-8 max-w-sm mx-auto">Start by creating your first course and adding multiple-choice questions.</p>
+                  <h3 className="text-[20px] font-bold text-slate-800 poppins mb-2">No courses found</h3>
+                  <p className="text-slate-400 mb-8 max-w-sm mx-auto font-medium">Start by creating your first course and adding multiple-choice questions.</p>
                   <button 
                       onClick={() => setIsFormOpen(true)}
-                      className="text-indigo-600 font-bold hover:underline"
+                      className="text-[#38BDF8] font-bold hover:underline"
                   >
                       Create Course Now
                   </button>
@@ -259,57 +259,58 @@ const CourseManagement = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     key={course._id} 
-                    className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300 p-6 flex flex-col group relative overflow-hidden"
+                    className="bg-white rounded-[24px] shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-cyan-400/5 transition-all duration-300 p-8 flex flex-col group relative overflow-hidden h-full"
                   >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-bl-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500"></div>
+                    {/* Corner Accent */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50/50 rounded-bl-full -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-500"></div>
                     
-                    <div className="flex justify-between items-start mb-6 relative z-10">
-                      <div className={`p-4 rounded-2xl shadow-sm ${course.isActive ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                        <FiBookOpen size={24} />
+                    <div className="flex justify-between items-start mb-8 relative z-10">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-500 ${course.isActive ? 'bg-gradient-to-br from-[#38BDF8] to-[#818CF8] text-white' : 'bg-slate-50 text-slate-300'}`}>
+                        <FiBookOpen size={28} />
                       </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => handleEdit(course)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"><FiEdit2 size={18} /></button>
-                        <button onClick={() => handleDelete(course._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"><FiTrash2 size={18} /></button>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEdit(course)} className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-[#38BDF8] hover:bg-cyan-50 rounded-xl transition-all"><FiEdit2 size={18} /></button>
+                        <button onClick={() => handleDelete(course._id)} className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><FiTrash2 size={18} /></button>
                       </div>
                     </div>
 
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 relative z-10 group-hover:text-indigo-600 transition-colors">{course.title}</h3>
-                    <p className="text-gray-500 text-sm mb-6 line-clamp-2 h-10">{course.description || "No description provided."}</p>
+                    <h3 className="text-[20px] font-bold text-slate-800 mb-2 relative z-10 group-hover:text-[#38BDF8] transition-colors poppins">{course.title}</h3>
+                    <p className="text-slate-400 text-sm mb-8 line-clamp-2 h-10 font-medium">{course.description || "No description provided."}</p>
                     
-                    <div className="grid grid-cols-2 gap-4 mb-8">
-                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                    <div className="grid grid-cols-2 gap-4 mb-10">
+                      <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
+                        <div className="flex items-center gap-2 text-slate-400 mb-2">
                           <FiClock size={14} />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Duration</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">Duration</span>
                         </div>
-                        <span className="text-gray-900 font-bold">{course.duration} min</span>
+                        <span className="text-slate-700 font-black text-[15px]">{course.duration} min</span>
                       </div>
-                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                      <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50">
+                        <div className="flex items-center gap-2 text-slate-400 mb-2">
                           <FiAward size={14} />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Results</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">Results</span>
                         </div>
-                        <span className={`font-bold ${course.showResult ? 'text-green-600' : 'text-orange-600'}`}>
+                        <span className={`font-black text-[15px] ${course.showResult ? 'text-emerald-500' : 'text-orange-400'}`}>
                           {course.showResult ? 'Public' : 'Hidden'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="mt-auto pt-6 border-t border-gray-50 flex flex-col gap-3">
+                    <div className="mt-auto pt-8 border-t border-slate-50 flex flex-col gap-5">
                       <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Assigned Company</span>
-                          <span className="text-sm font-bold text-gray-800">{course.companyId?.name || 'N/A'}</span>
+                          <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.2em]">Assigned Company</span>
+                          <span className="text-sm font-black text-slate-800 tracking-tight">{course.companyId?.name || 'N/A'}</span>
                       </div>
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex gap-3">
                           <button 
                               onClick={() => window.location.href = `/superadmin/test-management/questions?courseId=${course._id}`}
-                              className="flex-1 bg-white border-2 border-indigo-600 text-indigo-600 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                              className="flex-1 bg-white border border-[#38BDF8] text-[#38BDF8] h-[48px] rounded-xl text-[13px] font-bold hover:bg-[#38BDF8] hover:text-white transition-all shadow-sm shadow-cyan-400/5"
                           >
                               Management Questions
                           </button>
                           <button 
                               onClick={() => copyPublicLink(course.companyId?._id || course.companyId)}
-                              className="w-12 bg-indigo-50 text-indigo-600 flex items-center justify-center rounded-xl hover:bg-indigo-100 transition-colors"
+                              className="w-12 h-[48px] bg-slate-50 text-slate-400 flex items-center justify-center rounded-xl hover:bg-[#38BDF8]/10 hover:text-[#38BDF8] transition-all"
                               title="Copy Public Link"
                           >
                               <FiExternalLink size={20} />

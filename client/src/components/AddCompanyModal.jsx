@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { FiX, FiBriefcase, FiMail, FiPhone, FiGlobe, FiInfo, FiPlus, FiLock, FiUser, FiMapPin, FiActivity, FiShield } from "react-icons/fi";
+import { FiX, FiBriefcase, FiMail, FiPhone, FiGlobe, FiInfo, FiPlus, FiLock, FiUser, FiMapPin, FiActivity, FiShield, FiCheck } from "react-icons/fi";
 
-const AddCompanyModal = ({ isOpen, onClose, onSubmit, editingData }) => {
+const AddCompanyModal = ({ isOpen, onClose, onSubmit, editingData, isStandalone = false }) => {
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -9,7 +9,6 @@ const AddCompanyModal = ({ isOpen, onClose, onSubmit, editingData }) => {
         website: "",
         industry: "",
         address: "",
-        // Admin details (only for new creation)
         adminName: "",
         adminEmail: "",
         adminPassword: "",
@@ -56,176 +55,183 @@ const AddCompanyModal = ({ isOpen, onClose, onSubmit, editingData }) => {
         onSubmit(formData);
     };
 
-    if (!isOpen) return null;
+    const content = (
+        <div className={`bg-white w-full ${isStandalone ? "" : "max-w-2xl rounded-[2.5rem] shadow-2xl border border-gray-100"} overflow-hidden animate-in zoom-in-95 duration-300`}>
+            {/* Header */}
+            <div className={`p-4 border-b border-gray-50 flex items-center justify-between ${isStandalone ? "bg-white" : "bg-gray-50/50"}`}>
+                <div>
+                    <h2 className="text-lg font-black text-gray-900 tracking-tight text-left leading-none">
+                        {editingData ? "Edit Company" : "Add New Company"}
+                    </h2>
+                    <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-1 text-left">
+                        {editingData ? "Update company metadata and settings" : "Establish a new enterprise partner"}
+                    </p>
+                </div>
+                <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                    <FiX size={18} />
+                </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Basic Info */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Company Name *</label>
+                        <div className="relative group">
+                            <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                            <input
+                                required
+                                name="name"
+                                type="text"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="Company Name"
+                                value={formData.name}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Industry/Domain</label>
+                        <div className="relative group">
+                            <FiActivity className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                            <input
+                                name="industry"
+                                type="text"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="Technology, Real Estate, etc."
+                                value={formData.industry}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Official Website</label>
+                        <div className="relative group">
+                            <FiGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                            <input
+                                name="website"
+                                type="text"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="https://example.com"
+                                value={formData.website}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Contact Email *</label>
+                        <div className="relative group">
+                            <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                            <input
+                                required
+                                name="email"
+                                type="email"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="corp@example.com"
+                                value={formData.email}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Contact Phone</label>
+                        <div className="relative group">
+                            <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                            <input
+                                name="phone"
+                                type="tel"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="+1 (000) 000-0000"
+                                value={formData.phone}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Status</label>
+                        <div className="relative group">
+                            <FiCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors z-10" size={14} />
+                            <select
+                                name="status"
+                                className="w-full pl-10 pr-10 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs appearance-none shadow-inner cursor-pointer"
+                                value={formData.status}
+                                onChange={handleChange}
+                            >
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Account Provisioning */}
+                {!editingData && (
+                    <div className="pt-4 border-t border-gray-50 space-y-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                             <FiShield size={12} /> Admin Provisioning
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Admin Name *</label>
+                                <div className="relative group">
+                                    <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                                    <input
+                                        required={!editingData}
+                                        name="adminName"
+                                        type="text"
+                                        className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                        placeholder="Admin Full Name"
+                                        value={formData.adminName}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Admin Password *</label>
+                                <div className="relative group">
+                                    <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                                    <input
+                                        required={!editingData}
+                                        name="adminPassword"
+                                        type="password"
+                                        className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                        placeholder="••••••••"
+                                        value={formData.adminPassword}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex-1 py-3.5 bg-gray-100 text-gray-500 font-black rounded-xl hover:bg-gray-200 transition-all text-[10px] uppercase tracking-widest"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        className="flex-[2] flex items-center justify-center gap-2 py-3.5 bg-indigo-600 text-white font-black rounded-xl shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all text-[10px] uppercase tracking-widest"
+                    >
+                        <FiCheck size={16} />
+                        {editingData ? "Update Company" : "Confirm Onboarding"}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+
+    if (isStandalone) return content;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-3xl rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-300">
-                {/* Header */}
-                <div className="px-10 py-8 bg-gradient-to-r from-green-50 to-white flex items-center justify-between border-b border-gray-50">
-                    <div>
-                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-                            {editingData ? "Edit Company" : "Add Company"}
-                        </h2>
-                        <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mt-1">
-                            {editingData ? "Update company details" : "Create a new company"}
-                        </p>
-                    </div>
-                    <button onClick={onClose} className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all">
-                        <FiX size={24} />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-10 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
-                    {/* Primary Metadata */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3 text-gray-300 font-black uppercase tracking-[0.3em] text-[10px]">
-                            <FiActivity /> Basic Info
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Company Name *</label>
-                                <div className="relative group">
-                                    <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                    <input
-                                        required
-                                        name="name"
-                                        type="text"
-                                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[1.25rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm"
-                                        placeholder="Globex Corporation"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Website *</label>
-                                <div className="relative group">
-                                    <FiGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                    <input
-                                        required
-                                        name="website"
-                                        type="text"
-                                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[1.25rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm"
-                                        placeholder="https://globex.io"
-                                        value={formData.website}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Email *</label>
-                                <div className="relative group">
-                                    <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                    <input
-                                        required
-                                        name="email"
-                                        type="email"
-                                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[1.25rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm"
-                                        placeholder="corp@globex.io"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Phone</label>
-                                <div className="relative group">
-                                    <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                    <input
-                                        name="phone"
-                                        type="tel"
-                                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[1.25rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm"
-                                        placeholder="+1 (800) GLOBEX"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Address</label>
-                            <div className="relative group">
-                                <FiMapPin className="absolute left-4 top-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                <textarea
-                                    name="address"
-                                    rows={2}
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[1.25rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm resize-none"
-                                    placeholder="San Francisco HQ Node..."
-                                    value={formData.address}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Admin Provisioning (New Only) */}
-                    {!editingData && (
-                        <div className="space-y-6 pt-4 border-t border-gray-50">
-                            <div className="flex items-center gap-3 text-gray-300 font-black uppercase tracking-[0.3em] text-[10px]">
-                                <FiShield /> Admin Account
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Admin Name *</label>
-                                    <div className="relative group">
-                                        <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                        <input
-                                            required
-                                            name="adminName"
-                                            type="text"
-                                            className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[1.25rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm"
-                                            placeholder="Admin Name"
-                                            value={formData.adminName}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Admin Password *</label>
-                                    <div className="relative group">
-                                        <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                                        <input
-                                            required
-                                            name="adminPassword"
-                                            type="password"
-                                            className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[1.25rem] outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-400 focus:bg-white transition-all font-bold text-gray-700 text-sm shadow-sm"
-                                            placeholder="Admin Password"
-                                            value={formData.adminPassword}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-5 bg-orange-50/50 rounded-[1.5rem] border border-orange-100 flex items-start gap-3">
-                                <FiInfo className="text-orange-400 mt-1 shrink-0" />
-                                <p className="text-[10px] font-bold text-orange-600 leading-relaxed uppercase tracking-widest">
-                                    Note: This user will be the main administrator for this company.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex gap-4 pt-4">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-8 py-5 bg-gray-100 text-gray-500 font-black rounded-3xl hover:bg-gray-200 transition-all text-[11px] uppercase tracking-[0.2em]"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="flex-[2] flex items-center justify-center gap-3 px-8 py-5 bg-green-600 text-white font-black rounded-3xl shadow-2xl shadow-green-500/30 hover:bg-green-700 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.2em]"
-                        >
-                            <FiPlus size={20} />
-                            {editingData ? "Save Changes" : "Create Company"}
-                        </button>
-                    </div>
-                </form>
-            </div>
+            {content}
         </div>
     );
 };

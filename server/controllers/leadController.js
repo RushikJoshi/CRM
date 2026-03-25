@@ -9,6 +9,8 @@ const { runAutomation } = require("../utils/automationEngine");
 const { calculateLeadScore, assignLeadAutomatically } = require("../utils/leadManagement");
 const { logChange, createAuditEntry } = require("../utils/auditLogger");
 const Activity = require("../models/Activity");
+const { getNextCustomId } = require("../utils/idGenerator");
+
 
 // LEGACY FALLBACK (only used when company has no pipeline configured)
 const LEAD_PIPELINE_STAGES_FALLBACK = ["new", "qualified", "proposition", "won"];
@@ -70,6 +72,8 @@ exports.createLead = async (req, res) => {
 
     const now = new Date();
     const initialStage = normalizeLeadStage(cleanData.stage || "new_lead");
+    const customId = await getNextCustomId({ companyId: req.user.companyId, module: "lead" });
+
     const lead = await Lead.create({
       ...cleanData,
       companyId: req.user.companyId,
@@ -79,7 +83,9 @@ exports.createLead = async (req, res) => {
       stage: initialStage,
       stageUpdatedAt: now,
       stageHistory: [{ stage: initialStage, enteredAt: now, exitedAt: null }],
+      customId
     });
+
 
     if (req.body.sourceId) {
       const LeadSource = require("../models/LeadSource");
@@ -512,6 +518,8 @@ exports.convertLead = async (req, res) => {
       createdBy: req.user.id
     });
 
+    const dealCustomId = await getNextCustomId({ companyId: lead.companyId, module: "deal" });
+
     const deal = await Deal.create({
       title: lead.name + " Opportunity",
       value: lead.value || 0,
@@ -522,8 +530,10 @@ exports.convertLead = async (req, res) => {
       companyId: lead.companyId,
       branchId: lead.branchId || null,
       assignedTo: lead.assignedTo || req.user.id,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      customId: dealCustomId
     });
+
 
     lead.isConverted = true;
     lead.status = "Won";

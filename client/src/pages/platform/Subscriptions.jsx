@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { FiSearch, FiRefreshCcw, FiCalendar, FiCreditCard, FiCheckCircle, FiAlertCircle, FiX, FiPlus, FiChevronLeft, FiPlusCircle, FiArrowLeft } from "react-icons/fi";
+import { FiSearch, FiRefreshCcw, FiCalendar, FiCreditCard, FiCheckCircle, FiAlertCircle, FiX, FiPlus, FiChevronLeft, FiPlusCircle, FiArrowLeft, FiCopy } from "react-icons/fi";
+
 import API from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 
@@ -42,9 +43,10 @@ const SubscriptionForm = ({ company, plans, companies, onSave, onCancel }) => {
              <div className="space-y-1.5">
                <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Company</label>
                {company ? (
-                 <div className="w-full h-11 bg-slate-50 border border-slate-200 rounded-md px-4 flex items-center text-sm font-semibold text-slate-900">
-                    {company.name}
+                 <div className="w-full h-11 bg-slate-50 border border-slate-200 rounded-md px-4 flex items-center text-sm font-semibold text-slate-900 overflow-hidden truncate">
+                    {company.name} <span className="text-slate-400 font-medium text-xs ml-2 italic">({company.customId || company._id})</span>
                  </div>
+
                ) : (
                  <select 
                     required
@@ -53,7 +55,8 @@ const SubscriptionForm = ({ company, plans, companies, onSave, onCancel }) => {
                     onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
                  >
                     <option value="">Select a company</option>
-                    {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                    {companies.map(c => <option key={c._id} value={c._id}>{c.name} ({c.customId || c._id})</option>)}
+
                  </select>
                )}
              </div>
@@ -235,7 +238,8 @@ export default function Subscriptions() {
                             <tr key={comp._id} className="saas-tr group">
                                 <td className="saas-td">
                                     <div className="font-semibold text-slate-900 truncate max-w-[200px]">{comp.name}</div>
-                                    <div className="text-[11px] text-slate-400 uppercase tracking-tight">{comp.email}</div>
+                                    <div className="text-[11px] text-slate-400 uppercase tracking-tight">ID: {comp.customId || comp._id}</div>
+
                                 </td>
                                 <td className="saas-td">
                                     <div className="flex items-center gap-2">

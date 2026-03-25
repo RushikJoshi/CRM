@@ -8,6 +8,8 @@ const SystemLog = require("../models/SystemLog");
 const bcrypt = require("bcryptjs");
 const { seedMasterDataForCompany } = require("../utils/masterSeeder");
 const { createDefaultPipeline } = require("./pipelineController");
+const { getNextCustomId } = require("../utils/idGenerator");
+
 
 
 /* ================= COMPANIES ================= */
@@ -18,8 +20,12 @@ exports.getAllCompanies = async (req, res, next) => {
     const { search, page = 1, limit = 10 } = req.query;
     let query = {};
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { customId: { $regex: search, $options: "i" } }
+      ];
     }
+
 
     const companies = await Company.find(query)
       .limit(limit * 1)
@@ -73,6 +79,9 @@ exports.createCompany = async (req, res, next) => {
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + demoPlan.duration);
 
+    const customId = await getNextCustomId({ module: "company", companyName: name });
+    const companyCode = customId.split('-')[0];
+
     const newCompany = await Company.create({
       name,
       email,
@@ -83,8 +92,11 @@ exports.createCompany = async (req, res, next) => {
       planId: demoPlan._id,
       startDate,
       endDate,
-      subscriptionStatus: "active"
+      subscriptionStatus: "active",
+      customId,
+      code: companyCode
     });
+
 
     // D. Create Company Admin User
     const hashedPassword = await bcrypt.hash(adminPassword || "Company@123", 10);

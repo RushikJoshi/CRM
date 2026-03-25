@@ -12,7 +12,13 @@ const companySchema = new mongoose.Schema({
   planId: { type: mongoose.Schema.Types.ObjectId, ref: "Plan", default: null },
   startDate: { type: Date, default: null },
   endDate: { type: Date, default: null },
-  subscriptionStatus: { type: String, enum: ["active", "expired"], default: "active" }
+  subscriptionStatus: { type: String, enum: ["active", "expired"], default: "active" },
+  customId: { type: String, unique: true },
+  code: { type: String, unique: true }
 }, { timestamps: true });
+
+companySchema.index({ customId: 1 });
+companySchema.index({ code: 1 });
+
 
 module.exports = mongoose.model("Company", companySchema);

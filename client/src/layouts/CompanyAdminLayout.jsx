@@ -21,7 +21,7 @@ const CompanyAdminLayout = () => {
                 <div className="flex flex-col flex-1 min-w-0 overflow-hidden transition-all duration-300">
                     <Navbar toggleMobileSidebar={() => setMobileSidebar(!mobileSidebar)} />
                     <SubscriptionBanner />
-                    <main className="flex-1 overflow-y-auto px-[24px] py-[26px]">
+                    <main className="flex-1 overflow-y-auto px-[16px] py-[10px]">
                         <div className="animate-page-in">
                             <Outlet />
                         </div>

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     FiBriefcase, FiMail, FiPhone, FiGlobe, FiMapPin, FiUser,
-    FiLock, FiShield, FiArrowLeft, FiSave, FiInfo
+    FiLock, FiShield, FiArrowLeft, FiSave, FiInfo, FiCopy, FiCheck
 } from "react-icons/fi";
+
 import API from "../../services/api";
 import useFormValidation, { rules } from "../../hooks/useFormValidation";
 import FieldError from "../../components/FieldError";
@@ -25,7 +26,10 @@ export default function CompanyFormPage() {
     const [formData, setFormData] = useState({
         name: "", email: "", phone: "", website: "", industry: "", address: "",
         adminName: "", adminEmail: "", adminPassword: "",
+        customId: ""
     });
+    const [copied, setCopied] = useState(false);
+
 
     // ── Validation schema ────────────────────────────────────────────────────────
     const schema = {
@@ -58,11 +62,18 @@ export default function CompanyFormPage() {
                 const company = all.find(c => c._id === id);
                 if (company) {
                     setFormData({
-                        name: company.name || "", email: company.email || "",
-                        phone: company.phone || "", website: company.website || "",
-                        industry: company.industry || "", address: company.address || "",
-                        adminName: "", adminEmail: "", adminPassword: "",
+                        name: company.name || "", 
+                        email: company.email || "",
+                        phone: company.phone || "", 
+                        website: company.website || "",
+                        industry: company.industry || "", 
+                        address: company.address || "",
+                        adminName: "", 
+                        adminEmail: "", 
+                        adminPassword: "",
+                        customId: company.customId || ""
                     });
+
                 }
             } catch { toast.error("Failed to load company data"); }
             finally { setFetching(false); }
@@ -86,11 +97,18 @@ export default function CompanyFormPage() {
             if (isEdit) {
                 await API.put(`/super-admin/companies/${id}`, formData);
                 toast.success("Company updated successfully!");
+                navigate(-1);
             } else {
-                await API.post("/super-admin/companies", formData);
+                const res = await API.post("/super-admin/companies", formData);
                 toast.success("Company created successfully!");
+                const newId = res.data?.data?._id || res.data?._id;
+                if (newId) {
+                    navigate(`/superadmin/companies/${newId}`);
+                } else {
+                    navigate(-1);
+                }
             }
-            navigate(-1);
+
         } catch (err) {
             toast.error(err.response?.data?.message || "Something went wrong. Please try again.");
         } finally {
@@ -129,7 +147,8 @@ export default function CompanyFormPage() {
                     </div>
                     <div>
                         <h1 className="text-4xl font-black text-[#1A202C] tracking-tighter leading-none mb-2">
-                            {isEdit ? "Edit Company" : "Add Company"}
+                            {isEdit ? `Edit Company (${formData.customId || id})` : "Add Company"}
+
                         </h1>
                         <p className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.25em] opacity-80">
                             {isEdit ? "Update company information and enterprise details" : "Add a new company to the system"}
@@ -158,6 +177,40 @@ export default function CompanyFormPage() {
                             </div>
                             <FieldError error={errors.name} />
                         </div>
+
+                        {/* Company Custom ID (Read Only) */}
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">
+                                Company ID {isEdit ? "(Permanent)" : "(Auto-generated)"}
+                            </label>
+                            <div className="relative group">
+                                <FiShield size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0]" />
+                                <input 
+                                    name="customId" 
+                                    type="text" 
+                                    readOnly 
+                                    className={inputCls("customId") + " cursor-not-allowed opacity-70"} 
+                                    value={isEdit ? formData.customId : "Will be generated automatically"} 
+                                />
+                                {isEdit && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(formData.customId);
+                                            setCopied(true);
+                                            toast.success("ID copied to clipboard!");
+                                            setTimeout(() => setCopied(false), 2000);
+                                        }}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-slate-200 rounded-xl transition-all text-teal-600"
+                                        title="Copy Company ID"
+                                    >
+                                        {copied ? <FiCheck size={16} /> : <FiCopy size={16} />}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+
 
                         {/* Email */}
                         <div className="space-y-3">

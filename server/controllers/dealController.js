@@ -1,18 +1,24 @@
 const Deal = require("../models/Deal");
 const { runAutomation } = require("../utils/automationEngine");
 const { logChange, createAuditEntry } = require("../utils/auditLogger");
+const { getNextCustomId } = require("../utils/idGenerator");
+
 
 /* ================= CREATE DEAL ================= */
 exports.createDeal = async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
 
+    const customId = await getNextCustomId({ companyId: req.user.companyId, module: "deal" });
+
     const deal = await Deal.create({
       ...req.body,
       companyId: req.user.companyId,
       branchId: req.user.branchId || null,
-      createdBy: req.user.id
+      createdBy: req.user.id,
+      customId
     });
+
 
     // Stage and stageId are passed from frontend
 

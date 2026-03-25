@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { FiX, FiUser, FiMail, FiPhone, FiPlus, FiGlobe, FiMessageSquare, FiBriefcase } from "react-icons/fi";
+import React, { useState, useEffect } from "react";
+import { FiX, FiUser, FiMail, FiPhone, FiPlus, FiGlobe, FiMessageSquare, FiBriefcase, FiCheck } from "react-icons/fi";
 import API from "../services/api";
 
-const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
+const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isStandalone = false }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [formData, setFormData] = useState({
@@ -20,14 +20,18 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
         "Referral", "Social Media", "Website", "Other"
     ];
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
-        try {
-            await API.post("/inquiries", formData);
-            onSuccess();
-            onClose();
+    useEffect(() => {
+        if (editingData) {
+            setFormData({
+                name: editingData.name || "",
+                email: editingData.email || "",
+                phone: editingData.phone || "",
+                companyName: editingData.companyName || "",
+                source: editingData.source || "Manual",
+                website: editingData.website || "",
+                message: editingData.message || ""
+            });
+        } else {
             setFormData({
                 name: "",
                 email: "",
@@ -37,187 +41,195 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess }) => {
                 website: "",
                 message: ""
             });
+        }
+    }, [editingData, isOpen]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+        try {
+            if (editingData) {
+                await API.put(`/inquiries/${editingData._id}`, formData);
+            } else {
+                await API.post("/inquiries", formData);
+            }
+            onSuccess();
+            onClose();
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to create inquiry.");
+            setError(err.response?.data?.message || "Failed to save inquiry.");
         } finally {
             setLoading(false);
         }
     };
 
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl border border-[#E5EAF2] overflow-hidden animate-in zoom-in-95 duration-500 relative">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-teal-600/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-
-                {/* Header */}
-                <div className="px-10 py-8 bg-white flex items-center justify-between border-b border-[#F0F2F5] relative z-10">
-                    <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 bg-teal-700 text-white rounded-[20px] flex items-center justify-center shadow-xl shadow-teal-600/20 transform rotate-3">
-                            <FiPlus size={28} strokeWidth={2.5} />
-                        </div>
-                        <div>
-                            <h2 className="text-3xl font-black text-[#1A202C] tracking-tighter">
-                                Add Inquiry
-                            </h2>
-                            <p className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.25em] mt-2 opacity-80">
-                                INITIALIZING NEW INTAKE PROTOCOL NODE
-                            </p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="p-3 text-[#A0AEC0] hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100 shadow-sm hover:rotate-90">
-                        <FiX size={24} strokeWidth={3} />
-                    </button>
+    const content = (
+        <div className={`bg-white w-full ${isStandalone ? "" : "max-w-2xl rounded-[2.5rem] shadow-2xl border border-gray-100"} overflow-hidden animate-in zoom-in-95 duration-300`}>
+            {/* Header */}
+            <div className={`p-4 border-b border-gray-50 flex items-center justify-between ${isStandalone ? "bg-white" : "bg-gray-50/50"}`}>
+                <div>
+                    <h2 className="text-lg font-black text-gray-900 tracking-tight text-left leading-none">
+                        {editingData ? "Edit Inquiry" : "New Intake Protocol"}
+                    </h2>
+                    <p className="text-[9px] font-black text-teal-600 uppercase tracking-widest mt-1 text-left">
+                        {editingData ? "Refining inquiry parameters" : "Initializing new lead interaction"}
+                    </p>
                 </div>
+                <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                    <FiX size={18} />
+                </button>
+            </div>
 
-                <form onSubmit={handleSubmit} className="p-10 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar relative z-10">
-                    {error && (
-                        <div className="p-5 bg-red-50 border border-red-100 text-red-600 rounded-[24px] text-xs font-black uppercase tracking-widest animate-shake">
-                            {error}
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Name */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Lead Identity</label>
-                            <div className="relative group">
-                                <FiUser size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                                <input
-                                    required
-                                    type="text"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
-                                    placeholder="Enter full name..."
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Email */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Communication Link</label>
-                            <div className="relative group">
-                                <FiMail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                                <input
-                                    required
-                                    type="email"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
-                                    placeholder="email@example.com"
-                                    value={formData.email}
-                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Phone */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Direct Terminal</label>
-                            <div className="relative group">
-                                <FiPhone size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                                <input
-                                    required
-                                    type="tel"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
-                                    placeholder="+91"
-                                    value={formData.phone}
-                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Company Name */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Entity Context</label>
-                            <div className="relative group">
-                                <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                                <input
-                                    type="text"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
-                                    placeholder="Organization Name"
-                                    value={formData.companyName}
-                                    onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Source */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Origin Vector</label>
-                            <div className="relative group">
-                                <select
-                                    className="w-full px-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
-                                    value={formData.source}
-                                    onChange={e => setFormData({ ...formData, source: e.target.value })}
-                                >
-                                    {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-teal-700 text-[10px] font-black tracking-widest uppercase">
-                                    [ Select ]
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Website */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Global Web URI</label>
-                            <div className="relative group">
-                                <FiGlobe size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                                <input
-                                    type="text"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
-                                    placeholder="https://domain.com"
-                                    value={formData.website}
-                                    onChange={e => setFormData({ ...formData, website: e.target.value })}
-                                />
-                            </div>
-                        </div>
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 text-left">
+                {error && (
+                    <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest animate-shake">
+                        {error}
                     </div>
+                )}
 
-                    {/* Message */}
-                    <div className="space-y-3">
-                        <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Intelligence Packet</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Name */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Lead Identity *</label>
                         <div className="relative group">
-                            <FiMessageSquare size={20} className="absolute left-5 top-6 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                            <textarea
-                                rows={4}
-                                className="w-full pl-14 pr-6 py-5 bg-[#F4F7FB] border border-transparent rounded-[32px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm resize-none placeholder-[#CBD5E0]"
-                                placeholder="Describe the intake context..."
-                                value={formData.message}
-                                onChange={e => setFormData({ ...formData, message: e.target.value })}
+                            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={14} />
+                            <input
+                                required
+                                type="text"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="Full Name"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
                             />
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-col sm:flex-row gap-6 pt-6 border-t border-[#F4F7FB]">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 py-5 bg-[#F4F7FB] text-[#A0AEC0] font-black rounded-[24px] border border-[#E5EAF2] hover:bg-slate-100 hover:text-[#718096] transition-all text-[11px] uppercase tracking-[0.25em]"
-                        >
-                            Abort Intake
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="flex-[2] flex items-center justify-center gap-4 py-5 bg-teal-700 text-white font-black rounded-[24px] hover:bg-teal-800 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-teal-700/20 disabled:opacity-70 duration-300"
-                        >
-                            {loading ? (
-                                <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                <>
-                                    <FiPlus size={20} strokeWidth={4} />
-                                    Commit Inquiry
-                                </>
-                            )}
-                        </button>
+                    {/* Email */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Comm. Link *</label>
+                        <div className="relative group">
+                            <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={14} />
+                            <input
+                                required
+                                type="email"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="email@example.com"
+                                value={formData.email}
+                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                            />
+                        </div>
                     </div>
-                </form>
-            </div>
-        </div>
 
+                    {/* Phone */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Direct Terminal *</label>
+                        <div className="relative group">
+                            <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={14} />
+                            <input
+                                required
+                                type="tel"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="+1 (000) 000-0000"
+                                value={formData.phone}
+                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Company */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Entity Context</label>
+                        <div className="relative group">
+                            <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={14} />
+                            <input
+                                type="text"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="Organization"
+                                value={formData.companyName}
+                                onChange={e => setFormData({ ...formData, companyName: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Source */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Origin Vector</label>
+                        <div className="relative group">
+                            <select
+                                className="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs appearance-none shadow-inner cursor-pointer"
+                                value={formData.source}
+                                onChange={e => setFormData({ ...formData, source: e.target.value })}
+                            >
+                                {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Website */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Global Web URI</label>
+                        <div className="relative group">
+                            <FiGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={14} />
+                            <input
+                                type="text"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="https://..."
+                                value={formData.website}
+                                onChange={e => setFormData({ ...formData, website: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Message */}
+                <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Intelligence Packet</label>
+                    <div className="relative group">
+                        <FiMessageSquare className="absolute left-4 top-3 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={14} />
+                        <textarea
+                            rows={3}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner resize-none"
+                            placeholder="Intake details..."
+                            value={formData.message}
+                            onChange={e => setFormData({ ...formData, message: e.target.value })}
+                        />
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex-1 py-3.5 bg-gray-100 text-gray-500 font-black rounded-xl hover:bg-gray-200 transition-all text-[10px] uppercase tracking-widest"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-[2] flex items-center justify-center gap-2 py-3.5 bg-teal-600 text-white font-black rounded-xl shadow-lg shadow-teal-600/20 hover:bg-teal-700 active:scale-95 transition-all text-[10px] uppercase tracking-widest disabled:opacity-70"
+                    >
+                        {loading ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <>
+                                <FiCheck size={16} />
+                                {editingData ? "Update Record" : "Confirm Intake"}
+                            </>
+                        )}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+
+    if (isStandalone) return content;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            {content}
+        </div>
     );
 };
 

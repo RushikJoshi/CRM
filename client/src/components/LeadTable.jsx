@@ -1,7 +1,7 @@
 import React from "react";
 import {
     FiEdit2, FiPhone, FiUserPlus, FiCalendar, FiMail,
-    FiBriefcase, FiFlag, FiEye, FiMoreHorizontal
+    FiBriefcase, FiFlag, FiEye, FiMoreHorizontal, FiTrash2
 } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 
@@ -30,27 +30,27 @@ const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, 
     };
 
     return (
-        <div className="saas-table-container">
-            <table className="saas-table">
+        <div className="saas-table-excel-container">
+            <table className="saas-table-excel">
                 <thead>
                     <tr>
-                        <th className="saas-th w-10">
+                        <th className="saas-th-excel w-10 text-center">
                             <input
                                 type="checkbox"
-                                className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                className="w-3 h-3 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                 checked={selectedIds.length === leads.length && leads.length > 0}
                                 onChange={handleSelectAll}
                             />
                         </th>
-                        <th className="saas-th">Prospect Profile</th>
-                        <th className="saas-th">Contact Metadata</th>
-                        <th className="saas-th">Omnichannel</th>
-                        <th className="saas-th">Ownership</th>
-                        <th className="saas-th">Lifecycle State</th>
-                        <th className="saas-th text-right">Actions</th>
+                        <th className="saas-th-excel">Prospect Profile</th>
+                        <th className="saas-th-excel">Contact Info</th>
+                        <th className="saas-th-excel text-center">Channels</th>
+                        <th className="saas-th-excel">Assigned To</th>
+                        <th className="saas-th-excel">Lifecycle</th>
+                        <th className="saas-th-excel text-right px-6">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100">
                     {leads.length > 0 ? (
                         leads.map((lead, idx) => {
                             const status = lead.status?.name || lead.status || "New";
@@ -59,87 +59,80 @@ const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, 
                             return (
                                 <tr
                                     key={lead._id}
-                                    className={`saas-tr group ${selectedIds.includes(lead._id) ? 'bg-indigo-50/30' : ''}`}
+                                    className={`saas-tr-excel group ${selectedIds.includes(lead._id) ? 'bg-indigo-50/40' : ''}`}
                                 >
-                                    <td className="saas-td" onClick={(e) => e.stopPropagation()}>
+                                    <td className="saas-td-excel text-center" onClick={(e) => e.stopPropagation()}>
                                         <input
                                             type="checkbox"
-                                            className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            className="w-3 h-3 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                             checked={selectedIds.includes(lead._id)}
                                             onChange={() => handleSelectRow(lead._id)}
                                         />
                                     </td>
-                                    <td className="saas-td" onClick={() => onView?.(lead)}>
-                                        <div className="flex items-center gap-3 cursor-pointer">
-                                            <div className="w-7 h-7 rounded bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-bold text-[10px] uppercase">
+                                    <td className="saas-td-excel" onClick={() => onView?.(lead)}>
+                                        <div className="flex items-center gap-2.5 cursor-pointer">
+                                            <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-slate-500 font-black text-[9px] uppercase shrink-0 border border-slate-200">
                                                 {lead.name?.charAt(0)}
                                             </div>
-                                            <div>
-                                                <div className="font-semibold text-slate-900 text-[13px] hover:text-indigo-600 transition-colors">{lead.name || "Unknown Lead"}</div>
-                                                <div className="text-[11px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-tight">
-                                                    <FiBriefcase size={10} className="text-slate-300" />
-                                                    {lead.companyName || "Personal Interest"}
+                                            <div className="min-w-0">
+                                                <div className="font-bold text-slate-800 text-[12px] hover:text-indigo-600 truncate transition-colors leading-tight">{lead.name || "Unknown"}</div>
+                                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-tighter truncate opacity-70">
+                                                    {lead.customId || "No-ID"}
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="saas-td">
-                                        <div className="space-y-0.5">
-                                            <div className="text-[12px] font-semibold text-slate-700">{lead.phone || "No contact"}</div>
-                                            <div className="text-[11px] text-slate-400 lowercase tracking-tight">{lead.email || "No email record"}</div>
+                                    <td className="saas-td-excel">
+                                        <div className="flex flex-col leading-tight">
+                                            <span className="text-[12px] font-bold text-slate-700">{lead.phone || "-"}</span>
+                                            <span className="text-[10px] text-slate-400 truncate opacity-80">{lead.email || "-"}</span>
                                         </div>
                                     </td>
-                                    <td className="saas-td" onClick={(e) => e.stopPropagation()}>
-                                        <div className="flex items-center gap-1.5">
+                                    <td className="saas-td-excel" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex items-center justify-center gap-1">
                                             {lead.phone && (
-                                                <a
-                                                    href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`}
-                                                    target="_blank" rel="noopener noreferrer"
-                                                    className="w-6 h-6 flex items-center justify-center rounded border border-emerald-100 text-emerald-600 bg-emerald-50/30 hover:bg-emerald-50 transition-all"
-                                                    title="WhatsApp Direct"
-                                                >
-                                                    <FaWhatsapp size={12} />
-                                                </a>
+                                                <a href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-1 hover:text-emerald-600 transition-colors text-slate-300"><FaWhatsapp size={14} /></a>
                                             )}
                                             {lead.email && (
-                                                <a
-                                                    href={`mailto:${lead.email}`}
-                                                    className="w-6 h-6 flex items-center justify-center rounded border border-indigo-100 text-indigo-600 bg-indigo-50/30 hover:bg-indigo-50 transition-all"
-                                                    title="Email Dispatch"
-                                                >
-                                                    <FiMail size={12} />
-                                                </a>
+                                                <a href={`mailto:${lead.email}`} className="p-1 hover:text-indigo-600 transition-colors text-slate-300"><FiMail size={14} /></a>
                                             )}
                                         </div>
                                     </td>
-                                    <td className="saas-td" onClick={(e) => { e.stopPropagation(); onAssign(lead); }}>
-                                        <div className="flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors">
-                                            <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-500 uppercase">
-                                                {lead.assignedTo?.name?.charAt(0) || <FiUserPlus size={10} />}
+                                    <td className="saas-td-excel" onClick={(e) => { e.stopPropagation(); onAssign(lead); }}>
+                                        <div className="flex items-center gap-2 cursor-pointer group/user">
+                                            <div className="w-4.5 h-4.5 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[8px] font-black text-slate-400 uppercase shrink-0">
+                                                {lead.assignedTo?.name?.charAt(0) || "U"}
                                             </div>
-                                            <span className="text-[12px] font-bold text-slate-700 uppercase tracking-tight">{lead.assignedTo?.name || "Unassigned"}</span>
+                                            <span className="text-[11px] font-bold text-slate-600 truncate group-hover/user:text-indigo-600 transition-colors uppercase tracking-tight">{lead.assignedTo?.name?.split(' ')[0] || "Unassigned"}</span>
                                         </div>
                                     </td>
-                                    <td className="saas-td">
-                                        <div className={`badge-saas uppercase text-[9px] ${statusStyle}`}>
+                                    <td className="saas-td-excel">
+                                        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${statusStyle}`}>
                                             {status}
-                                        </div>
+                                        </span>
                                     </td>
-                                    <td className="saas-td text-right" onClick={(e) => e.stopPropagation()}>
-                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <td className="saas-td-excel text-right px-6" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex items-center justify-end gap-1.5 translate-x-3">
                                             <button 
                                                 onClick={() => onView?.(lead)} 
-                                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition-all"
+                                                className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                                 title="View Details"
                                             >
                                                 <FiEye size={13} />
                                             </button>
                                             <button 
                                                 onClick={() => onEdit(lead)} 
-                                                className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded transition-all"
-                                                title="Modify Lead"
+                                                className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                                title="Edit Lead"
                                             >
                                                 <FiEdit2 size={13} />
+                                            </button>
+                                            <button 
+                                                onClick={() => onDelete?.(lead)} 
+                                                className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                title="Delete Lead"
+                                            >
+                                                <FiTrash2 size={13} />
                                             </button>
                                         </div>
                                     </td>
@@ -148,8 +141,8 @@ const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, 
                         })
                     ) : (
                         <tr>
-                            <td colSpan="7" className="px-6 py-20 text-center">
-                                <p className="text-sm font-medium text-slate-400 italic">No lead records found matching these parameters</p>
+                            <td colSpan="7" className="px-6 py-20 text-center bg-white">
+                                <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No matching records found</p>
                             </td>
                         </tr>
                     )}

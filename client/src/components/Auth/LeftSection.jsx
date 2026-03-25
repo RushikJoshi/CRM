@@ -14,21 +14,26 @@ const LeftSection = () => {
 
             <div className="relative z-10 w-full max-w-lg flex flex-col items-center text-center">
                 {/* Logo Section */}
-                <div className="mb-16 flex flex-col items-center">
+                <div className="mb-14 flex flex-col items-center">
                    <div className="flex flex-col items-center">
-                      <div className="w-20 h-20 bg-white/10 rounded-3xl p-4 border border-white/20 backdrop-blur-md mb-6 flex items-center justify-center shadow-2xl">
+                      <div className="w-20 h-20 bg-white/20 rounded-3xl p-4 border border-white/20 backdrop-blur-md mb-8 flex items-center justify-center shadow-2xl">
                          <img src={logo} alt="EduPathpro" className="w-full h-full object-contain" />
                       </div>
-                      <h1 className="text-[54px] font-black tracking-tighter leading-none mb-1">EduPathpro</h1>
+                      
+                      <div className="flex flex-col items-center gap-1 mb-6">
+                        <h1 className="text-[58px] font-black tracking-tighter leading-none text-white poppins">EduPath</h1>
+                        <span className="text-[20px] font-black tracking-[0.25em] text-white/90 uppercase poppins -mt-1">Pro</span>
+                      </div>
+
                       <div className="flex items-center gap-3 w-full mb-2">
-                         <div className="h-[2px] flex-1 bg-white/40" />
-                         <span className="text-[12px] font-black uppercase tracking-[0.4em] text-white/80 whitespace-nowrap px-2">Powered by Gitakshmi Group</span>
-                         <div className="h-[2px] flex-1 bg-white/40" />
+                         <div className="h-[2px] flex-1 bg-white/30" />
+                         <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/70 whitespace-nowrap px-2">Powered by Gitakshmi Group</span>
+                         <div className="h-[2px] flex-1 bg-white/30" />
                       </div>
                    </div>
                 </div>
                 
-                <h1 className="text-[64px] font-black tracking-tight leading-tight mb-6">
+                <h1 className="text-[72px] font-black tracking-tighter leading-tight mb-8 text-white poppins drop-shadow-sm">
                     Smart CRM
                 </h1>
                 

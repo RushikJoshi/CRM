@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiBell, FiMenu, FiPlus, FiUser, FiBriefcase, FiChevronDown, FiMessageSquare, FiSearch } from "react-icons/fi";
+import { FiBell, FiMenu, FiPlus, FiUser, FiBriefcase, FiChevronDown, FiMessageSquare, FiSearch, FiSettings, FiLogOut } from "react-icons/fi";
 import { AuthContext, getCurrentUser } from "../context/AuthContext";
 import { useLocation } from "react-router-dom";
 import API from "../services/api";
@@ -48,34 +48,45 @@ const Navbar = ({ toggleMobileSidebar }) => {
     };
 
     const breadcrumbs = (() => {
-        const path = location.pathname.split("/").filter(Boolean);
-        return path.map((part, i) => {
-            const url = `/${path.slice(0, i + 1).join("/")}`;
-            const label = part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " ");
-            return { label, url };
+        const fullPathParts = location.pathname.split("/").filter(Boolean);
+        const roles = ["superadmin", "company", "branch", "sales", "super_admin", "company_admin", "branch_manager"];
+        
+        const crumbs = [];
+        let currentUrl = "";
+
+        fullPathParts.forEach((part) => {
+            currentUrl += `/${part}`;
+            const isRole = roles.includes(part.toLowerCase().replace(/_/g, ""));
+            const isId = /^[0-9a-fA-F]{24}$/.test(part);
+
+            // Skip Roles and IDs in breadcrumbs
+            if (!isRole && !isId) {
+                const label = part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " ");
+                crumbs.push({ label, url: currentUrl });
+            }
         });
+        return crumbs;
     })();
 
     return (
-        <header className="sticky top-0 z-40 h-[var(--tb-h)] bg-white border-b border-[var(--border)] flex items-center justify-between px-4 sm:px-6">
-            <div className="flex items-center gap-4 min-w-0 flex-1">
+        <header className="sticky top-0 z-40 h-[var(--tb-h)] min-h-[var(--tb-h)] bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 lg:px-10 shadow-sm shadow-slate-200/50">
+            <div className="flex items-center gap-6 min-w-0 flex-1 h-full">
                 <button
                     type="button"
                     onClick={toggleMobileSidebar}
-                    className="lg:hidden p-1.5 rounded-md text-[var(--txt3)] hover:bg-[var(--sb-hover)] transition-colors"
+                    className="lg:hidden p-2.5 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-[#38BDF8] transition-all"
                 >
-                    <FiMenu size={18} />
+                    <FiMenu size={20} />
                 </button>
                 
                 {/* Breadcrumbs */}
-                <nav className="hidden md:flex items-center gap-1.5 text-[12px] font-medium text-[var(--txt3)] overflow-hidden">
-                    <Link to="/" className="hover:text-[var(--indigo)] transition-colors">Home</Link>
+                <nav className="hidden md:flex items-center gap-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest h-full">
                     {breadcrumbs.map((bc, i) => (
                         <React.Fragment key={bc.url}>
-                            <span className="opacity-40">/</span>
+                            {i > 0 && <span className="opacity-20 text-[14px] font-light">/</span>}
                             <Link 
                                 to={bc.url} 
-                                className={`hover:text-[var(--indigo)] transition-colors truncate ${i === breadcrumbs.length - 1 ? "text-[var(--txt)] font-semibold" : ""}`}
+                                className={`hover:text-[#38BDF8] transition-colors truncate flex items-center ${i === breadcrumbs.length - 1 ? "text-[#0f172a] font-black" : "opacity-60"}`}
                             >
                                 {bc.label}
                             </Link>
@@ -85,46 +96,47 @@ const Navbar = ({ toggleMobileSidebar }) => {
             </div>
 
             {/* Center Search */}
-            <div className="flex-1 max-w-sm hidden lg:block mx-4">
-                <div className="relative group">
-                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--txt4)] group-focus-within:text-[var(--indigo)] transition-colors" size={14} />
+            <div className="flex-1 max-w-sm hidden lg:flex items-center mx-8 h-full">
+                <div className="relative group w-full">
+                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#38BDF8] transition-colors" size={16} />
                     <input 
                         type="text" 
-                        placeholder="Search anything..." 
-                        className="w-full h-8 pl-9 pr-3 bg-[var(--bg)] border border-[var(--border)] rounded-[var(--r)] text-[13px] outline-none focus:bg-white focus:border-[var(--indigo)] focus:ring-[3px] focus:ring-[rgba(99,102,241,.1)] transition-all"
+                        placeholder="Search system resources..." 
+                        className="w-full h-[42px] pl-11 pr-4 bg-slate-50/50 border border-transparent rounded-full text-[13px] font-medium outline-none focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 transition-all"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+
+            <div className="flex items-center gap-4 sm:gap-6 shrink-0 h-full">
                 {!location.pathname.startsWith("/superadmin") && <QuickCreate />}
 
                 {/* Messages */}
-                <div className="relative">
+                <div className="relative flex items-center h-full">
                     <button
                         onClick={() => setShowMessages(!showMessages)}
-                        className="w-8 h-8 flex items-center justify-center rounded-[var(--r)] border border-[var(--border)] text-[var(--txt3)] hover:bg-[var(--indigo-l)] hover:text-[var(--indigo)] transition-all"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50/50 border border-slate-100 text-slate-400 hover:text-[#38BDF8] hover:bg-white hover:border-[#38BDF8] transition-all shadow-sm hover:shadow-cyan-200/50"
                     >
-                        <FiMessageSquare size={14} />
+                        <FiMessageSquare size={18} />
                     </button>
                     {showMessages && (
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setShowMessages(false)} />
-                            <div className="absolute right-0 mt-2 w-72 bg-white rounded-[var(--r-md)] border border-[var(--border)] shadow-[var(--sh-md)] z-50 overflow-hidden">
-                                <div className="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface2)] flex items-center justify-between">
-                                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--txt3)]">Messages</span>
-                                    <Link to={`${base}/activities?type=message`} className="text-[10px] font-bold text-[var(--indigo)] hover:underline">View All</Link>
+                            <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 overflow-hidden animate-fade-in">
+                                <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">Recent Messages</span>
+                                    <Link to={`${base}/activities?type=message`} className="text-[11px] font-bold text-[#38BDF8] hover:underline">View All</Link>
                                 </div>
-                                <div className="max-h-64 overflow-y-auto">
+                                <div className="max-h-[320px] overflow-y-auto">
                                     {recentMessages.length === 0 ? (
-                                        <div className="py-8 text-center text-xs text-[var(--txt4)]">No recent messages</div>
+                                        <div className="py-12 text-center text-xs text-slate-400 font-medium">No recent messages</div>
                                     ) : (
                                         recentMessages.map((msg) => (
-                                            <div key={msg._id} className="p-3 hover:bg-[var(--surface2)] border-b last:border-0 cursor-pointer" onClick={() => navigate(`${base}/leads/${msg.leadId}`)}>
-                                                <p className="text-[12px] font-bold text-[var(--txt)] line-clamp-1">{msg.note || msg.title}</p>
-                                                <p className="text-[10px] text-[var(--txt3)] mt-0.5">{new Date(msg.createdAt || msg.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <div key={msg._id} className="p-4 hover:bg-slate-50/50 border-b border-slate-50 last:border-0 cursor-pointer transition-colors" onClick={() => navigate(`${base}/leads/${msg.leadId}`)}>
+                                                <p className="text-[13px] font-bold text-slate-700 line-clamp-1">{msg.note || msg.title}</p>
+                                                <p className="text-[11px] text-slate-400 mt-1 font-medium">{new Date(msg.createdAt || msg.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                             </div>
                                         ))
                                     )}
@@ -135,14 +147,14 @@ const Navbar = ({ toggleMobileSidebar }) => {
                 </div>
 
                 {/* Notifications */}
-                <div className="relative">
+                <div className="relative flex items-center h-full">
                     <button
                         onClick={() => setShowNotifications(!showNotifications)}
-                        className="w-8 h-8 flex items-center justify-center rounded-[var(--r)] border border-[var(--border)] text-[var(--txt3)] hover:bg-[var(--indigo-l)] hover:text-[var(--indigo)] transition-all"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50/50 border border-slate-100 text-slate-400 hover:text-[#38BDF8] hover:bg-white hover:border-[#38BDF8] transition-all shadow-sm hover:shadow-cyan-200/50"
                     >
-                        <FiBell size={14} />
+                        <FiBell size={18} />
                         {notifications.length > 0 && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--danger)] text-white text-[9px] font-bold rounded-full border-2 border-white flex items-center justify-center">
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[9px] font-black rounded-full border-2 border-white flex items-center justify-center shadow-sm">
                                 {notifications.length > 9 ? "9+" : notifications.length}
                             </span>
                         )}
@@ -150,19 +162,19 @@ const Navbar = ({ toggleMobileSidebar }) => {
                     {showNotifications && (
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                            <div className="absolute right-0 mt-2 w-72 bg-white rounded-[var(--r-md)] border border-[var(--border)] shadow-[var(--sh-md)] z-50 overflow-hidden">
-                                <div className="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface2)]">
-                                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--txt3)]">Notifications</span>
+                            <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 overflow-hidden animate-fade-in">
+                                <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/30">
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">System Notifications</span>
                                 </div>
-                                <div className="max-h-64 overflow-y-auto">
+                                <div className="max-h-[320px] overflow-y-auto">
                                     {notifications.length === 0 ? (
-                                        <div className="py-8 text-center text-xs text-[var(--txt4)]">No new notifications</div>
+                                        <div className="py-12 text-center text-xs text-slate-400 font-medium">No new notifications</div>
                                     ) : (
                                         notifications.map((n) => (
-                                            <div key={n._id} className="p-3 border-b last:border-0 hover:bg-[var(--surface2)]">
-                                                <p className="text-[12px] font-bold text-[var(--txt)]">{n.title}</p>
-                                                <p className="text-[11px] text-[var(--txt3)] mt-0.5 line-clamp-2">{n.message}</p>
-                                                <button onClick={() => markAsRead(n._id)} className="mt-2 text-[10px] font-bold text-[var(--indigo)] hover:underline">Mark read</button>
+                                            <div key={n._id} className="p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+                                                <p className="text-[13px] font-bold text-slate-700">{n.title}</p>
+                                                <p className="text-[12px] text-slate-400 mt-1 font-medium line-clamp-2">{n.message}</p>
+                                                <button onClick={() => markAsRead(n._id)} className="mt-3 text-[11px] font-bold text-[#38BDF8] hover:underline">Mark read</button>
                                             </div>
                                         ))
                                     )}
@@ -172,37 +184,44 @@ const Navbar = ({ toggleMobileSidebar }) => {
                     )}
                 </div>
 
-                <div className="h-4 w-px bg-[var(--border2)] mx-1 hidden sm:block" />
+                <div className="h-6 w-px bg-slate-100 mx-2 hidden sm:block self-center" />
 
                 {/* User Chip */}
-                <div className="relative">
+                <div className="relative flex items-center h-full">
                     <button
                         onClick={() => setShowProfileMenu(!showProfileMenu)}
-                        className="flex items-center gap-2.5 pl-1.5 group"
+                        className="flex items-center gap-3 pl-2 group h-full"
                     >
                         <div className="hidden sm:block text-right">
-                            <p className="text-[12px] font-bold text-[var(--txt)] leading-none mb-0.5 group-hover:text-[var(--indigo)] transition-colors">{user.name}</p>
-                            <p className="text-[10px] font-medium text-[var(--txt3)] leading-none capitalize opacity-70">{(user.role ?? "member").replace("_", " ")}</p>
+                            <p className="text-[13px] font-black text-slate-700 leading-none group-hover:text-[#38BDF8] transition-colors poppins tracking-tight uppercase">{user.name}</p>
                         </div>
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--indigo)] to-[var(--indigo-b)] text-white flex items-center justify-center font-bold text-[10px] shadow-sm ring-2 ring-white ring-offset-1 ring-offset-[var(--border)]">
-                            {(user.name || "U").split(" ").map(s => s[0]).join("").slice(0, 2).toUpperCase()}
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 border-2 border-white shadow-sm overflow-hidden group-hover:border-[#38BDF8] transition-all ring-1 ring-slate-100 shrink-0">
+                            {user.profilePhoto ? (
+                                <img src={user.profilePhoto} alt={user.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <img 
+                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "User")}&background=38BDF8&color=fff&bold=true&font-size=0.33`} 
+                                    alt={user.name} 
+                                    className="w-full h-full object-cover" 
+                                />
+                            )}
                         </div>
                     </button>
 
                     {showProfileMenu && (
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
-                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-[var(--r-md)] border border-[var(--border)] shadow-[var(--sh-md)] z-50 overflow-hidden">
-                                <div className="p-4 border-b border-[var(--border)] bg-[var(--surface2)]">
-                                    <p className="text-[12px] font-bold text-[var(--txt)] truncate">{user.name}</p>
-                                    <p className="text-[10px] text-[var(--txt3)] capitalize">{(user.role ?? "member").replace("_", " ")}</p>
+                            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 overflow-hidden animate-fade-in">
+                                <div className="p-5 border-b border-slate-50 bg-slate-50/20">
+                                    <p className="text-[14px] font-bold text-slate-800 truncate poppins tracking-tight">{user.name}</p>
+                                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">{(user.role ?? "member").replace("_", " ")}</p>
                                 </div>
-                                <div className="py-1">
-                                    <button onClick={() => { setShowProfileMenu(false); navigate(`${base}/profile`); }} className="w-full text-left px-4 py-2 text-[12.5px] text-[var(--txt2)] hover:bg-[var(--surface2)] transition-colors">My Profile</button>
-                                    <button onClick={() => { setShowProfileMenu(false); navigate(`${base}/settings`); }} className="w-full text-left px-4 py-2 text-[12.5px] text-[var(--txt2)] hover:bg-[var(--surface2)] transition-colors">Settings</button>
+                                <div className="py-2">
+                                    <button onClick={() => { setShowProfileMenu(false); navigate(`${base}/profile`); }} className="w-full text-left px-5 py-3 text-[13px] font-medium text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-3"><FiUser className="opacity-40" size={16} /> My Profile</button>
+                                    <button onClick={() => { setShowProfileMenu(false); navigate(`${base}/settings`); }} className="w-full text-left px-5 py-3 text-[13px] font-medium text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-3"><FiSettings className="opacity-40" size={16} /> Settings</button>
                                 </div>
-                                <div className="border-t border-[var(--border)] py-1">
-                                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-[12.5px] text-[var(--danger)] hover:bg-[var(--danger-l)] transition-colors font-semibold">Sign out</button>
+                                <div className="border-t border-slate-50 py-2">
+                                    <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-[13px] font-bold text-rose-500 hover:bg-rose-50 transition-colors flex items-center gap-3"><FiLogOut className="opacity-70" size={16} /> Sign out</button>
                                 </div>
                             </div>
                         </>
@@ -210,6 +229,8 @@ const Navbar = ({ toggleMobileSidebar }) => {
                 </div>
             </div>
         </header>
+
+
     );
 };
 

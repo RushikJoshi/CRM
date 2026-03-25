@@ -22,8 +22,9 @@ const DealDetailsModal = ({ isOpen, onClose, deal, onEdit }) => {
                 <div className="p-10 border-b border-gray-100 flex items-center justify-between bg-teal-50/30">
                     <div>
                         <div className="flex items-center gap-4">
-                            <h2 className="text-4xl font-black text-gray-900 tracking-tighter">{deal.title || "Untitled Deal"}</h2>
+                            <h2 className="text-4xl font-black text-gray-900 tracking-tighter">{deal.customId || deal.title || "Untitled Deal"}</h2>
                             <span className="px-4 py-1.5 bg-teal-100 text-teal-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm">
+
                                 {stageDisplay}
                             </span>
                         </div>

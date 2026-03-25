@@ -50,28 +50,31 @@ const QuickCreate = () => {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="crm-btn-primary gap-2"
+                className="btn-saas-primary gap-2"
             >
-                <FiPlus size={16} className={`${isOpen ? "rotate-45" : ""} transition-transform duration-200`} />
-                <span className="hidden sm:inline">Quick Create</span>
+                <FiPlus size={18} className={`${isOpen ? "rotate-45" : ""} transition-transform duration-300`} />
+                <span className="hidden sm:inline">Quick Action</span>
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-[var(--r-md)] border border-[var(--border)] shadow-[var(--sh-lg)] py-1.5 z-[100] animate-in fade-in zoom-in-95 duration-150 origin-top-right overflow-hidden">
-                    <div className="px-3 py-1.5 mb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--txt4)]">Quick Actions</div>
+                <div className="absolute right-0 mt-3 w-56 bg-white rounded-[20px] border border-[#e2e8f0] shadow-xl py-2 z-[100] animate-in fade-in zoom-in-95 duration-200 origin-top-right overflow-hidden shadow-[#00f0ff]/5">
+                    <div className="px-4 py-2 mb-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Creation Hub</div>
                     {filteredItems.map((item) => (
                         <button
                             key={item.path}
                             onClick={() => handleNavigate(item.path)}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-[12.5px] font-medium text-[var(--txt2)] hover:bg-[var(--sb-hover)] hover:text-[var(--indigo)] transition-colors text-left"
+                            className="w-full flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-slate-600 hover:bg-[#f1f5f9] hover:text-[#00F0FF] transition-all text-left group"
                         >
-                            <span className="opacity-60">{item.icon}</span>
+                            <span className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#00F0FF]/10 group-hover:text-[#00F0FF] transition-all">
+                                {React.cloneElement(item.icon, { size: 14, strokeWidth: 2.5 })}
+                            </span>
                             {item.label}
                         </button>
                     ))}
                 </div>
             )}
         </div>
+
     );
 };
 

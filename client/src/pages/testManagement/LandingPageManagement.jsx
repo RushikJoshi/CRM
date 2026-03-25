@@ -94,60 +94,61 @@ const LandingPageManagement = () => {
 
   if (isFormOpen) {
     return (
-      <div className="animate-fade-in max-w-4xl mx-auto py-4">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="animate-fade-in max-w-4xl mx-auto py-8">
+        <div className="flex items-center gap-6 mb-10">
           <button 
             onClick={() => setIsFormOpen(false)}
-            className="btn-saas-secondary w-10 h-10 p-0"
+            className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-[#38BDF8] transition-all shadow-sm"
           >
-            <FiArrowLeft size={18} />
+            <FiArrowLeft size={20} />
           </button>
           <div>
-              <h2 className="text-[20px] font-semibold text-slate-900 poppins">{editId ? 'Customize Portal' : 'New Assessment Portal'}</h2>
-              <p className="text-slate-500 text-sm">Configure entry points for public assessment funnels.</p>
+              <h2 className="text-[24px] font-bold text-slate-800 poppins tracking-tight">{editId ? 'Customize Portal' : 'New Assessment Portal'}</h2>
+              <p className="text-slate-400 font-medium text-[14px]">Configure entry points for public assessment funnels.</p>
           </div>
         </div>
 
-        <div className="saas-card p-10">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Portal Title</label>
+        <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-[#38BDF8] to-[#818CF8]"></div>
+          <form onSubmit={handleSubmit} className="p-10 space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Portal Title</label>
                   <input 
                     type="text" required
                     placeholder="e.g. Free Scholarship Test"
-                    className="w-full h-11 bg-white border border-slate-200 rounded-md px-4 text-sm focus:border-indigo-500 transition-all outline-none"
+                    className="w-full bg-slate-50/50 border border-transparent rounded-2xl p-4 focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 font-bold text-slate-700 placeholder:text-slate-300 transition-all outline-none"
                     value={formData.title} 
                     onChange={e => setFormData({...formData, title: e.target.value})}
                   />
                 </div>
-                <div className="space-y-1.5">
-                    <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Hero Subtitle</label>
+                <div className="space-y-3">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Hero Subtitle</label>
                     <input 
                       type="text"
                       placeholder="e.g. Join the elite 1%."
-                      className="w-full h-11 bg-white border border-slate-200 rounded-md px-4 text-sm focus:border-indigo-500 transition-all outline-none"
+                      className="w-full bg-slate-50/50 border border-transparent rounded-2xl p-4 focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 font-bold text-slate-700 placeholder:text-slate-300 transition-all outline-none"
                       value={formData.subtitle} 
                       onChange={e => setFormData({...formData, subtitle: e.target.value})}
                     />
                 </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Description</label>
               <textarea 
-                className="w-full bg-white border border-slate-200 rounded-md p-4 text-sm focus:border-indigo-500 transition-all outline-none" rows="3"
+                className="w-full bg-slate-50/50 border border-transparent rounded-2xl p-4 focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 font-medium text-slate-600 placeholder:text-slate-300 transition-all outline-none" rows="3"
                 placeholder="Brief description for applicants..."
                 value={formData.description} 
                 onChange={e => setFormData({...formData, description: e.target.value})}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-1.5">
-                <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Assigned Company</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Assigned Company</label>
                 <select 
-                  required className="w-full h-11 bg-white border border-slate-200 rounded-md px-3 text-sm focus:border-indigo-500 transition-all outline-none"
+                  required className="w-full bg-slate-50/50 border border-transparent rounded-2xl p-4 focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 font-bold text-slate-700 appearance-none cursor-pointer outline-none"
                   value={formData.companyId} 
                   onChange={e => setFormData({...formData, companyId: e.target.value})}
                 >
@@ -156,13 +157,13 @@ const LandingPageManagement = () => {
                 </select>
               </div>
               
-              <div className="space-y-1.5">
-                <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">URL Extension (Slug)</label>
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">URL Extension (Slug)</label>
                 <div className="relative">
-                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-mono pointer-events-none">.../assessment/</div>
+                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-[12px] font-black tracking-tight pointer-events-none italic">.../assessment/</div>
                    <input 
                       type="text" required
-                      className="w-full h-11 bg-white border border-slate-200 rounded-md px-4 pl-28 text-sm focus:border-indigo-500 transition-all outline-none font-mono"
+                      className="w-full bg-slate-50/50 border border-transparent rounded-2xl p-4 pl-36 focus:bg-white focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 font-bold text-slate-800 transition-all outline-none"
                       value={formData.slug} 
                       onChange={e => setFormData({...formData, slug: e.target.value.replace(/\s+/g, '-').toLowerCase()})}
                    />
@@ -170,25 +171,25 @@ const LandingPageManagement = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 py-2">
+            <div className="bg-slate-50/50 p-6 rounded-3xl flex items-center gap-4 hover:border-slate-100 transition-all border border-transparent">
                <input 
                  type="checkbox" 
                  id="isActive"
-                 className="w-4 h-4 rounded-sm border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                 className="w-5 h-5 rounded-lg border-slate-300 text-[#38BDF8] focus:ring-[#38BDF8]"
                  checked={formData.isActive}
                  onChange={e => setFormData({...formData, isActive: e.target.checked})}
                />
-               <label htmlFor="isActive" className="text-sm text-slate-700 font-medium cursor-pointer select-none">Make portal active and visible</label>
+               <label htmlFor="isActive" className="text-[14px] text-slate-600 font-bold cursor-pointer select-none">Make portal active and visible to public</label>
             </div>
 
-            <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-               <button type="submit" className="btn-saas-primary px-8 h-11">
+            <div className="flex items-center gap-4 pt-6">
+               <button type="submit" className="btn-saas-primary px-10 h-[52px]">
                   {editId ? 'Update Portal' : 'Launch Portal'}
                </button>
                <button 
                   type="button" 
                   onClick={() => setIsFormOpen(false)} 
-                  className="btn-saas-secondary px-8 h-11"
+                  className="px-10 h-[52px] rounded-2xl border border-slate-200 text-slate-400 font-bold hover:bg-slate-50 hover:text-slate-600 transition-all"
                 >
                   Discard Changes
                 </button>
@@ -200,45 +201,45 @@ const LandingPageManagement = () => {
   }
 
   return (
-    <div className="animate-fade-in space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
-        <div>
-          <h1 className="text-[22px] font-semibold text-slate-900 poppins">Assessment Portals</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">Manage high-conversion landing pages for public test funnels.</p>
+    <div className="animate-fade-in space-y-10 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-[28px] font-bold text-slate-800 poppins tracking-tight">Assessment Portals</h1>
+          <p className="text-[14px] text-slate-400 font-medium font-medium">Manage high-conversion landing pages for public test funnels.</p>
         </div>
         <button 
           onClick={() => { resetForm(); setIsFormOpen(true); }}
-          className="btn-saas-primary h-9 px-5"
+          className="btn-saas-primary h-[48px] px-8"
         >
-          <FiPlus size={16} /> Design Portal
+          <FiPlus size={20} /> Design Portal
         </button>
       </div>
 
-      <div className="flex items-center gap-3">
-          <div className="relative group w-full max-w-sm">
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="flex items-center gap-4 max-w-md">
+          <div className="relative group w-full">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#38BDF8] transition-colors" />
             <input 
                placeholder="Search portals..."
-               className="w-full h-10 bg-white border border-slate-200 rounded-md pl-9 pr-4 text-sm focus:border-indigo-500 transition-all outline-none"
+               className="w-full h-[48px] bg-white border border-slate-100 rounded-2xl pl-12 pr-6 text-[14px] font-medium focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/5 transition-all outline-none shadow-sm"
             />
           </div>
       </div>
 
       {loading ? (
-        <div className="h-[400px] saas-table-container flex flex-col items-center justify-center space-y-4">
-           <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-           <p className="text-slate-400 text-[12px] font-medium">Syncing portals...</p>
+        <div className="h-[400px] bg-white rounded-[32px] border border-slate-100 flex flex-col items-center justify-center space-y-4">
+           <div className="w-10 h-10 border-4 border-slate-50 border-t-[#38BDF8] rounded-full animate-spin"></div>
+           <p className="text-slate-300 text-[11px] font-black uppercase tracking-widest">Syncing portals...</p>
         </div>
       ) : pages.length === 0 ? (
-        <div className="saas-card py-20 text-center flex flex-col items-center">
-            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
-                <FiGlobe size={24} />
+        <div className="bg-white rounded-[40px] border border-slate-100 py-24 text-center shadow-sm flex flex-col items-center">
+            <div className="w-24 h-24 bg-cyan-50 rounded-full flex items-center justify-center mb-10 text-[#38BDF8] shadow-sm">
+                <FiGlobe size={48} />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">No Active Portals</h3>
-            <p className="text-slate-500 text-sm max-w-xs mx-auto mb-8 font-medium">Create your first public-facing assessment funnel to start generating leads.</p>
+            <h3 className="text-[22px] font-bold text-slate-800 mb-2 poppins">No Active Portals</h3>
+            <p className="text-slate-400 text-[14px] max-w-xs mx-auto mb-10 font-medium">Create your first public-facing assessment funnel to start generating leads.</p>
             <button 
                 onClick={() => setIsFormOpen(true)}
-                className="btn-saas-primary px-10 h-11"
+                className="btn-saas-primary h-[56px] px-12"
             >
                 Start Designing
             </button>
@@ -259,55 +260,55 @@ const LandingPageManagement = () => {
               {pages.map(page => (
                 <tr key={page._id} className="saas-tr group">
                   <td className="saas-td">
-                    <div className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{page.title}</div>
-                    <div className="text-[11px] text-slate-400 truncate max-w-[250px]">{page.subtitle || "Assessment funnel"}</div>
+                    <div className="font-bold text-slate-800 text-[15px] group-hover:text-[#38BDF8] transition-colors poppins">{page.title}</div>
+                    <div className="text-[12px] text-slate-400 font-medium truncate max-w-[250px] mt-0.5">{page.subtitle || "Assessment funnel"}</div>
                   </td>
                   <td className="saas-td">
-                    <span className="text-[13px] font-medium text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                    <span className="text-[12px] font-black text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 uppercase tracking-tighter">
                       {page.companyId?.name || "Global"}
                     </span>
                   </td>
                   <td className="saas-td">
-                    <div className="flex items-center gap-2">
-                       <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded">/{page.slug}</span>
+                    <div className="flex items-center gap-3">
+                       <span className="text-[12px] font-mono text-slate-400 bg-slate-50/50 px-3 py-1.5 rounded-lg border border-slate-50 group-hover:bg-cyan-50 group-hover:border-cyan-100 transition-colors tracking-tight">/{page.slug}</span>
                        <button 
                           onClick={() => copyPortalLink(page.companyId?._id || page.companyId, page.slug)}
-                          className="p-1 text-slate-300 hover:text-indigo-600 transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-[#38BDF8] transition-all bg-white rounded-lg shadow-sm border border-slate-100"
                           title="Copy Link"
                        >
-                          <FiCopy size={12} />
+                          <FiCopy size={14} />
                        </button>
                     </div>
                   </td>
                   <td className="saas-td">
-                    <span className={`badge-saas ${page.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                    <span className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${page.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                       {page.isActive ? 'Active' : 'Draft'}
                     </span>
                   </td>
                   <td className="saas-td text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                       <a 
                           href={`${window.location.origin}/assessment/${page.companyId?._id || page.companyId}/${page.slug}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition-all"
+                          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-[#38BDF8] hover:bg-cyan-50 rounded-xl transition-all border border-transparent hover:border-cyan-100"
                           title="Open Live"
                       >
-                          <FiExternalLink size={15} />
+                          <FiExternalLink size={18} />
                       </a>
                       <button 
                         onClick={() => handleEdit(page)} 
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition-all"
+                        className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-[#38BDF8] hover:bg-cyan-50 rounded-xl transition-all border border-transparent hover:border-cyan-100"
                         title="Edit"
                       >
-                        <FiEdit2 size={15} />
+                        <FiEdit2 size={18} />
                       </button>
                       <button 
                         onClick={() => handleDelete(page._id)} 
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"
+                        className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
                         title="Delete"
                       >
-                        <FiTrash2 size={15} />
+                        <FiTrash2 size={18} />
                       </button>
                     </div>
                   </td>
@@ -319,6 +320,7 @@ const LandingPageManagement = () => {
       )}
     </div>
   );
+
 };
 
 export default LandingPageManagement;

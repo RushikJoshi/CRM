@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import UserTable from "../components/UserTable";
+import AddUserModal from "../components/AddUserModal";
 import Pagination from "../components/Pagination";
-import { FiPlus, FiSearch } from "react-icons/fi";
+import { FiPlus, FiSearch, FiShield, FiX, FiUser } from "react-icons/fi";
 import { useToast } from "../context/ToastContext";
 import { getCurrentUser } from "../context/AuthContext";
 
@@ -15,21 +16,15 @@ function Users() {
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
     const pageSize = 10;
+    
+    const [activeTask, setActiveTask] = useState(null); // 'create', 'edit'
+    const [editingUser, setEditingUser] = useState(null);
+
     const navigate = useNavigate();
     const toast = useToast();
-
     const currentUser = getCurrentUser();
     const isSuperAdmin = currentUser?.role === "super_admin";
     const apiBase = isSuperAdmin ? "/super-admin/users" : "/users";
-
-    // Base path for form navigation depending on role
-    const formBase = (() => {
-        const path = window.location.pathname;
-        if (path.startsWith("/superadmin")) return "/superadmin/users";
-        if (path.startsWith("/company")) return "/company/users";
-        if (path.startsWith("/branch")) return "/branch/users";
-        return "/users";
-    })();
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -51,7 +46,7 @@ function Users() {
         if (!window.confirm("Are you sure you want to remove this user?")) return;
         try {
             await API.delete(`${apiBase}/${id}`);
-            toast.success("User deleted.");
+            toast.success("User removed successfully.");
             fetchUsers();
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to remove user.");
@@ -62,49 +57,96 @@ function Users() {
         try {
             const newStatus = user.status === "inactive" ? "active" : "inactive";
             await API.put(`${apiBase}/${user._id}`, { status: newStatus });
-            toast.success("User status updated.");
+            toast.success("User access updated.");
             fetchUsers();
         } catch (err) {
             toast.error("Failed to update user status.");
         }
     };
 
+    const handleFormSubmit = async (formData) => {
+        try {
+            if (activeTask === 'edit' && editingUser) {
+                await API.put(`${apiBase}/${editingUser._id}`, formData);
+                toast.success("Identity updated successfully.");
+            } else {
+                await API.post(`${apiBase}/create`, formData);
+                toast.success("New user onboarded successfully.");
+            }
+            setActiveTask(null);
+            setEditingUser(null);
+            fetchUsers();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Operation failed.");
+        }
+    };
+
     useEffect(() => { setPage(1); }, [search]);
     useEffect(() => { fetchUsers(); }, [page, search]);
 
+    const closeTask = () => {
+        setActiveTask(null);
+        setEditingUser(null);
+    };
+
+    if (activeTask === 'create' || activeTask === 'edit') {
+        return (
+            <div className="animate-fade-in bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
+                <AddUserModal 
+                    isOpen={true} 
+                    onClose={closeTask} 
+                    onSubmit={handleFormSubmit}
+                    editingData={editingUser}
+                    isStandalone={true}
+                />
+            </div>
+        );
+    }
+
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-700">
-            {/* Top Action Bar */}
-            <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-                <div className="w-64 relative">
+        <div className="animate-fade-in space-y-3 pb-4">
+            {/* Excel Filter Header */}
+            <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
+                <div className="relative group min-w-[240px]">
+                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={12} />
                     <input
                         type="text"
-                        placeholder="Search team members..."
-                        className="w-full px-4 py-2 bg-gray-50 border border-transparent rounded-lg outline-none focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-medium text-gray-700 text-sm"
+                        placeholder="Search team members by name or email..."
+                        className="w-full h-8 pl-9 pr-3 bg-slate-50 border border-transparent rounded-lg text-[12px] font-medium outline-none focus:bg-white focus:border-indigo-600/20 focus:ring-4 focus:ring-indigo-600/5 transition-all text-slate-700"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
+
+                <div className="h-4 w-px bg-slate-100 mx-1" />
+
+                <button
+                    onClick={() => setActiveTask('create')}
+                    className="btn-saas-primary h-8 px-4 text-[11px] gap-2 ml-auto"
+                >
+                    <FiPlus size={14} /> Onboard User
+                </button>
             </div>
 
             {loading ? (
-                <div className="bg-white rounded-xl border shadow-sm p-12 flex flex-col items-center justify-center space-y-4">
-                    <div className="w-10 h-10 border-4 border-teal-50 border-t-teal-600 rounded-full animate-spin" />
-                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Loading Users...</p>
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center space-y-4">
+                    <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Hydrating Team...</p>
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <div className="bg-white rounded-xl border shadow-sm p-4 overflow-hidden">
-                        <UserTable
-                            users={users}
-                            onEdit={(u) => navigate(`${formBase}/${u._id}/edit`)}
-                            onView={(u) => navigate(`${formBase}/${u._id}/edit?mode=view`)}
-                            onDelete={handleDelete}
-                            onToggleStatus={handleToggleStatus}
-                            onAddNew={() => {}} // Disabled here, use Quick Create
-                        />
+                    <UserTable
+                        users={users}
+                        onEdit={(u) => { setEditingUser(u); setActiveTask('edit'); }}
+                        onDelete={handleDelete}
+                        onToggleStatus={handleToggleStatus}
+                    />
+                    <div className="flex items-center justify-between">
+                         <div className="text-[12px] text-slate-500 font-medium">
+                            Showing <span className="text-slate-900 font-bold">{users.length}</span> of <span className="text-slate-900 font-bold">{total}</span> total members
+                         </div>
+                         <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} total={total} pageSize={pageSize} />
                     </div>
-                    <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} total={total} pageSize={pageSize} />
                 </div>
             )}
         </div>

@@ -139,7 +139,8 @@ const DealPipeline = ({ deals = [], onEdit, onMove, onAddTask, onViewDeal, stage
         {activeDeal ? (
           <div className="w-[280px] bg-white rounded-[32px] shadow-2xl p-4 border border-teal-500/10 rotate-1 scale-105">
             <h4 className="text-sm font-black text-gray-900 truncate">
-              {activeDeal.title || "Opportunity"}
+              {activeDeal.customId || activeDeal.title || "Opportunity"}
+
             </h4>
             <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-4">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">

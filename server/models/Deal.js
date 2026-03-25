@@ -72,11 +72,18 @@ const dealSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
-    }
+    },
+
+
+
+    customId: { type: String, unique: true },
 
   },
   { timestamps: true }
 );
+
+dealSchema.index({ customId: 1 });
+
 
 dealSchema.index({ companyId: 1 });
 dealSchema.index({ companyId: 1, updatedAt: -1 });

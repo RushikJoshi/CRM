@@ -66,7 +66,8 @@ export default function DealCard({ deal, onView, onEdit, onAddTask }) {
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
                     <h4 className="text-[13px] font-bold text-[var(--txt)] truncate leading-tight group-hover/card:text-[var(--indigo)] transition-colors">
-                        {deal.title || "Untitled Deal"}
+                        {deal.customId || deal.title || "Untitled Deal"}
+
                     </h4>
                 </div>
                 

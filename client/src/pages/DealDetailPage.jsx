@@ -144,7 +144,8 @@ export default function DealDetailPage() {
             <FiArrowLeft size={18} /> Back
           </button>
           <h1 className="text-lg font-semibold text-gray-800 truncate">
-            {deal.title || "Deal"}
+            {deal.customId || deal.title || "Deal"}
+
           </h1>
           <span className="shrink-0 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
             {stageDisplay}

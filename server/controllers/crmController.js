@@ -262,6 +262,20 @@ exports.deleteCall = async (req, res) => {
 // ============================
 exports.createMeeting = async (req, res) => {
     try {
+        // Conflict detection (optional check)
+        const overlap = await Meeting.findOne({
+            assignedTo: req.body.assignedTo || req.user.id,
+            companyId: req.user.companyId,
+            _id: { $ne: req.params.id }, // For updates, but this is create
+            $or: [
+                { startDate: { $lt: req.body.endDate }, endDate: { $gt: req.body.startDate } }
+            ]
+        });
+
+        if (overlap) {
+            return res.status(400).json({ success: false, message: "Time slot already booked for this user." });
+        }
+
         const data = await Meeting.create({
             ...req.body,
             companyId: req.user.companyId,
@@ -292,10 +306,19 @@ exports.createMeeting = async (req, res) => {
 };
 exports.getMeetings = async (req, res) => {
     try {
+        const { start, end, search } = req.query;
         let query = { companyId: req.user.companyId };
         if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
         if (req.user.role === "sales") query.assignedTo = req.user.id;
-        const data = await Meeting.find(query).sort({ startDate: -1 });
+
+        if (start && end) {
+            query.startDate = { $gte: new Date(start), $lte: new Date(end) };
+        }
+        if (search) {
+            query.title = { $regex: search, $options: "i" };
+        }
+
+        const data = await Meeting.find(query).sort({ startDate: 1 });
         res.json({ success: true, data });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -305,6 +328,27 @@ exports.updateMeeting = async (req, res) => {
     try {
         const query = { _id: req.params.id, companyId: req.user.companyId };
         if (req.user.role === "branch_manager" || req.user.role === "sales") query.branchId = req.user.branchId;
+
+        // If time is being updated, check for conflicts
+        if (req.body.startDate || req.body.endDate) {
+            const current = await Meeting.findOne(query);
+            const start = req.body.startDate || current.startDate;
+            const end = req.body.endDate || current.endDate;
+            const assignedTo = req.body.assignedTo || current.assignedTo;
+
+            const overlap = await Meeting.findOne({
+                assignedTo,
+                companyId: req.user.companyId,
+                _id: { $ne: req.params.id },
+                $or: [
+                    { startDate: { $lt: end }, endDate: { $gt: start } }
+                ]
+            });
+
+            if (overlap) {
+                return res.status(400).json({ success: false, message: "Time slot already booked for this user." });
+            }
+        }
 
         const updated = await Meeting.findOneAndUpdate(
             query,

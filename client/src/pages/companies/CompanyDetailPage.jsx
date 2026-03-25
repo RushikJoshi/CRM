@@ -4,8 +4,9 @@ import {
     FiBriefcase, FiUsers, FiTrendingUp, FiCheckCircle, FiArrowLeft,
     FiMail, FiPhone, FiGlobe, FiMapPin, FiEdit2,
     FiLayers, FiCalendar, FiBarChart2, FiExternalLink, FiRefreshCw,
-    FiActivity, FiShield, FiAlertCircle, FiSettings, FiTrash2, FiClock
+    FiActivity, FiShield, FiAlertCircle, FiSettings, FiTrash2, FiClock, FiUser, FiCopy
 } from "react-icons/fi";
+
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import API from "../../services/api";
 import { useToast } from "../../context/ToastContext";
@@ -129,7 +130,24 @@ const CompanyDetailPage = () => {
                     </div>
                     <div>
                         <div className="flex items-center gap-3 mb-1">
-                            <h1 className="text-[22px] font-bold text-slate-900 poppins leading-tight">{company.name}</h1>
+                            <h1 className="text-[22px] font-bold text-slate-900 poppins leading-tight flex items-center gap-2">
+                                {company.name} 
+                                <span className="text-slate-400 font-medium text-[13px] bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100 flex items-center gap-2 group/id">
+                                    ID: {company.customId || company._id}
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(company.customId || company._id);
+                                            toast.success("Company ID copied!");
+                                        }}
+                                        className="hover:text-teal-600 opacity-30 group-hover/id:opacity-100 transition-all"
+                                        title="Copy Company ID"
+                                    >
+                                        <FiCopy size={12} />
+                                    </button>
+                                </span>
+                            </h1>
+
+
                             <span className={`badge-saas ${company.status === "inactive" ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"}`}>
                                 {company.status || "active"}
                             </span>

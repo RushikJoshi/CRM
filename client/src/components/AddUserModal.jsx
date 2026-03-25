@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { FiX, FiUser, FiMail, FiLock, FiShield, FiBriefcase, FiLayers, FiInfo, FiPlus } from "react-icons/fi";
+import { FiX, FiUser, FiMail, FiLock, FiShield, FiBriefcase, FiLayers, FiInfo, FiPlus, FiCheck } from "react-icons/fi";
 import API from "../services/api";
 
-const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
+const AddUserModal = ({ isOpen, onClose, onSubmit, editingData, isStandalone = false }) => {
     const [companies, setCompanies] = useState([]);
     const [branches, setBranches] = useState([]);
     const [formData, setFormData] = useState({
@@ -38,7 +38,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
             setFormData({
                 name: editingData.name || "",
                 email: editingData.email || "",
-                password: "", // Don't show password for editing
+                password: "",
                 role: editingData.role || "sales",
                 companyId: editingData.companyId?._id || editingData.companyId || "",
                 branchId: editingData.branchId?._id || editingData.branchId || "",
@@ -83,7 +83,6 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // If editing and password is empty, remove it from formData to avoid overwriting with empty
         const submissionData = { ...formData };
         if (editingData && !submissionData.password) {
             delete submissionData.password;
@@ -91,180 +90,163 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData }) => {
         onSubmit(submissionData);
     };
 
-    if (!isOpen) return null;
+    const content = (
+        <div className={`bg-white w-full ${isStandalone ? "" : "max-w-2xl rounded-[2.5rem] shadow-2xl border border-gray-100"} overflow-hidden animate-in zoom-in-95 duration-300`}>
+            {/* Header */}
+            <div className={`p-4 border-b border-gray-50 flex items-center justify-between ${isStandalone ? "bg-white" : "bg-gray-50/50"}`}>
+                <div>
+                    <h2 className="text-lg font-black text-gray-900 tracking-tight text-left leading-none">
+                        {editingData ? "Edit User" : "Add New User"}
+                    </h2>
+                    <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-1 text-left">
+                        {editingData ? "Update user credentials and access" : "Establish a new user identity"}
+                    </p>
+                </div>
+                <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                    <FiX size={18} />
+                </button>
+            </div>
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl border border-[#E5EAF2] overflow-hidden animate-in zoom-in-95 duration-500 relative">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-teal-600/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-
-                {/* Header */}
-                <div className="px-10 py-8 bg-white flex items-center justify-between border-b border-[#F0F2F5] relative z-10">
-                    <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 bg-teal-700 text-white rounded-[20px] flex items-center justify-center shadow-xl shadow-teal-600/20 transform rotate-3">
-                            <FiShield size={28} strokeWidth={2.5} />
-                        </div>
-                        <div>
-                            <h2 className="text-3xl font-black text-[#1A202C] tracking-tighter">
-                                {editingData ? "Refine Identity" : "Onboard Identity"}
-                            </h2>
-                            <p className="text-[11px] font-black text-[#A0AEC0] uppercase tracking-[0.25em] mt-2 opacity-80">
-                                {editingData ? "Synchronizing updated user credentials" : "Initializing new administrative access node"}
-                            </p>
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Name */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Full Name *</label>
+                        <div className="relative group">
+                            <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                            <input
+                                required
+                                name="name"
+                                type="text"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="Full Name"
+                                value={formData.name}
+                                onChange={handleChange}
+                            />
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-3 text-[#A0AEC0] hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100 shadow-sm hover:rotate-90">
-                        <FiX size={24} strokeWidth={3} />
-                    </button>
-                </div>
 
-                <form onSubmit={handleSubmit} className="p-10 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Name */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Persona Name</label>
-                            <div className="relative group">
-                                <FiUser size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                                <input
-                                    required
-                                    name="name"
-                                    type="text"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
-                                    placeholder="Full Legal Name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                />
-                            </div>
+                    {/* Email */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Email Address *</label>
+                        <div className="relative group">
+                            <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                            <input
+                                required
+                                name="email"
+                                type="email"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="Email Address"
+                                value={formData.email}
+                                onChange={handleChange}
+                            />
                         </div>
+                    </div>
 
-                        {/* Email */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Communication Link</label>
-                            <div className="relative group">
-                                <FiMail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                                <input
-                                    required
-                                    name="email"
-                                    type="email"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
-                                    placeholder="name@example.com"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                />
-                            </div>
+                    {/* Password */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">
+                            {editingData ? "New Password (Optional)" : "Security Password *"}
+                        </label>
+                        <div className="relative group">
+                            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                            <input
+                                required={!editingData}
+                                name="password"
+                                type="password"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                placeholder="••••••••"
+                                value={formData.password}
+                                onChange={handleChange}
+                            />
                         </div>
+                    </div>
 
-                        {/* Password */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">
-                                {editingData ? "Secure Reset Vector" : "Security Lock Key"}
-                            </label>
-                            <div className="relative group">
-                                <FiLock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                                <input
-                                    required={!editingData}
-                                    name="password"
-                                    type="password"
-                                    className="w-full pl-14 pr-6 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm placeholder-[#CBD5E0]"
-                                    placeholder="••••••••"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                />
-                            </div>
+                    {/* Role */}
+                    <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Access Role *</label>
+                        <div className="relative group">
+                            <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors z-10" size={14} />
+                            <select
+                                name="role"
+                                className="w-full pl-10 pr-10 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs appearance-none shadow-inner cursor-pointer"
+                                value={formData.role}
+                                onChange={handleChange}
+                            >
+                                {isSuperAdmin && <option value="super_admin">Super Admin</option>}
+                                <option value="company_admin">Company Admin</option>
+                                <option value="branch_manager">Branch Manager</option>
+                                <option value="sales">Sales Executive</option>
+                            </select>
                         </div>
+                    </div>
 
-                        {/* Role */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Authorization Grade</label>
+                    {/* Company Selection (Super Admin only) */}
+                    {isSuperAdmin && (
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Assign Company</label>
                             <div className="relative group">
-                                <FiShield size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
+                                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors z-10" size={14} />
                                 <select
-                                    name="role"
-                                    className="w-full pl-14 pr-12 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
-                                    value={formData.role}
+                                    name="companyId"
+                                    className="w-full pl-10 pr-10 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs appearance-none shadow-inner cursor-pointer"
+                                    value={formData.companyId}
                                     onChange={handleChange}
                                 >
-                                    {isSuperAdmin && <option value="super_admin">Prime Admin</option>}
-                                    <option value="company_admin">Entity Principal</option>
-                                    <option value="branch_manager">Hub Architect</option>
-                                    <option value="sales">Field Intelligence</option>
+                                    <option value="">Select Company...</option>
+                                    {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                                 </select>
                             </div>
                         </div>
+                    )}
 
-                        {/* Company Selection (Super Admin only) */}
-                        {isSuperAdmin && (
-                            <div className="space-y-3">
-                                <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Entity Parent</label>
-                                <div className="relative group">
-                                    <FiBriefcase size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
-                                    <select
-                                        name="companyId"
-                                        className="w-full pl-14 pr-12 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
-                                        value={formData.companyId}
-                                        onChange={handleChange}
-                                    >
-                                        <option value="">Detached Source</option>
-                                        {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                                    </select>
-                                </div>
+                    {/* Branch Selection */}
+                    {(formData.companyId || isCompanyAdmin) && (
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Assign Branch</label>
+                            <div className="relative group">
+                                <FiLayers className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors z-10" size={14} />
+                                <select
+                                    name="branchId"
+                                    className="w-full pl-10 pr-10 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs appearance-none shadow-inner cursor-pointer"
+                                    value={formData.branchId}
+                                    onChange={handleChange}
+                                >
+                                    <option value="">Select Branch...</option>
+                                    {branches.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
+                                </select>
                             </div>
-                        )}
-
-                        {/* Branch Selection */}
-                        {(formData.companyId || isCompanyAdmin) && (
-                            <div className="space-y-3">
-                                <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">Operational Hub</label>
-                                <div className="relative group">
-                                    <FiLayers size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#Clean5E0] group-focus-within:text-teal-700 transition-colors z-10" />
-                                    <select
-                                        name="branchId"
-                                        className="w-full pl-14 pr-12 py-4.5 bg-[#F4F7FB] border border-transparent rounded-[24px] outline-none focus:bg-white focus:ring-4 focus:ring-teal-600/5 focus:border-teal-300 transition-all font-black text-[#1A202C] text-sm shadow-sm appearance-none cursor-pointer"
-                                        value={formData.branchId}
-                                        onChange={handleChange}
-                                    >
-                                        <option value="">Neutral Branch</option>
-                                        {branches.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Status Alert */}
-                    <div className="p-6 bg-teal-50/50 rounded-[32px] border border-teal-100 flex items-start gap-5">
-                        <div className="p-3 bg-white rounded-xl shadow-sm border border-teal-100">
-                            <FiInfo className="text-teal-700" size={20} />
                         </div>
-                        <div>
-                            <p className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em]">System Propagation</p>
-                            <p className="text-[12px] font-bold text-[#718096] mt-1 leading-relaxed">
-                                Access parameters will propagate across the core cluster immediately upon sync completion.
-                            </p>
-                        </div>
-                    </div>
+                    )}
+                </div>
 
-                    {/* Actions */}
-                    <div className="flex flex-col sm:flex-row gap-6 pt-6 border-t border-[#F4F7FB]">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 py-5 bg-[#F4F7FB] text-[#A0AEC0] font-black rounded-[24px] border border-[#E5EAF2] hover:bg-slate-100 hover:text-[#718096] transition-all text-[11px] uppercase tracking-[0.25em]"
-                        >
-                            Abort Sync
-                        </button>
-                        <button
-                            type="submit"
-                            className="flex-[2] flex items-center justify-center gap-4 py-5 bg-teal-700 text-white font-black rounded-[24px] hover:bg-teal-800 hover:scale-[1.02] active:scale-95 transition-all text-[11px] uppercase tracking-[0.25em] shadow-2xl shadow-teal-700/20 duration-300"
-                        >
-                            <FiPlus size={20} strokeWidth={4} />
-                            {editingData ? "Commit Updates" : "Authorize Node"}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex-1 py-3.5 bg-gray-100 text-gray-500 font-black rounded-xl hover:bg-gray-200 transition-all text-[10px] uppercase tracking-widest"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        className="flex-[2] flex items-center justify-center gap-2 py-3.5 bg-indigo-600 text-white font-black rounded-xl shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all text-[10px] uppercase tracking-widest"
+                    >
+                        <FiCheck size={16} />
+                        {editingData ? "Save Changes" : "Confirm User"}
+                    </button>
+                </div>
+            </form>
         </div>
+    );
 
+    if (isStandalone) return content;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            {content}
+        </div>
     );
 };
 
