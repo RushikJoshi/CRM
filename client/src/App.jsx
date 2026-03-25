@@ -34,7 +34,7 @@ const Tasks = lazy(() => import("./pages/Tasks"));
 const DealPipelinePage = lazy(() => import("./pages/DealPipelinePage"));
 const PipelineSettings = lazy(() => import("./pages/PipelineSettings"));
 const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard"));
-const Prospects = lazy(() => import("./pages/Prospects"));
+// const Prospects = lazy(() => import("./pages/Prospects"));
 const Targets = lazy(() => import("./pages/Targets"));
 const BranchAnalytics = lazy(() => import("./pages/BranchAnalytics"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
@@ -167,7 +167,7 @@ function App() {
           <Route path="/company/leads/create" element={<LeadFormPage />} />
           <Route path="/company/leads/:id/edit" element={<LeadFormPage />} />
           <Route path="/company/leads/:id" element={<LeadDetailPage />} />
-          <Route path="/company/prospects" element={<Prospects />} />
+          {/* <Route path="/company/prospects" element={<Prospects />} /> */}
           <Route path="/company/deals" element={<Deals />} />
           <Route path="/company/deals/create" element={<DealFormPage />} />
           <Route path="/company/deals/:id/edit" element={<DealFormPage />} />
@@ -215,7 +215,7 @@ function App() {
           <Route path="/branch/leads/create" element={<LeadFormPage />} />
           <Route path="/branch/leads/:id/edit" element={<LeadFormPage />} />
           <Route path="/branch/leads/:id" element={<LeadDetailPage />} />
-          <Route path="/branch/prospects" element={<Prospects />} />
+          {/* <Route path="/branch/prospects" element={<Prospects />} /> */}
           <Route path="/branch/deals" element={<Deals />} />
           <Route path="/branch/deals/create" element={<DealFormPage />} />
           <Route path="/branch/deals/:id/edit" element={<DealFormPage />} />
@@ -259,7 +259,7 @@ function App() {
           <Route path="/sales/leads/create" element={<LeadFormPage />} />
           <Route path="/sales/leads/:id/edit" element={<LeadFormPage />} />
           <Route path="/sales/leads/:id" element={<LeadDetailPage />} />
-          <Route path="/sales/prospects" element={<Prospects />} />
+          {/* <Route path="/sales/prospects" element={<Prospects />} /> */}
           <Route path="/sales/deals" element={<Deals />} />
           <Route path="/sales/deals/create" element={<DealFormPage />} />
           <Route path="/sales/deals/:id/edit" element={<DealFormPage />} />

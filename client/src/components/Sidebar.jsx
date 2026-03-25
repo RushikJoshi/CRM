@@ -84,7 +84,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
                 { name: "Branches", icon: <FiGitBranch />, path: "/branches", roles: ["company_admin"] },
                 { name: "Users", icon: <FiUsers />, path: "/users", roles: ["company_admin", "branch_manager"] },
                 { name: "Leads", icon: <FiTrendingUp />, path: "/leads", roles: ["company_admin", "branch_manager", "sales"], labelMap: { sales: "My Leads" } },
-                { name: "Prospects", icon: <FiZap />, path: "/prospects", roles: ["company_admin", "branch_manager", "sales"] },
+                // { name: "Prospects", icon: <FiZap />, path: "/prospects", roles: ["company_admin", "branch_manager", "sales"] },
                 { name: "Accounts", icon: <FiUserCheck />, path: "/customers", roles: ["company_admin", "branch_manager", "sales"] }
             ]
         },
