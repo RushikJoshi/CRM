@@ -1,87 +1,88 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { FiEdit2, FiMail, FiPhone, FiExternalLink, FiTrash2 } from "react-icons/fi";
+import { FiEdit2, FiMail, FiPhone, FiExternalLink, FiTrash2, FiClock } from "react-icons/fi";
 
-const CompanyTable = ({ companies, onEdit, onDelete, onStatusChange }) => {
+const CompanyTable = ({ companies, onEdit, onDelete }) => {
     const navigate = useNavigate();
+    
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto min-h-[400px]">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-gray-50/50 border-b border-gray-100">
-                            <th className="px-8 py-5 text-[13px] font-semibold text-gray-400 uppercase tracking-[0.03em]">Company</th>
-                            <th className="px-8 py-5 text-[13px] font-semibold text-gray-400 uppercase tracking-[0.03em]">Contact Info</th>
-                            <th className="px-8 py-5 text-[13px] font-semibold text-gray-400 uppercase tracking-[0.03em] text-right">Actions</th>
+        <table className="saas-table">
+            <thead>
+                <tr>
+                    <th className="saas-th">Company Name</th>
+                    <th className="saas-th">Contact Details</th>
+                    <th className="saas-th">Registration</th>
+                    <th className="saas-th text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {companies.length > 0 ? (
+                    companies.map((company) => (
+                        <tr key={company._id} className="saas-tr group">
+                            <td className="saas-td">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center text-[12px] font-bold shrink-0">
+                                        {(company.name || "?").charAt(0).toUpperCase()}
+                                    </div>
+                                    <div
+                                        className="cursor-pointer group-hover:text-indigo-600 transition-colors"
+                                        onClick={() => navigate(`/superadmin/companies/${company._id}`)}
+                                    >
+                                        <div className="font-semibold text-slate-900 flex items-center gap-1">
+                                            {company.name}
+                                            <FiArrowUpRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                        <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">ID: {company._id?.substring(18)}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="saas-td">
+                                <div className="flex flex-col gap-0.5">
+                                    <div className="flex items-center gap-1.5 text-slate-600">
+                                        <FiMail size={12} className="text-slate-300" />
+                                        <span>{company.email}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-slate-400 text-[12px]">
+                                        <FiPhone size={11} className="text-slate-200" />
+                                        <span>{company.phone || "No phone"}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="saas-td">
+                                <div className="flex items-center gap-1.5 text-slate-500">
+                                    <FiClock size={12} className="text-slate-300" />
+                                    <span>{new Date(company.createdAt || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                </div>
+                            </td>
+                            <td className="saas-td text-right">
+                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => onEdit(company)}
+                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
+                                        title="Edit"
+                                    >
+                                        <FiEdit2 size={15} />
+                                    </button>
+                                    <button
+                                        onClick={() => onDelete?.(company._id)}
+                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"
+                                        title="Delete"
+                                    >
+                                        <FiTrash2 size={15} />
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                        {companies.length > 0 ? (
-                            companies.map((company) => (
-                                <tr
-                                    key={company._id}
-                                    className="hover:bg-teal-50/30 transition-all group animate-in fade-in duration-500"
-                                >
-                                    <td className="px-8 py-5">
-                                        <div
-                                            className="flex items-center cursor-pointer"
-                                            onClick={() => navigate(`/superadmin/companies/${company._id}`)}
-                                        >
-                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-50 to-teal-100/50 flex items-center justify-center text-teal-600 font-black mr-4 group-hover:scale-110 group-hover:bg-[#38BDF8] group-hover:text-white transition-all shadow-sm">
-                                                {company.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <span className="text-[14px] font-semibold text-gray-900 tracking-tight group-hover:text-[#0EA5E9] flex items-center gap-1.5 transition-colors">
-                                                    {company.name}
-                                                    <FiExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity text-[#0EA5E9]" />
-                                                </span>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase mt-1 tracking-widest">Click to view details</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-5">
-                                        <div className="flex flex-col gap-1.5">
-                                            <div className="flex items-center text-gray-600 text-[14px] font-normal">
-                                                <FiMail className="mr-2 text-gray-300" />
-                                                {company.email}
-                                            </div>
-                                            <div className="flex items-center text-[14px] font-normal text-gray-400">
-                                                <FiPhone className="mr-2 text-gray-300" />
-                                                {company.phone}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-5 text-right">
-                                        <div className="flex items-center justify-end gap-3 translate-x-2 group-hover:translate-x-0 transition-transform">
-                                            <button
-                                                onClick={() => onEdit(company)}
-                                                className="p-2.5 text-gray-400 hover:text-[#0EA5E9] hover:bg-[#F0F9FF] rounded-xl transition-all shadow-sm bg-white border border-transparent hover:border-[#E0F2FE]"
-                                                title="Edit"
-                                            >
-                                                <FiEdit2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => onDelete?.(company._id)}
-                                                className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shadow-sm bg-white border border-transparent hover:border-red-100"
-                                                title="Delete"
-                                            >
-                                                <FiTrash2 size={16} className="text-red-500" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="3" className="px-8 py-20 text-center text-gray-400 font-bold bg-gray-50/20 italic">
-                                    No companies found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                    ))
+                ) : (
+                    <tr>
+                        <td colSpan="4" className="saas-td text-center py-20 text-slate-400 italic">
+                            No company records found.
+                        </td>
+                    </tr>
+                )}
+            </tbody>
+        </table>
     );
 };
 

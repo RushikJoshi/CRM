@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import API from '../../services/api';
 import { 
   FiPlus, FiSearch, FiEdit2, FiTrash2, FiCheckCircle, FiXCircle, 
-  FiExternalLink, FiGlobe, FiLayout, FiChevronLeft 
+  FiExternalLink, FiGlobe, FiLayout, FiChevronLeft, FiLink, FiArrowLeft, FiCopy
 } from 'react-icons/fi';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const LandingPageManagement = () => {
   const [pages, setPages] = useState([]);
@@ -77,7 +76,7 @@ const LandingPageManagement = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Delete this landing portal?")) {
+    if (window.confirm("Delete this assessment portal?")) {
       try {
         await API.delete(`/test/management/landing/${id}`);
         fetchData();
@@ -93,217 +92,231 @@ const LandingPageManagement = () => {
     alert("Portal Link Copied!");
   };
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto font-inter">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Public Portals</h1>
-          <p className="text-slate-500 mt-1 font-medium">Design custom landing pages for company-specific test funnels.</p>
-        </div>
-        {!isFormOpen && (
+  if (isFormOpen) {
+    return (
+      <div className="animate-fade-in max-w-4xl mx-auto py-4">
+        <div className="flex items-center gap-4 mb-6">
           <button 
-            onClick={() => { resetForm(); setIsFormOpen(true); }}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all duration-300"
+            onClick={() => setIsFormOpen(false)}
+            className="btn-saas-secondary w-10 h-10 p-0"
           >
-            <FiPlus size={20} /> Design Portal
+            <FiArrowLeft size={18} />
           </button>
-        )}
-      </div>
+          <div>
+              <h2 className="text-[20px] font-semibold text-slate-900 poppins">{editId ? 'Customize Portal' : 'New Assessment Portal'}</h2>
+              <p className="text-slate-500 text-sm">Configure entry points for public assessment funnels.</p>
+          </div>
+        </div>
 
-      <AnimatePresence mode="wait">
-        {isFormOpen ? (
-          <motion.div 
-            key="form"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-[3rem] shadow-2xl border border-slate-50 overflow-hidden mb-12"
-          >
-            <div className="p-10 pb-4 flex justify-between items-center relative overflow-hidden bg-slate-50/30">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-cyan-500 to-indigo-500"></div>
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setIsFormOpen(false)}
-                  className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-all font-bold"
-                >
-                  <FiChevronLeft size={20} />
-                </button>
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900">{editId ? 'Customize Portal' : 'New Assessment Portal'}</h2>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Configure entry points for lead generation.</p>
-                </div>
-              </div>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-10 grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <div className="space-y-8">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Portal Title</label>
+        <div className="saas-card p-10">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Portal Title</label>
                   <input 
                     type="text" required
-                    placeholder="e.g. Free Scholarship Test 2026"
-                    className="w-full bg-slate-50 border-0 rounded-2xl p-5 focus:ring-4 focus:ring-indigo-100 font-bold text-slate-800 placeholder:text-slate-300 transition-all"
+                    placeholder="e.g. Free Scholarship Test"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-md px-4 text-sm focus:border-indigo-500 transition-all outline-none"
                     value={formData.title} 
                     onChange={e => setFormData({...formData, title: e.target.value})}
                   />
                 </div>
-                <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Hero Subtitle</label>
+                <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Hero Subtitle</label>
                     <input 
                       type="text"
-                      placeholder="e.g. Join the elite 1% of digital creators."
-                      className="w-full bg-slate-50 border-0 rounded-2xl p-5 focus:ring-4 focus:ring-indigo-100 font-bold text-slate-800 placeholder:text-slate-300 transition-all"
+                      placeholder="e.g. Join the elite 1%."
+                      className="w-full h-11 bg-white border border-slate-200 rounded-md px-4 text-sm focus:border-indigo-500 transition-all outline-none"
                       value={formData.subtitle} 
                       onChange={e => setFormData({...formData, subtitle: e.target.value})}
                     />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Description</label>
-                  <textarea 
-                    className="w-full bg-slate-50 border-0 rounded-3xl p-6 focus:ring-4 focus:ring-indigo-100 font-medium text-slate-600 placeholder:text-slate-300 transition-all" rows="5"
-                    placeholder="Provide context for the student..."
-                    value={formData.description} 
-                    onChange={e => setFormData({...formData, description: e.target.value})}
-                  />
-                </div>
-              </div>
+            </div>
 
-              <div className="space-y-8">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Assign to Brand (Company)</label>
-                  <select 
-                    required className="w-full bg-slate-50 border-0 rounded-2xl p-5 focus:ring-4 focus:ring-indigo-100 font-bold text-slate-800 appearance-none cursor-pointer"
-                    value={formData.companyId} 
-                    onChange={e => setFormData({...formData, companyId: e.target.value})}
-                  >
-                    <option value="">Select Company</option>
-                    {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">URL Extension (Slug)</label>
-                  <div className="relative">
-                     <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 font-mono text-xs">/assessment/:id/</span>
-                     <input 
-                        type="text" required
-                        placeholder="my-cool-link"
-                        className="w-full bg-slate-50 border-0 rounded-2xl p-5 pl-32 focus:ring-4 focus:ring-indigo-100 font-bold text-slate-800 transition-all font-mono lowercase"
-                        value={formData.slug} 
-                        onChange={e => setFormData({...formData, slug: e.target.value.replace(/\s+/g, '-').toLowerCase()})}
-                     />
-                  </div>
-                </div>
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
+              <textarea 
+                className="w-full bg-white border border-slate-200 rounded-md p-4 text-sm focus:border-indigo-500 transition-all outline-none" rows="3"
+                placeholder="Brief description for applicants..."
+                value={formData.description} 
+                onChange={e => setFormData({...formData, description: e.target.value})}
+              />
+            </div>
 
-                <div className="bg-slate-50 p-6 rounded-[2rem] flex items-center justify-between border border-slate-100">
-                   <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setFormData({...formData, isActive: !formData.isActive})}>
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center border-2 transition-all ${formData.isActive ? 'bg-indigo-600 border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-white border-slate-200'}`}>
-                        {formData.isActive && <FiCheckCircle className="text-white" size={18} />}
-                      </div>
-                      <div>
-                        <span className="block text-sm font-black text-slate-800 group-hover:text-indigo-600 transition-colors">Portal Visibility</span>
-                        <span className="block text-[10px] font-bold text-slate-400">If active, this link will be publically accessible.</span>
-                      </div>
-                   </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Assigned Company</label>
+                <select 
+                  required className="w-full h-11 bg-white border border-slate-200 rounded-md px-3 text-sm focus:border-indigo-500 transition-all outline-none"
+                  value={formData.companyId} 
+                  onChange={e => setFormData({...formData, companyId: e.target.value})}
+                >
+                  <option value="">Select Company</option>
+                  {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                </select>
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">URL Extension (Slug)</label>
+                <div className="relative">
+                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[11px] font-mono pointer-events-none">.../assessment/</div>
+                   <input 
+                      type="text" required
+                      className="w-full h-11 bg-white border border-slate-200 rounded-md px-4 pl-28 text-sm focus:border-indigo-500 transition-all outline-none font-mono"
+                      value={formData.slug} 
+                      onChange={e => setFormData({...formData, slug: e.target.value.replace(/\s+/g, '-').toLowerCase()})}
+                   />
                 </div>
+              </div>
+            </div>
 
-                <div className="flex gap-4 pt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => setIsFormOpen(false)} 
-                    className="flex-1 py-5 rounded-2xl bg-white border-2 border-slate-100 text-slate-400 font-black hover:bg-slate-50 transition-all hover:text-slate-600"
-                  >
-                    Discard Changes
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="flex-2 py-5 rounded-2xl bg-slate-900 text-white font-black shadow-xl shadow-slate-200 hover:bg-indigo-600 hover:scale-[1.02] active:scale-95 transition-all text-lg"
-                  >
-                    {editId ? 'Update Portal' : 'Launch Portal'}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-8"
-          >
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-4">
-                 <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                 <p className="text-slate-400 font-black tracking-widest text-[10px] uppercase animate-pulse">Syncing Cloud Portals...</p>
-              </div>
-            ) : pages.length === 0 ? (
-              <div className="bg-white rounded-[3.5rem] border-2 border-dashed border-slate-100 p-24 text-center">
-                  <div className="bg-indigo-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner shadow-indigo-100">
-                      <FiGlobe size={48} className="text-indigo-600" />
-                  </div>
-                  <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Digital Portals Status: Offline</h3>
-                  <p className="text-slate-500 mb-10 max-w-sm mx-auto font-medium">Create your first public-facing assessment funnel to start generating leads.</p>
-                  <button 
-                      onClick={() => setIsFormOpen(true)}
-                      className="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black shadow-xl shadow-indigo-100 hover:scale-105 transition-all active:scale-95"
-                  >
-                      Design New Portal
-                  </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {pages.map(page => (
-                  <motion.div 
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    key={page._id} 
-                    className="bg-white rounded-[2.5rem] shadow-sm border border-slate-50 hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-500 p-8 flex flex-col group relative overflow-hidden"
-                  >
-                    <div className="flex justify-between items-start mb-10 relative z-10">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110 ${page.isActive ? 'bg-indigo-600 text-white shadow-indigo-100' : 'bg-slate-100 text-slate-400 shadow-slate-100'}`}>
-                        <FiLayout size={28} />
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => handleEdit(page)} className="p-3 bg-white border border-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all shadow-sm"><FiEdit2 size={20} /></button>
-                        <button onClick={() => handleDelete(page._id)} className="p-3 bg-white border border-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm"><FiTrash2 size={20} /></button>
-                      </div>
+            <div className="flex items-center gap-2 py-2">
+               <input 
+                 type="checkbox" 
+                 id="isActive"
+                 className="w-4 h-4 rounded-sm border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                 checked={formData.isActive}
+                 onChange={e => setFormData({...formData, isActive: e.target.checked})}
+               />
+               <label htmlFor="isActive" className="text-sm text-slate-700 font-medium cursor-pointer select-none">Make portal active and visible</label>
+            </div>
+
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+               <button type="submit" className="btn-saas-primary px-8 h-11">
+                  {editId ? 'Update Portal' : 'Launch Portal'}
+               </button>
+               <button 
+                  type="button" 
+                  onClick={() => setIsFormOpen(false)} 
+                  className="btn-saas-secondary px-8 h-11"
+                >
+                  Discard Changes
+                </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="animate-fade-in space-y-6 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
+        <div>
+          <h1 className="text-[22px] font-semibold text-slate-900 poppins">Assessment Portals</h1>
+          <p className="text-[13px] text-slate-500 mt-0.5">Manage high-conversion landing pages for public test funnels.</p>
+        </div>
+        <button 
+          onClick={() => { resetForm(); setIsFormOpen(true); }}
+          className="btn-saas-primary h-9 px-5"
+        >
+          <FiPlus size={16} /> Design Portal
+        </button>
+      </div>
+
+      <div className="flex items-center gap-3">
+          <div className="relative group w-full max-w-sm">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+               placeholder="Search portals..."
+               className="w-full h-10 bg-white border border-slate-200 rounded-md pl-9 pr-4 text-sm focus:border-indigo-500 transition-all outline-none"
+            />
+          </div>
+      </div>
+
+      {loading ? (
+        <div className="h-[400px] saas-table-container flex flex-col items-center justify-center space-y-4">
+           <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+           <p className="text-slate-400 text-[12px] font-medium">Syncing portals...</p>
+        </div>
+      ) : pages.length === 0 ? (
+        <div className="saas-card py-20 text-center flex flex-col items-center">
+            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
+                <FiGlobe size={24} />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">No Active Portals</h3>
+            <p className="text-slate-500 text-sm max-w-xs mx-auto mb-8 font-medium">Create your first public-facing assessment funnel to start generating leads.</p>
+            <button 
+                onClick={() => setIsFormOpen(true)}
+                className="btn-saas-primary px-10 h-11"
+            >
+                Start Designing
+            </button>
+        </div>
+      ) : (
+        <div className="saas-table-container">
+          <table className="saas-table">
+            <thead>
+              <tr>
+                <th className="saas-th">Assessment Portal</th>
+                <th className="saas-th">Linked Brand</th>
+                <th className="saas-th">Slug / Link</th>
+                <th className="saas-th">Status</th>
+                <th className="saas-th text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pages.map(page => (
+                <tr key={page._id} className="saas-tr group">
+                  <td className="saas-td">
+                    <div className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{page.title}</div>
+                    <div className="text-[11px] text-slate-400 truncate max-w-[250px]">{page.subtitle || "Assessment funnel"}</div>
+                  </td>
+                  <td className="saas-td">
+                    <span className="text-[13px] font-medium text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                      {page.companyId?.name || "Global"}
+                    </span>
+                  </td>
+                  <td className="saas-td">
+                    <div className="flex items-center gap-2">
+                       <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded">/{page.slug}</span>
+                       <button 
+                          onClick={() => copyPortalLink(page.companyId?._id || page.companyId, page.slug)}
+                          className="p-1 text-slate-300 hover:text-indigo-600 transition-colors"
+                          title="Copy Link"
+                       >
+                          <FiCopy size={12} />
+                       </button>
                     </div>
-
-                    <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors uppercase tracking-tight leading-tight">{page.title}</h3>
-                    <p className="text-slate-500 text-sm font-medium mb-10 line-clamp-3 leading-relaxed">{page.subtitle || page.description || "Digital acquisition portal."}</p>
-                    
-                    <div className="mt-auto pt-8 border-t border-slate-50 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Linked Ecosystem</span>
-                            <span className="text-xs font-black text-slate-800">{page.companyId?.name || "Global"}</span>
-                        </div>
-                        <div className="flex gap-3">
-                            <button 
-                                onClick={() => copyPortalLink(page.companyId?._id || page.companyId, page.slug)}
-                                className="flex-1 bg-slate-900 text-white py-4 rounded-xl text-xs font-black uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all flex items-center justify-center gap-2 shadow-lg"
-                            >
-                                <FiExternalLink /> Copy URL
-                            </button>
-                            <a 
-                                href={`${window.location.origin}/assessment/${page.companyId?._id || page.companyId}/${page.slug}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="w-14 bg-slate-50 text-slate-400 flex items-center justify-center rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-slate-100"
-                                title="Open Portal"
-                            >
-                                <FiGlobe size={24} />
-                            </a>
-                        </div>
+                  </td>
+                  <td className="saas-td">
+                    <span className={`badge-saas ${page.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                      {page.isActive ? 'Active' : 'Draft'}
+                    </span>
+                  </td>
+                  <td className="saas-td text-right">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <a 
+                          href={`${window.location.origin}/assessment/${page.companyId?._id || page.companyId}/${page.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition-all"
+                          title="Open Live"
+                      >
+                          <FiExternalLink size={15} />
+                      </a>
+                      <button 
+                        onClick={() => handleEdit(page)} 
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition-all"
+                        title="Edit"
+                      >
+                        <FiEdit2 size={15} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(page._id)} 
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"
+                        title="Delete"
+                      >
+                        <FiTrash2 size={15} />
+                      </button>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
