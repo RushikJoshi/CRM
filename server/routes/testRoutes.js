@@ -11,6 +11,7 @@ router.get("/public/courses/:companyId", publicTestController.getCoursesByCompan
 router.post("/public/start-test", publicTestController.startTest);
 router.get("/public/test/:token", publicTestController.getTestByToken);
 router.post("/public/submit-test", publicTestController.submitTest);
+router.post("/public/proctoring/log", publicTestController.logProctoring);
 router.post("/public/submit-lead", publicTestController.submitLead);
 router.post("/public/inquiry/create", publicTestController.submitLead); // Unified inquiry capture
 
@@ -37,5 +38,8 @@ router.get("/management/questions/:courseId", testManagementController.getQuesti
 router.post("/management/questions", testManagementController.addQuestion);
 router.put("/management/questions/:id", testManagementController.updateQuestion);
 router.delete("/management/questions/:id", testManagementController.deleteQuestion);
+
+// Proctoring Details
+router.get("/management/proctoring/:token", publicTestController.getProctoringDetails);
 
 module.exports = router;

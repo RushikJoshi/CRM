@@ -3,6 +3,7 @@ const Lead = require("../models/Lead");
 const User = require("../models/User");
 const MasterData = require("../models/MasterData");
 const { assignLeadAutomatically, calculateLeadScore } = require("../utils/leadManagement");
+const { getNextCustomId } = require("../utils/idGenerator");
 const Activity = require("../models/Activity");
 const mongoose = require("mongoose");
 
@@ -72,18 +73,7 @@ exports.createInquiry = async (req, res) => {
             });
         }
 
-        // 2. AUTO CONVERSION: If testScore >= 70
-        if (inquiry.testScore >= 70 && inquiry.status !== "converted") {
-            const leadResult = await exports.performConversion(inquiry, req.user?.id || null);
-            return res.status(201).json({ 
-                success: true, 
-                message: "High score! Auto-converted to Lead.", 
-                data: inquiry,
-                autoConverted: true,
-                leadId: leadResult._id
-            });
-        }
-
+        // 2. Response
         res.status(201).json({ success: true, data: inquiry });
     } catch (err) {
         console.error("Inquiry Capture Error:", err);
@@ -98,6 +88,12 @@ exports.performConversion = async (inquiry, userId) => {
     const statusObj = await MasterData.findOne({ companyId: inquiry.companyId, type: "lead_status", name: "New" });
     if (statusObj) defaultStatus = statusObj.name;
 
+    // Generate a proper Custom ID for the lead
+    const customId = await getNextCustomId({ 
+        companyId: inquiry.companyId, 
+        module: "lead" 
+    });
+
     const lead = await Lead.create({
         name: inquiry.name,
         email: inquiry.email,
@@ -106,13 +102,18 @@ exports.performConversion = async (inquiry, userId) => {
         notes: inquiry.message,
         courseSelected: inquiry.courseSelected,
         testScore: inquiry.testScore,
+        proctoringScore: inquiry.proctoringScore || 100,
+        proctoringRisk: inquiry.proctoringRisk || "Low",
+        testToken: inquiry.testToken,
+        proctoringStatus: inquiry.proctoringStatus,
         inquiryId: inquiry._id,
         status: defaultStatus,
-        stage: "new_lead",
+        stage: "New", // Align with primary pipeline stage
         companyId: inquiry.companyId,
         branchId: inquiry.branchId,
         assignedTo: inquiry.assignedTo || null,
-        createdBy: userId
+        createdBy: userId,
+        customId
     });
 
     // Auto assignment
@@ -125,6 +126,7 @@ exports.performConversion = async (inquiry, userId) => {
 
     // Update Inquiry
     inquiry.status = "converted";
+    inquiry.leadId = lead._id;
     await inquiry.save();
 
     // Log Activity for Lead
@@ -206,12 +208,26 @@ exports.getInquiryById = async (req, res) => {
 
         if (!inquiry) return res.status(404).json({ success: false, message: "Inquiry not found" });
 
+        // Find associated lead if it exists
+        let leadIdFromLead = inquiry.leadId;
+        if (!leadIdFromLead && inquiry.status === "converted") {
+            const associatedLead = await Lead.findOne({ inquiryId: inquiry._id }).select("_id").lean();
+            if (associatedLead) leadIdFromLead = associatedLead._id;
+        }
+
         // Fetch activities for inquiry history
         const activities = await Activity.find({ inquiryId: inquiry._id })
             .sort({ createdAt: -1 })
             .populate("userId", "name role");
 
-        res.json({ success: true, data: inquiry, activities });
+        res.json({ 
+            success: true, 
+            data: { 
+                ...inquiry.toObject(), 
+                leadId: leadIdFromLead 
+            }, 
+            activities 
+        });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

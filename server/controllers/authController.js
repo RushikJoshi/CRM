@@ -117,7 +117,9 @@ exports.login = async (req, res) => {
     }
 
     const emailTrimmed = String(email).trim().toLowerCase();
-    const user = await User.findOne({ email: new RegExp(`^${emailTrimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") });
+    const user = await User.findOne({ 
+      email: new RegExp(`^${emailTrimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") 
+    }).populate("companyId");
 
     if (!user) {
       return res.status(400).json({
@@ -166,15 +168,13 @@ exports.login = async (req, res) => {
     // Fetch subscription info
     let subscription = null;
     if (user.companyId) {
-        const company = await Company.findById(user.companyId).select("planId startDate endDate subscriptionStatus");
-        if (company) {
-            subscription = {
-                planId: company.planId,
-                startDate: company.startDate,
-                endDate: company.endDate,
-                status: company.subscriptionStatus
-            };
-        }
+        const company = user.companyId; // Already populated
+        subscription = {
+            planId: company.planId,
+            startDate: company.startDate,
+            endDate: company.endDate,
+            status: company.subscriptionStatus
+        };
     }
 
     // ✅ Never return password hash to frontend
@@ -211,20 +211,18 @@ exports.login = async (req, res) => {
 // ============================
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id).select("-password").populate("companyId");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     let subscription = null;
     if (user.companyId) {
-        const company = await Company.findById(user.companyId).select("planId startDate endDate subscriptionStatus");
-        if (company) {
-            subscription = {
-                planId: company.planId,
-                startDate: company.startDate,
-                endDate: company.endDate,
-                status: company.subscriptionStatus
-            };
-        }
+        const company = user.companyId;
+        subscription = {
+            planId: company.planId,
+            startDate: company.startDate,
+            endDate: company.endDate,
+            status: company.subscriptionStatus
+        };
     }
 
     const userData = user.toObject();

@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import API from '../../services/api';
 import { 
   FiClock, FiCheckSquare, FiChevronRight, FiChevronLeft, FiAlertTriangle, 
-  FiHash, FiMonitor, FiShieldOff, FiTrash2 
+  FiHash, FiMonitor, FiShieldOff, FiTrash2, FiArrowRight 
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import ProctoringOverlay from '../../components/ProctoringOverlay';
 
 const AssessmentTest = () => {
   const { token } = useParams();
@@ -17,13 +18,19 @@ const AssessmentTest = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isProctoringStarted, setIsProctoringStarted] = useState(false);
+  const [isExamStarted, setIsExamStarted] = useState(false);
+  const [proctoringStream, setProctoringStream] = useState(null);
+  const [proctoringStatus, setProctoringStatus] = useState("not_requested"); 
+  const [cameraStatus, setCameraStatus] = useState("idle"); 
+  const [micStatus, setMicStatus] = useState("idle"); 
 
   useEffect(() => {
     fetchTest();
   }, [token]);
 
   useEffect(() => {
-    if (timeLeft > 0) {
+    if (isExamStarted && timeLeft > 0) {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
@@ -36,7 +43,81 @@ const AssessmentTest = () => {
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [timeLeft]);
+  }, [isExamStarted, timeLeft]);
+
+  const enterFullscreen = () => {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.msRequestFullscreen) el.msRequestFullscreen();
+  };
+
+  const handleStartExam = async () => {
+    setLoading(true);
+    try {
+      console.log("Initializing secure proctoring modality...");
+      const stream = await startProctoring();
+      setProctoringStream(stream);
+      setIsProctoringStarted(true);
+      setProctoringStatus("active");
+      
+      // Delay to ensure video ref is matched
+      setTimeout(() => {
+        const video = document.getElementById("pre-exam-preview");
+        if (video) {
+            video.srcObject = stream;
+            video.play();
+        }
+      }, 100);
+
+      enterFullscreen();
+      console.log("Hardware verified. Awaiting candidate confirmation.");
+    } catch (error) {
+      console.warn("Proctoring bypassed with warning:", error.message);
+      if (error.message === "Permission denied") {
+        setProctoringStatus("denied");
+        alert("WARNING: Camera access denied. Monitoring will be limited. This event has been logged for review.");
+      } else if (error.message === "Camera not supported") {
+        setProctoringStatus("not_supported");
+        alert("Your browser does not support proctoring hardware. Proceeding with standard mode.");
+      }
+      setIsExamStarted(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startProctoring = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Camera not supported");
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: true
+      });
+
+      console.log("Media Stream tracks started:", stream.getTracks().map(t => t.kind));
+      setCameraStatus("active");
+      setMicStatus("active");
+      return stream;
+    } catch (error) {
+      if (error.name === "NotAllowedError") {
+        setCameraStatus("denied");
+        setMicStatus("denied");
+        throw new Error("Permission denied");
+      }
+      if (error.name === "NotFoundError") {
+        throw new Error("Camera or mic not found");
+      }
+      throw new Error("Unknown media error");
+    }
+  };
 
   const fetchTest = async () => {
     try {
@@ -61,7 +142,11 @@ const AssessmentTest = () => {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await API.post('/test/public/submit-test', { token, answers });
+      const res = await API.post('/test/public/submit-test', { 
+        token, 
+        answers,
+        proctoringStatus
+      });
       // Redirect to results but pass token
       navigate(`/assessment/result/${token}`, { state: { scoreData: res.data.data } });
     } catch (err) {
@@ -88,7 +173,94 @@ const AssessmentTest = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/50 font-inter">
-      {/* ── TOP NAVIGATION ─────────────────────────────────────────────────── */}
+      <ProctoringOverlay 
+        token={token} 
+        stream={proctoringStream} 
+        isStarted={isProctoringStarted} 
+        proctoringStatus={proctoringStatus}
+      />
+
+      {!isExamStarted && (
+        <div className="fixed inset-0 z-[200] bg-[#f8fafc] flex flex-col items-center justify-center p-6 lg:p-12 overflow-y-auto">
+            <div className="max-w-2xl w-full bg-white rounded-[3rem] p-10 lg:p-16 shadow-2xl shadow-slate-200 border border-slate-100 flex flex-col items-center text-center animate-in zoom-in-95 duration-500">
+               <div className="w-20 h-20 bg-indigo-500 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-200 mb-8">
+                  <FiCheckSquare size={32} />
+               </div>
+               <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Ready to begin?</h1>
+               <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">Secure Assessment Protocol v2.0</p>
+               
+               <div className="w-full bg-slate-50 rounded-[2rem] p-8 text-left mb-10 space-y-6">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-2">Hardware & Security Protocols</h3>
+                  {!isProctoringStarted ? (
+                    <div className="space-y-4">
+                        <div className="flex gap-4 p-4 bg-white rounded-2xl border border-slate-100">
+                           <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                              <FiCheckSquare size={18} />
+                           </div>
+                           <p className="text-sm font-medium text-slate-600 leading-relaxed">Evaluation will involve real-time face detection and acoustic monitoring to ensure integrity.</p>
+                        </div>
+                        <div className="flex gap-4 p-4 bg-white rounded-2xl border border-slate-100">
+                           <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                              <FiAlertTriangle size={18} />
+                           </div>
+                           <p className="text-sm font-medium text-slate-600 leading-relaxed">Tab switching or exiting fullscreen will result in integrity score penalties.</p>
+                        </div>
+                    </div>
+                  ) : (
+                    <div className="animate-in fade-in duration-500 flex flex-col items-center">
+                        <div className="w-full aspect-video bg-black rounded-3xl overflow-hidden border-4 border-indigo-600 shadow-2xl mb-6 relative group">
+                            <video 
+                                id="pre-exam-preview"
+                                autoPlay 
+                                muted 
+                                playsInline 
+                                className="w-full h-full object-cover transform -scale-x-100"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+                                <span className="text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+                                    Live Stream Active
+                                </span>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 w-full">
+                            <div className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">Camera Verified</span>
+                            </div>
+                            <div className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+                                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">Mic Detected</span>
+                            </div>
+                        </div>
+                    </div>
+                  )}
+               </div>
+
+               {!isProctoringStarted ? (
+                 <button 
+                  onClick={handleStartExam}
+                  className="w-full py-6 bg-slate-900 text-white rounded-[1.5rem] font-black text-xl shadow-2xl hover:bg-indigo-600 hover:scale-105 active:scale-95 transition-all outline-none flex items-center justify-center gap-4"
+                >
+                  Verify Hardware <FiArrowRight />
+                </button>
+               ) : (
+                 <button 
+                  onClick={() => setIsExamStarted(true)}
+                  className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all outline-none flex items-center justify-center gap-4 animate-in slide-in-from-bottom-2 duration-500"
+                >
+                  Confirm & Begin Exam <FiChevronRight />
+                </button>
+               )}
+              
+              <p className="mt-8 text-[11px] text-slate-400 font-medium">Monitoring is mandatory for evaluation completion.</p>
+            </div>
+        </div>
+      )}
+
+      {isExamStarted && (
+        <div className="animate-in fade-in duration-700">
+          {/* ── TOP NAVIGATION ─────────────────────────────────────────────────── */}
       <header className="bg-white border-b sticky top-0 z-50 backdrop-blur-xl bg-white/70">
         <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center h-20">
             <div className="flex items-center gap-4">
@@ -250,6 +422,8 @@ const AssessmentTest = () => {
               <p className="hidden md:block text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">Exam Engine v2.0-STABLE</p>
           </div>
       </footer>
+      </div>
+      )}
     </div>
   );
 };

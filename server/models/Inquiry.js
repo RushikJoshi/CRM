@@ -38,6 +38,15 @@ const inquirySchema = new mongoose.Schema(
             type: Number,
             default: 0
         },
+        proctoringScore: {
+            type: Number,
+            default: 100
+        },
+        proctoringRisk: {
+            type: String,
+            enum: ["Low", "Medium", "High"],
+            default: "Low"
+        },
         status: {
             type: String,
             enum: ["new", "contacted", "qualified", "converted", "rejected"],
@@ -56,6 +65,20 @@ const inquirySchema = new mongoose.Schema(
         branchId: { // Keeping for CRM consistency
             type: mongoose.Schema.Types.ObjectId,
             ref: "Branch",
+            default: null
+        },
+        testToken: {
+            type: String,
+            default: null
+        },
+        proctoringStatus: {
+            type: String,
+            enum: ["active", "denied", "not_supported", "unknown"],
+            default: "unknown"
+        },
+        leadId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Lead",
             default: null
         }
     },

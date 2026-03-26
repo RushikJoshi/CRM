@@ -204,11 +204,11 @@ function ActivityItem({ item, isLast }) {
 
          <div className="flex gap-8 relative z-10">
             {/* Left Rail: Icon & Avatar */}
-            <div className="flex flex-col items-center">
-               <div className={`w-16 h-16 rounded-3xl ${config.bg} ${config.border} border flex items-center justify-center text-xl ${config.text} shadow-xl shadow-gray-100 group-hover:scale-110 transition-transform duration-300`}>
-                  {config.icon}
-               </div>
-            </div>
+             <div className="flex flex-col items-center shrink-0">
+                <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl ${config.bg} ${config.border} border flex items-center justify-center text-lg md:text-xl ${config.text} shadow-xl shadow-gray-100 group-hover:scale-110 transition-transform duration-300`}>
+                   {config.icon}
+                </div>
+             </div>
 
             {/* Right Side: Content Card */}
             <div className="flex-1 pb-16">
@@ -349,6 +349,8 @@ export default function LeadDetailPage() {
   const [followUpTime, setFollowUpTime] = useState("10:00");
   const [followUpNote, setFollowUpNote] = useState("");
   const [activeQuickAction, setActiveQuickAction] = useState(null); 
+  const [proctoring, setProctoring] = useState(null);
+  const [proctoringLoading, setProctoringLoading] = useState(false);
 
   const fetchPipeline = useCallback(async () => {
     try {
@@ -496,10 +498,29 @@ export default function LeadDetailPage() {
     }
   }, [id]);
 
+  const fetchProctoring = useCallback(async (token) => {
+    if (!token) return;
+    setProctoringLoading(true);
+    try {
+      const res = await API.get(`/test/management/proctoring/${token}`);
+      setProctoring(res.data?.data || null);
+    } catch (err) {
+      console.error("Failed to load proctoring log", err);
+    } finally {
+      setProctoringLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTimeline();
     fetchFollowUps();
   }, [fetchTimeline, fetchFollowUps]);
+
+  useEffect(() => {
+    if (lead?.testToken) {
+        fetchProctoring(lead.testToken);
+    }
+  }, [lead?.testToken, fetchProctoring]);
 
   useEffect(() => {
     (async () => {
@@ -636,73 +657,63 @@ export default function LeadDetailPage() {
       <div className="w-full bg-white shadow-sm flex flex-col">
         {/* Status Header */}
         <div className="px-4 md:px-6 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between bg-white relative gap-4">
-          <div className="flex items-center gap-3">
-             <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200">
-               <FiArrowLeft size={18} className="text-gray-600" />
-             </button>
-             <div className="flex items-center gap-2 min-w-0">
-                <span className={`px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded border ${isWon ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : isLost ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
-                  {statusNorm.toUpperCase()}
-                </span>
-                <div className="hidden sm:flex items-center text-xs font-bold text-gray-400 min-w-0 flex-1">
-                  <span>{pipeline?.name || "Pipeline"}</span>
-                  <FiChevronRight size={14} />
-                  <span className="text-gray-900 truncate max-w-[200px]">{lead.customId || lead.name || "Opportunity"}</span>
-
-                  <FiChevronRight size={14} />
-                  <span className="text-indigo-600 font-black uppercase tracking-widest text-[10px] ml-1">Assigned to: {salesperson}</span>
-                  <span className="ml-4 px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
-                    Score: {lead?.score || 0} 🔥
-                  </span>
-                  <span className="ml-2 px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
-                    Engagement: {lead?.engagementScore || 0}% ⚡
-                  </span>
-                </div>
-             </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-               {!isWon && !isLost && (
-                 <>
-                   <button 
-                    onClick={() => markWon()}
-                    disabled={updatingStage}
-                    className="hidden md:block px-4 py-1.5 bg-emerald-600 text-white text-[11px] font-bold uppercase rounded-md shadow-sm hover:bg-emerald-700 disabled:opacity-50"
-                   >
-                     Won
-                   </button>
-                   <button 
-                    onClick={() => setShowLost(true)}
-                    className="hidden md:block px-4 py-1.5 bg-white border border-gray-200 text-gray-700 text-[11px] font-bold uppercase rounded-md hover:bg-gray-50"
-                   >
-                     Lost
-                   </button>
-                 </>
-               )}
-               <button 
-                 onClick={() => setShowEnrichment(!showEnrichment)}
-                 className={`px-4 py-1.5 border text-[11px] font-bold uppercase rounded-md transition-all ${showEnrichment ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-               >
-                 Enrich
-               </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="flex-1 overflow-x-auto no-scrollbar">
-                <StageBreadcrumbs 
-                  stages={navStages} 
-                  currentStage={currentStageKey} 
-                  onUpdate={updateStage} 
-                  updating={updatingStage} 
-                />
+           {/* Breadcrumbs Section */}
+           <div className="flex items-center gap-3 w-full lg:w-auto">
+              <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200 shrink-0">
+                <FiArrowLeft size={18} className="text-gray-600" />
+              </button>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                 <span className={`px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded border shrink-0 ${isWon ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : isLost ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+                   {statusNorm.toUpperCase()}
+                 </span>
+                 <div className="flex items-center text-xs font-bold text-gray-400 min-w-0 flex-1">
+                   <span className="hidden xs:inline">{pipeline?.name || "Pipeline"}</span>
+                   <FiChevronRight size={14} className="hidden xs:inline text-gray-200" />
+                   <span className="text-gray-900 truncate max-w-[150px]">{lead.customId || lead.name || "Opportunity"}</span>
+                   <div className="hidden sm:flex items-center ml-4 gap-2 border-l pl-4 border-gray-100">
+                      <span className="text-indigo-600 font-black uppercase tracking-widest text-[9px] truncate">Agent: {salesperson.split(' ')[0]}</span>
+                   </div>
+                 </div>
               </div>
-               <div className="hidden lg:flex items-center ml-2 text-gray-400 gap-1 text-sm border-l pl-4 border-gray-200">
+           </div>
+
+           {/* Actions Section */}
+           <div className="flex flex-1 flex-row items-center justify-between lg:justify-end gap-3 w-full lg:w-auto overflow-hidden">
+              <div className="flex items-center gap-2 shrink-0">
+                 {!isWon && !isLost && (
+                   <>
+                     <button 
+                      onClick={() => markWon()}
+                      disabled={updatingStage}
+                      className="px-3 md:px-4 py-1.5 bg-emerald-600 text-white text-[10px] md:text-[11px] font-bold uppercase rounded-md shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+                     >
+                       Won
+                     </button>
+                     <button 
+                      onClick={() => setShowLost(true)}
+                      className="px-3 md:px-4 py-1.5 bg-white border border-gray-200 text-gray-700 text-[10px] md:text-[11px] font-bold uppercase rounded-md hover:bg-gray-50"
+                     >
+                       Lost
+                     </button>
+                   </>
+                 )}
+                 <button 
+                   onClick={() => setShowEnrichment(!showEnrichment)}
+                   className={`px-3 md:px-4 py-1.5 border text-[10px] md:text-[11px] font-bold uppercase rounded-md transition-all ${showEnrichment ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                 >
+                   Enrich
+                 </button>
+              </div>
+
+              <div className="flex-1 min-w-0 max-w-[200px] sm:max-w-md overflow-x-auto no-scrollbar py-1">
+                 <StageBreadcrumbs stages={navStages} currentStage={currentStageKey} onUpdate={updateStage} updating={updatingStage} />
+              </div>
+
+              <div className="hidden lg:flex items-center gap-1 text-gray-400 text-sm border-l pl-4 border-gray-100 shrink-0">
                  <button className="p-1 hover:text-gray-900" onClick={() => navigate(-1)} title="Back"><FiChevronLeft size={20} /></button>
                  <button className="p-1 hover:text-gray-900" title="Next"><FiChevronRight size={20} /></button>
               </div>
-            </div>
-          </div>
+           </div>
         </div>
       </div>
 
@@ -1031,13 +1042,13 @@ export default function LeadDetailPage() {
 
             {/* Content Tabs */}
             <div className="border-b border-gray-100 flex items-center gap-12">
-               {['notes', 'extra', 'docs'].map((tab) => (
+               {['notes', 'extra', 'docs', (lead?.testToken ? 'proctoring' : null)].filter(Boolean).map((tab) => (
                   <button 
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`pb-4 text-[11px] font-black uppercase tracking-[2px] transition-all relative ${activeTab === tab ? 'text-teal-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-teal-600 after:rounded-t-full' : 'text-gray-400 hover:text-gray-900'}`}
                   >
-                    {tab === 'notes' ? 'Description' : tab === 'extra' ? 'Extra Info' : 'Attachments'}
+                    {tab === 'notes' ? 'Description' : tab === 'extra' ? 'Extra Info' : tab === 'docs' ? 'Attachments' : 'AI Proctoring'}
                   </button>
                ))}
             </div>
@@ -1263,6 +1274,104 @@ export default function LeadDetailPage() {
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {activeTab === 'proctoring' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {proctoringLoading ? (
+                        <div className="flex flex-col items-center py-20">
+                            <div className="w-10 h-10 border-4 border-slate-100 border-t-indigo-500 rounded-full animate-spin" />
+                            <p className="mt-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Hydrating Proctoring Report...</p>
+                        </div>
+                    ) : proctoring ? (
+                        <div className="space-y-12">
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="bg-white border border-gray-100 rounded-[32px] p-8 flex flex-col items-center justify-center shadow-sm relative overflow-hidden group">
+                                   <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-bl-full -mr-12 -mt-12 group-hover:scale-110 transition-transform"></div>
+                                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Integrity Score</span>
+                                   <div className="flex items-baseline gap-2">
+                                      <span className={`text-7xl font-black ${proctoring.score > 80 ? 'text-emerald-500' : 'text-rose-500'}`}>{proctoring.score}</span>
+                                      <span className="text-xl font-bold text-slate-300">/ 100</span>
+                                   </div>
+                                </div>
+                                <div className={`rounded-[32px] p-8 flex flex-col items-center justify-center border shadow-sm relative overflow-hidden group ${proctoring.score > 80 ? 'bg-emerald-50/30 border-emerald-100 text-emerald-700' : 'bg-rose-50/30 border-rose-100 text-rose-700'}`}>
+                                   <div className="absolute top-0 right-0 w-24 h-24 bg-white/20 rounded-bl-full -mr-12 -mt-12"></div>
+                                   <span className="text-[10px] font-black opacity-60 uppercase tracking-widest mb-4">Security Level</span>
+                                   <span className="text-3xl font-black uppercase tracking-tight">{proctoring.score > 80 ? 'Low' : proctoring.score >= 50 ? 'Medium' : 'High'} Risk</span>
+                                   <div className="mt-4 px-3 py-1 bg-white/50 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                       Status: {lead.proctoringStatus || 'unknown'}
+                                   </div>
+                                </div>
+                                <div className="bg-indigo-600 rounded-[32px] p-8 text-white flex flex-col items-center justify-center shadow-xl shadow-indigo-600/20 relative overflow-hidden group">
+                                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50"></div>
+                                   <span className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-4">Assessment Verfied</span>
+                                   <FiCheckCircle size={40} className="mb-2" />
+                                   <span className="text-[9px] font-bold opacity-70">AI MONITORING ACTIVE</span>
+                                </div>
+                            </div>
+
+                            {/* Violation Details */}
+                            <div className="bg-white border border-gray-100 rounded-[40px] overflow-hidden shadow-sm">
+                                <div className="px-10 py-8 border-b border-gray-50 flex items-center justify-between">
+                                    <h4 className="text-[13px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-3">
+                                        <div className="w-2 h-2 bg-indigo-600 rounded-full animate-ping"></div>
+                                        Telemetry Violations
+                                    </h4>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Real-time Forensics</span>
+                                </div>
+                                <div className="p-0">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                            <tr>
+                                                <th className="px-10 py-6">Incident Category</th>
+                                                <th className="px-10 py-6">Hits Recorded</th>
+                                                <th className="px-10 py-6 text-right">Integrity Impact</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
+                                            {[
+                                                { label: 'Face Detection Failure', key: 'noFace', weight: 10 },
+                                                { label: 'Multiple Entities Present', key: 'multipleFaces', weight: 30 },
+                                                { label: 'Browser Context Switch', key: 'tabSwitch', weight: 20 },
+                                                { label: 'Acoustic Interference', key: 'noise', weight: 10 },
+                                                { label: 'Security Modality Violation', key: 'fullscreenExit', weight: 15 }
+                                            ].map((v) => (
+                                                <tr key={v.key} className="hover:bg-slate-50/50 transition-colors group">
+                                                    <td className="px-10 py-8">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[15px] font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{v.label}</span>
+                                                            <span className="text-[10px] text-gray-400 font-medium mt-1">Weight: {v.weight}% per event</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-10 py-8">
+                                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black ${(proctoring.violations?.[v.key] || 0) > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                                            {proctoring.violations?.[v.key] || 0}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-10 py-8 text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className={`text-[13px] font-black ${(proctoring.violations?.[v.key] || 0) > 0 ? 'text-rose-600' : 'text-emerald-500'}`}>
+                                                                {(proctoring.violations?.[v.key] || 0) > 0 ? `-${(proctoring.violations?.[v.key] || 0) * v.weight}%` : 'NO IMPACT'}
+                                                            </span>
+                                                            <span className="text-[9px] font-bold text-gray-300 uppercase tracking-tighter mt-1">Forensic Analysis</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="py-40 text-center bg-gray-50/50 rounded-[40px] border border-dashed border-gray-100">
+                            <FiAlertTriangle className="mx-auto text-gray-200 mb-6" size={64} />
+                            <h3 className="text-lg font-black text-gray-400 uppercase tracking-widest">No proctoring record found</h3>
+                            <p className="text-[11px] text-gray-300 mt-2 font-bold uppercase tracking-[0.2em]">The candidate may not have used the secure browser mode.</p>
+                        </div>
+                    )}
                 </div>
               )}
             </div>

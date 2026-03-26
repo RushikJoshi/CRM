@@ -117,15 +117,6 @@ function Users() {
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
-
-                <div className="h-4 w-px bg-slate-100 mx-1" />
-
-                <button
-                    onClick={() => setActiveTask('create')}
-                    className="btn-saas-primary h-8 px-4 text-[11px] gap-2 ml-auto"
-                >
-                    <FiPlus size={14} /> Onboard User
-                </button>
             </div>
 
             {loading ? (

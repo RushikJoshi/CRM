@@ -26,23 +26,23 @@ const getPanelByPath = (path) => {
 export const tokenManager = {
     getTokenByRole: (role) => {
         const key = getPanelKey(role);
-        return key ? localStorage.getItem(key) : null;
+        return key ? sessionStorage.getItem(key) : null;
     },
     getTokenByPath: (path) => {
         const key = getPanelByPath(path);
-        return key ? localStorage.getItem(key) : null;
+        return key ? sessionStorage.getItem(key) : null;
     },
     setToken: (role, token) => {
         const key = getPanelKey(role);
-        if (key) localStorage.setItem(key, token);
+        if (key) sessionStorage.setItem(key, token);
     },
     clearToken: (role) => {
         const key = getPanelKey(role);
-        if (key) localStorage.removeItem(key);
+        if (key) sessionStorage.removeItem(key);
     },
     clearTokenByPath: (path) => {
         const key = getPanelByPath(path);
-        if (key) localStorage.removeItem(key);
+        if (key) sessionStorage.removeItem(key);
     }
 };
 

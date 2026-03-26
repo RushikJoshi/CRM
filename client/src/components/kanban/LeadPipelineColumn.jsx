@@ -30,7 +30,7 @@ function LeadPipelineColumn({ stageKey, stageLabel, leads, onViewLead }) {
   const StageIcon = isWon ? FiAward : (stageKey.toLowerCase() === "proposition" ? FiZap : FiTarget);
 
   return (
-    <div className="flex-1 min-w-[240px] max-w-[320px] h-full flex flex-col">
+    <div className="shrink-0 w-[270px] md:w-[320px] h-full flex flex-col">
       <div
         ref={setNodeRef}
         className={`

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import BranchTable from "../components/BranchTable";
-import AddBranchModal from "../components/AddBranchModal";
 import Pagination from "../components/Pagination";
 import { FiPlus, FiSearch, FiFilter, FiX } from "react-icons/fi";
 import { useToast } from "../context/ToastContext";
@@ -20,13 +19,13 @@ function Branches() {
     const [total, setTotal] = useState(0);
     const pageSize = 10;
     
-    const [activeTask, setActiveTask] = useState(null); // 'create', 'edit'
-    const [editingBranch, setEditingBranch] = useState(null);
+    const currentUser = getCurrentUser();
+    const isSuperAdmin = currentUser?.role === "super_admin";
+    const isSales = currentUser?.role === "sales";
+    const rolePath = isSuperAdmin ? "/superadmin" : isSales ? "/sales" : currentUser?.role === "branch_manager" ? "/branch" : "/company";
 
     const navigate = useNavigate();
     const toast = useToast();
-    const currentUser = getCurrentUser();
-    const isSuperAdmin = currentUser?.role === "super_admin";
     const apiBase = isSuperAdmin ? "/super-admin/branches" : "/branches";
 
     const fetchBranches = async () => {
@@ -81,45 +80,10 @@ function Branches() {
         }
     };
 
-    const handleFormSubmit = async (formData) => {
-        try {
-            if (activeTask === 'edit' && editingBranch) {
-                await API.put(`${apiBase}/${editingBranch._id}`, formData);
-                toast.success("Branch updated.");
-            } else {
-                await API.post(apiBase, formData);
-                toast.success("Branch created.");
-            }
-            setActiveTask(null);
-            setEditingBranch(null);
-            fetchBranches();
-        } catch (err) {
-            toast.error(err.response?.data?.message || "Operation failed.");
-        }
-    };
 
     useEffect(() => { setPage(1); }, [search, selectedCompany, statusFilter]);
     useEffect(() => { fetchBranches(); }, [search, selectedCompany, statusFilter, page]);
     useEffect(() => { fetchCompanies(); }, []);
-
-    const closeTask = () => {
-        setActiveTask(null);
-        setEditingBranch(null);
-    };
-
-    if (activeTask === 'create' || activeTask === 'edit') {
-        return (
-            <div className="animate-fade-in bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
-                <AddBranchModal 
-                    isOpen={true} 
-                    onClose={closeTask} 
-                    onSubmit={handleFormSubmit}
-                    editingData={editingBranch}
-                    isStandalone={true}
-                />
-            </div>
-        );
-    }
 
     return (
         <div className="animate-fade-in space-y-3 pb-4">
@@ -138,7 +102,7 @@ function Branches() {
 
                 <div className="h-4 w-px bg-slate-100 mx-1" />
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1">
                     {isSuperAdmin && (
                         <div className="relative">
                             <FiBriefcase size={10} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -167,8 +131,16 @@ function Branches() {
                             <option value="inactive">Inactive</option>
                         </select>
                     </div>
-
                 </div>
+
+                <div className="h-4 w-px bg-slate-100 mx-1" />
+
+                <button
+                    onClick={() => navigate(`${rolePath}/branches/create`)}
+                    className="h-8 px-4 bg-emerald-600 text-white rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-2 shrink-0 shadow-sm"
+                >
+                    <FiPlus size={14} /> Add Branch
+                </button>
             </div>
 
             {loading ? (
@@ -180,7 +152,7 @@ function Branches() {
                 <div className="space-y-4">
                     <BranchTable
                         branches={branches}
-                        onEdit={(b) => { setEditingBranch(b); setActiveTask('edit'); }}
+                        onEdit={(b) => navigate(`${rolePath}/branches/${b._id}/edit`)}
                         onDelete={handleDelete}
                         onToggleStatus={handleToggleStatus}
                     />

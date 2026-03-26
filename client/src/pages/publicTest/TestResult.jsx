@@ -77,6 +77,38 @@ const TestResult = () => {
                     ></motion.div>
                 </div>
                 <span className="mt-5 text-[10px] font-black text-slate-400 uppercase tracking-widest relative">{percentage}% Intelligence Quotient</span>
+
+                {/* Proctoring Score Section */}
+                <div className="w-full mt-10 pt-8 border-t border-slate-100/50 flex flex-col items-center">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Proctoring Integrity Evaluation</span>
+                    <div className="flex items-center gap-3">
+                        <div className={`text-3xl font-black ${result.proctoringScore > 80 ? 'text-emerald-500' : result.proctoringScore >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>{result.proctoringScore}</div>
+                        <div className="h-4 w-px bg-slate-200"></div>
+                        <div className="text-[11px] font-bold text-slate-500 uppercase tracking-tighter">
+                            {result.proctoringStatus === 'denied' ? 'Incomplete Monitoring' : result.proctoringScore > 80 ? 'Low Risk Profile' : result.proctoringScore >= 50 ? 'Medium Risk Profile' : 'High Risk Activity'}
+                        </div>
+                    </div>
+                    
+                    {result.proctoringStatus === 'active' && result.violations && (
+                        <div className="grid grid-cols-2 gap-4 w-full mt-8">
+                            <div className="bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm flex flex-col items-center">
+                                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Tab Switches</span>
+                                <span className={`text-lg font-black ${result.violations.tabSwitch > 0 ? 'text-rose-500' : 'text-slate-800'}`}>{result.violations.tabSwitch || 0}</span>
+                            </div>
+                            <div className="bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm flex flex-col items-center">
+                                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Acoustic Hits</span>
+                                <span className={`text-lg font-black ${result.violations.noise > 0 ? 'text-rose-500' : 'text-slate-800'}`}>{result.violations.noise || 0}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {result.proctoringStatus === 'denied' && (
+                        <div className="mt-6 p-4 bg-orange-50 border border-orange-100 rounded-2xl flex items-center gap-3">
+                            <FiAlertTriangle className="text-orange-500" />
+                            <p className="text-[10px] text-orange-700 font-bold uppercase tracking-tight text-left leading-relaxed">Evaluation trust is significantly reduced due to camera/mic restriction.</p>
+                        </div>
+                    )}
+                </div>
             </motion.div>
         )}
 

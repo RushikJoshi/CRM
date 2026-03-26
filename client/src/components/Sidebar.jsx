@@ -33,7 +33,7 @@ import {
     FiSend,
     FiLayout
 } from "react-icons/fi";
-import { AuthContext, getCurrentUser } from "../context/AuthContext";
+import { AuthContext, getCurrentUser, USER_DATA_KEYS } from "../context/AuthContext";
 import logo from "/src/assets/logos/edupathpro_logo.png";
 
 const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) => {
@@ -134,16 +134,20 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
                 <div className={`flex items-center border-b border-[var(--sb-border)] h-[var(--tb-h)] min-h-[var(--tb-h)] ${isCollapsed ? "justify-center" : "px-5 justify-between"}`}>
                     <div className="flex items-center gap-3">
                         <img 
-                            src={logo} 
-                            alt="EduPathpro" 
+                            src={user?.companyId?.logoUrl || logo} 
+                            alt={user?.companyId?.name || "EduPathpro"} 
                             className="w-8 h-8 object-contain shrink-0" 
                         />
                         <div className="flex flex-col">
                             {!isCollapsed && (
-                                <span className="text-[14px] font-black text-[#0F172A] tracking-tighter leading-none">EduPathpro</span>
+                                <span className="text-[14px] font-black text-[#0F172A] tracking-tighter leading-none">
+                                    {user?.companyId?.name || "EduPathpro"}
+                                </span>
                             )}
                             {!isCollapsed && (
-                                <span className="text-[8px] font-black uppercase tracking-[0.05em] text-slate-400 mt-0.5 leading-none">by Gitakshmi Group</span>
+                                <span className="text-[8px] font-black uppercase tracking-[0.05em] text-slate-400 mt-0.5 leading-none">
+                                    {user?.companyId?.tagline || "Powered by EduPath"}
+                                </span>
                             )}
                         </div>
                     </div>

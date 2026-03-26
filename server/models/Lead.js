@@ -108,6 +108,15 @@ const leadSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    proctoringScore: {
+      type: Number,
+      default: 100
+    },
+    proctoringRisk: {
+      type: String,
+      enum: ["Low", "Medium", "High"],
+      default: "Low"
+    },
     website: {
       type: String,
       default: ""
@@ -171,6 +180,8 @@ const leadSchema = new mongoose.Schema(
       type: Date
     },
 
+    testToken: { type: String, default: null },
+    proctoringStatus: { type: String, enum: ["active", "denied", "not_supported", "unknown"], default: "unknown" },
     customId: { type: String, unique: true },
   },
   { timestamps: true }

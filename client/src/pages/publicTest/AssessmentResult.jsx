@@ -24,7 +24,10 @@ const AssessmentResult = () => {
     setSubmitting(true);
     setError(null);
     try {
-      await API.post('/test/public/inquiry/create', formData);
+      await API.post('/test/public/inquiry/create', {
+        ...formData,
+        proctoringStatus: scoreData?.proctoringStatus
+      });
       setStep('final');
     } catch (err) {
       setError(err.response?.data?.message || "Linking failed. Try again.");
@@ -45,7 +48,7 @@ const AssessmentResult = () => {
     );
   }
 
-  const { score, totalMarks, showResult } = scoreData;
+  const { score, totalMarks, showResult, proctoringStatus } = scoreData;
   const percentage = Math.round((score / totalMarks) * 100);
 
   return (

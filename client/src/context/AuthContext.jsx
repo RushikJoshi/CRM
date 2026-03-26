@@ -34,7 +34,7 @@ export const getSessionKeyForPath = (path = window.location.pathname) => {
 export const readSession = (role) => {
   if (!role) return null;
   try {
-    const userRaw = localStorage.getItem(USER_DATA_KEYS[role]);
+    const userRaw = sessionStorage.getItem(USER_DATA_KEYS[role]);
     const token = tokenManager.getTokenByRole(role);
     if (!token || !userRaw) return null;
     return { token, user: JSON.parse(userRaw) };
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const role = getSessionKeyForPath(location.pathname);
     if (role) {
-      const savedUser = localStorage.getItem(USER_DATA_KEYS[role]);
+      const savedUser = sessionStorage.getItem(USER_DATA_KEYS[role]);
       if (savedUser) {
         setUser(JSON.parse(savedUser));
       } else {
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
     // Store user data in panel-specific key
     const userKey = USER_DATA_KEYS[role];
     if (userKey) {
-      localStorage.setItem(userKey, JSON.stringify(userData));
+      sessionStorage.setItem(userKey, JSON.stringify(userData));
     }
 
     setUser(userData);
@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
 
     if (role) {
       tokenManager.clearToken(role);
-      localStorage.removeItem(USER_DATA_KEYS[role]);
+      sessionStorage.removeItem(USER_DATA_KEYS[role]);
     }
 
     setUser(null);

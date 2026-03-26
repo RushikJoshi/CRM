@@ -213,7 +213,7 @@ export default function LeadPipelineBoard() {
       >
         <div
           ref={scrollRef}
-          className="flex-1 flex flex-nowrap overflow-hidden gap-3 pb-2"
+          className="flex-1 flex flex-nowrap overflow-x-auto no-scrollbar gap-3 pb-2"
         >
           {/* RENDER ALL STAGES DYNAMICALLY FROM DB */}
           {pipeline?.stages?.map((stage) => (

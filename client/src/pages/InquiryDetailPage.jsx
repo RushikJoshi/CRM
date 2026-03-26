@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
     FiArrowLeft, FiUser, FiMail, FiPhone, FiInbox,
     FiMessageSquare, FiActivity, FiGlobe, FiCheckCircle,
-    FiClock, FiSend, FiTag, FiMoreHorizontal, FiDownload, FiFile, FiTrash2, FiUserCheck, FiZap
+    FiClock, FiSend, FiTag, FiMoreHorizontal, FiDownload, FiFile, FiTrash2, FiUserCheck, FiZap, FiExternalLink
 } from "react-icons/fi";
 import API from "../services/api";
 import { useToast } from "../context/ToastContext";
@@ -93,6 +93,19 @@ export default function InquiryDetailPage() {
     const [noteText, setNoteText] = useState("");
     const [savingNote, setSavingNote] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [updatingAssignee, setUpdatingAssignee] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [proctoring, setProctoring] = useState(null);
+    const [proctoringLoading, setProctoringLoading] = useState(false);
+
+    const fetchUsers = useCallback(async () => {
+        try {
+            const res = await API.get("/users?limit=500");
+            setUsers(res.data?.data || []);
+        } catch (err) {
+            console.error("Failed to fetch users", err);
+        }
+    }, []);
 
     const fetchInquiry = useCallback(async () => {
         try {
@@ -118,10 +131,24 @@ export default function InquiryDetailPage() {
         }
     }, [id]);
 
+    const fetchProctoring = useCallback(async (token) => {
+        if (!token) return;
+        setProctoringLoading(true);
+        try {
+            const res = await API.get(`/test/management/proctoring/${token}`);
+            setProctoring(res.data?.data || null);
+        } catch (err) {
+            console.error("Failed to load proctoring log", err);
+        } finally {
+            setProctoringLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         fetchInquiry();
         fetchActivities();
-    }, [fetchInquiry, fetchActivities]);
+        fetchUsers();
+    }, [fetchInquiry, fetchActivities, fetchUsers]);
 
     useEffect(() => {
         if (!socket || !id) return;
@@ -135,6 +162,12 @@ export default function InquiryDetailPage() {
         return () => socket.off("inquiry_updated", handleUpdate);
     }, [socket, id, fetchInquiry, fetchActivities]);
 
+    useEffect(() => {
+        if (inquiry?.testToken) {
+            fetchProctoring(inquiry.testToken);
+        }
+    }, [inquiry?.testToken, fetchProctoring]);
+
     const handleUpdateStatus = async (newStatus) => {
         setUpdatingStatus(true);
         try {
@@ -146,6 +179,20 @@ export default function InquiryDetailPage() {
             toast.error(err.response?.data?.message || "Failed to update status.");
         } finally {
             setUpdatingStatus(false);
+        }
+    };
+
+    const handleAssign = async (userId) => {
+        setUpdatingAssignee(true);
+        try {
+            await API.patch(`/inquiries/${id}`, { assignedTo: userId });
+            toast.success("Assignment updated");
+            fetchInquiry();
+            fetchActivities();
+        } catch (err) {
+            toast.error("Failed to update assignment");
+        } finally {
+            setUpdatingAssignee(false);
         }
     };
 
@@ -220,6 +267,33 @@ export default function InquiryDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <div className="relative group/assign">
+                        <select 
+                            value={inquiry.assignedTo?._id || ""}
+                            onChange={(e) => handleAssign(e.target.value)}
+                            disabled={updatingAssignee}
+                            className="h-10 pl-10 pr-10 bg-slate-50 border border-slate-100 rounded-2xl text-[12px] font-bold text-slate-700 outline-none focus:bg-white focus:border-blue-500/20 transition-all appearance-none cursor-pointer min-w-[160px]"
+                        >
+                            <option value="" disabled>Assign Case...</option>
+                            {users.map(u => (
+                                <option key={u._id} value={u._id}>{u.name}</option>
+                            ))}
+                        </select>
+                        <FiUserCheck size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        {updatingAssignee && <div className="absolute inset-0 bg-white/50 rounded-2xl flex items-center justify-center"><div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
+                    </div>
+
+                    {inquiry.status === "converted" && inquiry.leadId && (
+                        <button 
+                            onClick={() => {
+                                const base = currentUser?.role === 'super_admin' ? '/superadmin' : (currentUser?.role === 'sales' ? '/sales' : (currentUser?.role === 'branch_manager' ? '/branch' : '/company'));
+                                navigate(`${base}/leads/${inquiry.leadId}`);
+                            }}
+                            className="btn-saas-primary bg-emerald-600 hover:bg-emerald-700 px-6 h-10 gap-2 shadow-lg shadow-emerald-500/20"
+                        >
+                            <FiExternalLink size={16} /> View Lead Record
+                        </button>
+                    )}
                     {inquiry.status !== "converted" && (
                         <>
                             <select 
@@ -345,6 +419,15 @@ export default function InquiryDetailPage() {
                                 Private Notes
                                 {tab === 'notes' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-t-full shadow-lg shadow-blue-500/20 animate-fade-in" />}
                             </button>
+                            {inquiry.testToken && (
+                                <button 
+                                    onClick={() => setTab("proctoring")}
+                                    className={`pb-6 text-[13px] font-black uppercase tracking-widest transition-all relative ${tab === 'proctoring' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    AI Proctoring Report
+                                    {tab === 'proctoring' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-t-full shadow-lg shadow-blue-500/20 animate-fade-in" />}
+                                </button>
+                            )}
                         </div>
 
                         <div className="flex-1 p-8">
@@ -397,6 +480,77 @@ export default function InquiryDetailPage() {
                                     <FiTag className="text-slate-200 mb-4" size={40} />
                                     <p className="text-[14px] font-bold text-slate-400">Private notes feature coming soon.</p>
                                     <p className="text-[11px] text-slate-300 mt-1 uppercase font-black tracking-widest">Use Activity history to log notes for now.</p>
+                                </div>
+                            )}
+
+                            {tab === "proctoring" && (
+                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    {proctoringLoading ? (
+                                        <div className="flex flex-col items-center py-20">
+                                            <div className="w-10 h-10 border-4 border-slate-100 border-t-indigo-500 rounded-full animate-spin" />
+                                            <p className="mt-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Analyzing Telemetry...</p>
+                                        </div>
+                                    ) : proctoring ? (
+                                        <div className="space-y-10">
+                                            {/* Header Score Card */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="bg-slate-50 border border-slate-100 rounded-[2rem] p-8 flex flex-col items-center justify-center">
+                                                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Final Integrity Score</span>
+                                                   <div className="flex items-baseline gap-2">
+                                                      <span className={`text-6xl font-black ${proctoring.score > 80 ? 'text-emerald-500' : 'text-rose-500'}`}>{proctoring.score}</span>
+                                                      <span className="text-xl font-bold text-slate-300">/ 100</span>
+                                                   </div>
+                                                </div>
+                                                <div className={`rounded-[2rem] p-8 flex flex-col items-center justify-center border ${proctoring.score > 80 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'}`}>
+                                                   <span className="text-[10px] font-black opacity-60 uppercase tracking-widest mb-4">Assessed Risk Level</span>
+                                                   <span className="text-4xl font-black uppercase tracking-tight">{proctoring.score > 80 ? 'Low' : proctoring.score >= 50 ? 'Medium' : 'High'} Risk</span>
+                                                   <div className="mt-4 px-3 py-1 bg-white/50 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                                       Status: {inquiry.proctoringStatus || 'unknown'}
+                                                   </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Details Table */}
+                                            <div>
+                                                <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-widest mb-6 px-2">Violation Breakdown</h4>
+                                                <div className="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm">
+                                                    <table className="w-full text-left">
+                                                        <thead className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                            <tr>
+                                                                <th className="px-6 py-4">Violation Type</th>
+                                                                <th className="px-6 py-4">Incident Count</th>
+                                                                <th className="px-6 py-4 text-right">Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-50">
+                                                            {[
+                                                                { label: 'Face Not Detected', key: 'noFace', weight: 10 },
+                                                                { label: 'Multiple Faces Detected', key: 'multipleFaces', weight: 30 },
+                                                                { label: 'Tab Switched / Focus Lost', key: 'tabSwitch', weight: 20 },
+                                                                { label: 'Background Noise', key: 'noise', weight: 10 },
+                                                                { label: 'Fullscreen Modality Exit', key: 'fullscreenExit', weight: 15 }
+                                                            ].map((v) => (
+                                                                <tr key={v.key} className="hover:bg-slate-50/50 transition-colors">
+                                                                    <td className="px-6 py-5 text-[13px] font-bold text-slate-700">{v.label}</td>
+                                                                    <td className="px-6 py-5 text-[13px] font-black text-slate-900">{proctoring.violations?.[v.key] || 0}</td>
+                                                                    <td className="px-6 py-5 text-right">
+                                                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tight border ${(proctoring.violations?.[v.key] || 0) > 0 ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                                                                            {(proctoring.violations?.[v.key] || 0) > 0 ? `${(proctoring.violations?.[v.key] || 0) * v.weight}% Penalty` : 'Clean Record'}
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="py-20 text-center">
+                                            <FiAlertTriangle className="mx-auto text-slate-100 mb-4" size={48} />
+                                            <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">No proctoring logs found for this session.</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

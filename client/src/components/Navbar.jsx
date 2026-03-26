@@ -82,7 +82,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
                 {/* Breadcrumbs */}
                 <nav className="hidden md:flex items-center gap-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest h-full">
                     {breadcrumbs.map((bc, i) => (
-                        <React.Fragment key={bc.url}>
+                        <React.Fragment key={`${bc.url}-${i}`}>
                             {i > 0 && <span className="opacity-20 text-[14px] font-light">/</span>}
                             <Link 
                                 to={bc.url} 
@@ -133,8 +133,8 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                     {recentMessages.length === 0 ? (
                                         <div className="py-12 text-center text-xs text-slate-400 font-medium">No recent messages</div>
                                     ) : (
-                                        recentMessages.map((msg) => (
-                                            <div key={msg._id} className="p-4 hover:bg-slate-50/50 border-b border-slate-50 last:border-0 cursor-pointer transition-colors" onClick={() => navigate(`${base}/leads/${msg.leadId}`)}>
+                                        recentMessages.map((msg, i) => (
+                                            <div key={msg._id || i} className="p-4 hover:bg-slate-50/50 border-b border-slate-50 last:border-0 cursor-pointer transition-colors" onClick={() => navigate(`${base}/leads/${msg.leadId}`)}>
                                                 <p className="text-[13px] font-bold text-slate-700 line-clamp-1">{msg.note || msg.title}</p>
                                                 <p className="text-[11px] text-slate-400 mt-1 font-medium">{new Date(msg.createdAt || msg.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                             </div>
@@ -170,8 +170,8 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                     {notifications.length === 0 ? (
                                         <div className="py-12 text-center text-xs text-slate-400 font-medium">No new notifications</div>
                                     ) : (
-                                        notifications.map((n) => (
-                                            <div key={n._id} className="p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+                                        notifications.map((n, i) => (
+                                            <div key={n._id || i} className="p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
                                                 <p className="text-[13px] font-bold text-slate-700">{n.title}</p>
                                                 <p className="text-[12px] text-slate-400 mt-1 font-medium line-clamp-2">{n.message}</p>
                                                 <button onClick={() => markAsRead(n._id)} className="mt-3 text-[11px] font-bold text-[#38BDF8] hover:underline">Mark read</button>
@@ -195,15 +195,11 @@ const Navbar = ({ toggleMobileSidebar }) => {
                         <div className="hidden sm:block text-right">
                             <p className="text-[13px] font-black text-slate-700 leading-none group-hover:text-[#38BDF8] transition-colors poppins tracking-tight uppercase">{user.name}</p>
                         </div>
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 border-2 border-white shadow-sm overflow-hidden group-hover:border-[#38BDF8] transition-all ring-1 ring-slate-100 shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center text-slate-400 group-hover:border-[#38BDF8] group-hover:text-[#38BDF8] transition-all ring-1 ring-slate-100 shrink-0 overflow-hidden">
                             {user.profilePhoto ? (
                                 <img src={user.profilePhoto} alt={user.name} className="w-full h-full object-cover" />
                             ) : (
-                                <img 
-                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "User")}&background=38BDF8&color=fff&bold=true&font-size=0.33`} 
-                                    alt={user.name} 
-                                    className="w-full h-full object-cover" 
-                                />
+                                <FiUser size={18} strokeWidth={2.5} />
                             )}
                         </div>
                     </button>

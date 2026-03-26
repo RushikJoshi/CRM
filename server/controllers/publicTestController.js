@@ -2,6 +2,7 @@ const Course = require("../models/Course");
 const Question = require("../models/Question");
 const TestSession = require("../models/TestSession");
 const TestSubmission = require("../models/TestSubmission");
+const ProctoringLog = require("../models/ProctoringLog");
 const LandingPage = require("../models/LandingPage");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
@@ -173,21 +174,74 @@ exports.submitTest = async (req, res, next) => {
 
     const course = await Course.findById(session.courseId);
 
+    // Fetch proctoring summary
+    const proctoring = await ProctoringLog.findOne({ token });
+
     res.json({ 
       success: true, 
       data: { 
         score, 
         totalMarks, 
-        showResult: course?.showResult 
+        showResult: course?.showResult,
+        proctoringScore: proctoring?.score || 100,
+        violations: proctoring?.violations || null,
+        proctoringStatus: proctoring?.status || "active"
       } 
     });
+  } catch (error) { next(error); }
+};
+
+// ── Proctoring System ────────────────────────────────────────────────────────
+exports.logProctoring = async (req, res, next) => {
+  try {
+    const { token, violations, proctoringStatus } = req.body;
+    if (!token) return res.status(400).json({ success: false, message: "Token required." });
+
+    let log = await ProctoringLog.findOne({ token });
+    if (!log) {
+      log = new ProctoringLog({ token });
+    }
+
+    // Merge violations (always keep max count or incremental?)
+    // User said: "Send data every 10–15 seconds: { testId, violations, timestamp }"
+    // This implies violations are totals or current snapshots.
+    // I'll assume they are totals from the frontend for simplicity.
+    log.violations = {
+      noFace: violations.noFace || 0,
+      multipleFaces: violations.multipleFaces || 0,
+      tabSwitch: violations.tabSwitch || 0,
+      noise: violations.noise || 0,
+      fullscreenExit: violations.fullscreenExit || 0
+    };
+
+    // Calculate score
+    let score = 100;
+    score -= (log.violations.noFace * 10);
+    score -= (log.violations.multipleFaces * 30);
+    score -= (log.violations.tabSwitch * 20);
+    score -= (log.violations.noise * 10);
+    score -= (log.violations.fullscreenExit * 15);
+
+    log.score = Math.max(0, score);
+    await log.save();
+
+    res.json({ success: true, score: log.score });
+  } catch (error) { next(error); }
+};
+
+exports.getProctoringDetails = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const log = await ProctoringLog.findOne({ token });
+    if (!log) return res.status(404).json({ success: false, message: "Proctoring log not found." });
+    res.json({ success: true, data: log });
   } catch (error) { next(error); }
 };
 
 // ── Inquiry-Based Capture ───────────────────────────────────────────────────
 exports.submitLead = async (req, res, next) => {
   try {
-    const { token, name, email, phone, location } = req.body;
+    const { token, name, email, phone, location, proctoringStatus } = req.body;
     if (!token || !name || !email) return res.status(400).json({ success: false, message: "Identification required." });
 
     const submission = await TestSubmission.findOne({ token });
@@ -205,6 +259,12 @@ exports.submitLead = async (req, res, next) => {
 
     // 1. DUPLICATE CHECK (24H)
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    // FETCH PROCTORING LOG
+    const procLog = await ProctoringLog.findOne({ token });
+    const pScore = procLog ? procLog.score : 100;
+    const pRisk = pScore > 80 ? "Low" : pScore >= 50 ? "Medium" : "High";
+
     let inquiry = await Inquiry.findOne({
       companyId,
       $or: [{ email: emailStr }, { phone: phoneStr || "NONE" }],
@@ -216,8 +276,12 @@ exports.submitLead = async (req, res, next) => {
       inquiry.name = name;
       inquiry.courseSelected = course?.title || inquiry.courseSelected;
       inquiry.testScore = testScorePerc;
+      inquiry.proctoringScore = pScore;
+      inquiry.proctoringRisk = pRisk;
+      inquiry.testToken = token;
+      inquiry.proctoringStatus = proctoringStatus || (procLog ? "active" : "unknown");
       inquiry.location = location || inquiry.location;
-      inquiry.message = `Updated via Test Portal (Score: ${testScorePerc}%)`;
+      inquiry.message = `Updated via Test Portal (Score: ${testScorePerc}%) [Proctoring: ${pScore} / ${pRisk}]`;
       await inquiry.save();
     } else {
       // Create new
@@ -230,8 +294,12 @@ exports.submitLead = async (req, res, next) => {
         source: "test_portal",
         courseSelected: course?.title || "Unknown",
         testScore: testScorePerc,
+        proctoringScore: pScore,
+        proctoringRisk: pRisk,
+        testToken: token,
+        proctoringStatus: proctoringStatus || (procLog ? "active" : "unknown"),
         status: "new",
-        message: `Captured via Test Portal Assessment (Result: ${submission.score}/${submission.totalMarks})`
+        message: `Captured via Test Portal Assessment (Result: ${submission.score}/${submission.totalMarks}) [Proctoring: ${pScore} / ${pRisk}]`
       });
 
       // Log activity
@@ -243,25 +311,14 @@ exports.submitLead = async (req, res, next) => {
       });
     }
 
-    // ── AUTO CONVERSION: If testScore >= 70% ──
-    let leadId = null;
-    if (testScorePerc >= 70 && inquiry.status !== "converted") {
-      try {
-        const lead = await inquiryCtrl.performConversion(inquiry, null);
-        leadId = lead._id;
-      } catch (convErr) {
-        console.error("Test Portal Auto-conversion failed:", convErr);
-      }
-    }
-
-    // ── Notification (Legacy/Manual) ────────────
+    // Notify admin/candidate (optional/legacy)
     sendResultEmail(emailStr, name, submission.score, submission.totalMarks || 10);
 
+    // Final response
     res.json({ 
       success: true, 
-      message: leadId ? "Elite performance! Lead generated automatically." : "Profile linked. Inquiry captured.",
-      inquiryId: inquiry._id,
-      leadId: leadId
+      message: "Profile linked. Inquiry captured successfully.",
+      inquiryId: inquiry._id
     });
   } catch (error) { next(error); }
 };
