@@ -4,15 +4,17 @@ const inquiryController = require("../controllers/inquiryController");
 const auth = require("../middleware/auth");
 const checkCompanyAccess = require("../middleware/checkCompanyAccess");
 
-// ✅ auth FIRST — applies to ALL routes below including POST /
+// ✅ auth FIRST — applies to ALL routes below
 router.use(auth, checkCompanyAccess);
 
 router.post("/", inquiryController.createInquiry);
-router.get("/", inquiryController.getInquiries);
+router.get("/", inquiryController.getGetInquiries || inquiryController.getInquiries); // Fallback for naming
 router.get("/:id", inquiryController.getInquiryById);
-router.patch("/:id/assign", inquiryController.assignInquiry);
-router.post("/:id/convert", inquiryController.convertInquiryToLead);
-router.put("/:id/status", inquiryController.updateInquiryStatus);
+router.patch("/:id", inquiryController.updateInquiry);
 router.delete("/:id", inquiryController.deleteInquiry);
 
+// Convert:
+router.post("/:id/convert", inquiryController.convertInquiryToLead);
+
 module.exports = router;
+

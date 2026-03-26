@@ -38,7 +38,7 @@ exports.publicCheckApiKey = async (req, res) => {
 
 exports.publicCreateInquiry = async (req, res) => {
     try {
-        // Support multiple ways WordPress plugins send keys
+        const inquiryCtrl = require("./inquiryController");
         const apiKey =
             req.headers["x-api-key"] ||
             req.headers["X-API-KEY"] ||
@@ -47,105 +47,117 @@ exports.publicCreateInquiry = async (req, res) => {
             req.body?.companyId;
 
         if (!apiKey) {
-            return res.status(401).json({ success: false, message: "Missing x-api-key." });
+            return res.status(401).json({ success: false, message: "Missing API Key (x-api-key)." });
         }
 
-        const { name, email, phone, message, source, website, city, address, course, location } = req.body;
+        const { name, email, phone, message, source, courseSelected, testScore, location } = req.body;
 
-        if (!name || !email || !phone) {
-            return res.status(400).json({ success: false, message: "name, email, phone are required." });
-        }
-        // Normalize: ensure phone is string (WordPress may send number)
-        const phoneStr = String(phone || "").trim();
-        if (!phoneStr) {
-            return res.status(400).json({ success: false, message: "phone is required." });
+        if (!name || !email) {
+            return res.status(400).json({ success: false, message: "name and email are required." });
         }
 
-        // Validate companyId using API key (use ObjectId so it matches list query)
+        // Validate company
         let companyId;
         try {
             companyId = mongoose.Types.ObjectId.isValid(apiKey) ? new mongoose.Types.ObjectId(apiKey) : null;
         } catch {
             companyId = null;
         }
-        if (!companyId) {
-            return res.status(400).json({ success: false, message: "Invalid x-api-key format." });
-        }
-        const company = await Company.findOne({ _id: companyId, status: "active" });
-        if (!company) {
-            console.warn("Public inquiry rejected: Company not found or inactive for apiKey:", companyId);
-            return res.status(404).json({ success: false, message: "Company not found or inactive." });
-        }
 
-        // STEP 11 — DUPLICATE LEAD DETECTION
-        const Lead = require("../models/Lead");
-        let existingLead = await Lead.findOne({
-            $or: [{ email }, { phone: phoneStr }],
+        if (!companyId) return res.status(400).json({ success: false, message: "Invalid API Key format." });
+
+        const company = await Company.findOne({ _id: companyId, status: "active" });
+        if (!company) return res.status(404).json({ success: false, message: "Company not found or inactive." });
+
+        // Normalize phone
+        const phoneStr = phone ? String(phone).trim() : "";
+
+        // 1. DUPLICATE PREVENTION: Check same phone OR email within last 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        let inquiry = await Inquiry.findOne({
             companyId,
-            isDeleted: false
+            $or: [{ email: String(email).trim().toLowerCase() }, { phone: phoneStr || "NONE" }],
+            createdAt: { $gte: twentyFourHoursAgo }
         });
 
-        let existingLeadId = null;
-        if (existingLead) {
-            existingLead.notes = (existingLead.notes || "") + "\n\nNew Inquiry: " + (message || "No message");
-            await existingLead.save();
-            existingLeadId = existingLead._id;
+        if (inquiry) {
+            // Update existing
+            inquiry.name = name;
+            inquiry.message = message || inquiry.message;
+            inquiry.courseSelected = courseSelected || inquiry.courseSelected;
+            inquiry.testScore = testScore || inquiry.testScore;
+            await inquiry.save();
+            
+            // Log update
+            const Activity = require("../models/Activity");
+            await Activity.create({
+                inquiryId: inquiry._id,
+                companyId,
+                type: "inquiry",
+                note: "External Inquiry updated (Duplicate prevented)"
+            });
+        } else {
+            // Mapping location to branch
+            let branchId = null;
+            if (location) {
+                const branch = await Branch.findOne({
+                    companyId,
+                    isDeleted: false,
+                    $or: [
+                        { city: new RegExp(`^${String(location).trim()}$`, "i") },
+                        { name: new RegExp(`^${String(location).trim()}$`, "i") }
+                    ]
+                });
+                if (branch) branchId = branch._id;
+            }
+
+            // Create new
+            inquiry = await Inquiry.create({
+                name,
+                email,
+                phone: phoneStr,
+                message: message || "",
+                source: source || "landing_page",
+                courseSelected,
+                testScore: testScore || 0,
+                status: "new",
+                companyId,
+                branchId
+            });
+
+            // Log activity
+            const Activity = require("../models/Activity");
+            await Activity.create({
+                inquiryId: inquiry._id,
+                companyId,
+                type: "inquiry",
+                note: "New External Inquiry captured"
+            });
         }
 
-        // Try to map the submitted location (eg. "Ahmedabad") to a branch of this company
-        let branchId = null;
-        if (location) {
-            const normalizedLocation = String(location).trim().toLowerCase();
-            const branch = await Branch.findOne({
-                companyId,
-                isDeleted: false,
-                status: "active",
-                $or: [
-                    { city: new RegExp(`^${normalizedLocation}$`, "i") },
-                    { name: new RegExp(`^${normalizedLocation}$`, "i") }
-                ]
-            }).select("_id");
-            if (branch) {
-                branchId = branch._id;
+        // 2. AUTO CONVERSION: If testScore >= 70
+        if (inquiry.testScore >= 70 && inquiry.status !== "converted") {
+            try {
+                const lead = await inquiryCtrl.performConversion(inquiry, null);
+                return res.status(201).json({
+                    success: true,
+                    message: "High score! Auto-converted to Lead.",
+                    data: inquiry,
+                    leadId: lead._id,
+                    autoConverted: true
+                });
+            } catch (convErr) {
+                console.error("Auto-conversion failed, proceeding with inquiry:", convErr);
             }
         }
-
-        const inferredWebsite =
-            (website && String(website).trim()) ||
-            (req.headers.origin && String(req.headers.origin).trim()) ||
-            (req.headers.referer && String(req.headers.referer).trim()) ||
-            "";
-
-        const inquiry = await Inquiry.create({
-            name: String(name || "").trim(),
-            email: String(email || "").trim(),
-            phone: phoneStr,
-            message: message || "",
-            source: source || "Website Form",
-            website: inferredWebsite,
-            city: city || "",
-            address: address || "",
-            course: course || "",
-            location: location || "",
-            companyId,
-            branchId,
-            status: "Open",
-            isExternal: true
-        });
-
-        // Automatically trigger lead creation from inquiry if needed, or just return
-        // For now, satisfy Step 3 requirements for Stability
-        console.log("New Inquiry created:", inquiry._id, "for company:", companyId);
 
         res.status(201).json({
             success: true,
             message: "Inquiry received successfully.",
-            data: inquiry,
-            leadId: existingLeadId,
-            isUpdate: !!existingLeadId
+            data: inquiry
         });
     } catch (err) {
         console.error("Public Inquiry Error:", err.message);
-        res.status(500).json({ success: false, message: "Server error." });
+        res.status(500).json({ success: false, message: "Error processing submission. Please try again." });
     }
 };

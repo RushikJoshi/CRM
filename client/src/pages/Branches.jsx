@@ -168,12 +168,6 @@ function Branches() {
                         </select>
                     </div>
 
-                    <button
-                        onClick={() => setActiveTask('create')}
-                        className="btn-saas-primary h-8 px-4 text-[11px] gap-2 ml-auto"
-                    >
-                        <FiPlus size={14} /> Add Branch
-                    </button>
                 </div>
             </div>
 

@@ -14,7 +14,7 @@ const PublicAssessmentLanding = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [starting, setStarting] = useState(false);
+  const [startingCourseId, setStartingCourseId] = useState(null);
 
   useEffect(() => {
     fetchPortalData();
@@ -32,14 +32,14 @@ const PublicAssessmentLanding = () => {
   };
 
   const handleStart = async (courseId) => {
-    setStarting(true);
+    setStartingCourseId(courseId);
     try {
       const res = await API.post('/test/public/start-test', { courseId, companyId });
       navigate(`/assessment/test/${res.data.token}`);
     } catch (err) {
-      alert("System busy. Please try again.");
+      alert(err.response?.data?.message || "Assessment could not be started. Please try again later.");
     } finally {
-      setStarting(false);
+      setStartingCourseId(null);
     }
   };
 
@@ -233,10 +233,10 @@ const PublicAssessmentLanding = () => {
                            </div>
                            <button 
                              onClick={() => handleStart(course._id)}
-                             disabled={starting}
+                             disabled={startingCourseId !== null}
                              className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-xl shadow-indigo-100 hover:bg-slate-900 transition-all active:scale-95 flex items-center justify-center gap-3"
                            >
-                             {starting ? 'Initializing...' : 'Challenge Now'} <FiChevronRight />
+                             {startingCourseId === course._id ? 'Initializing...' : 'Challenge Now'} <FiChevronRight />
                            </button>
                        </div>
                     </motion.div>

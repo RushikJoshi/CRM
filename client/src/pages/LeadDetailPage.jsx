@@ -9,6 +9,7 @@ import {
   FiMail,
   FiCalendar,
   FiCheckCircle,
+  FiCheckSquare,
   FiMessageSquare,
   FiSend,
   FiUser,
@@ -25,6 +26,8 @@ import {
   FiX,
   FiFile,
   FiDownload,
+  FiInbox,
+  FiPlus,
 } from "react-icons/fi";
 import API from "../services/api";
 import { useToast } from "../context/ToastContext";
@@ -163,64 +166,104 @@ function groupActivitiesByDate(activities) {
 }
 
 function ActivityItem({ item, isLast }) {
-  const label = TIMELINE_TYPE_LABELS[item.type] || item.type || "Activity";
-  const date = item.date ? new Date(item.date) : null;
-  const timeStr = date && !Number.isNaN(date.getTime())
-    ? date.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
-    : "—";
-  const displayMessage = item.note ?? item.title ?? "";
-  const { message, followUpDate } = parseNoteAndFollowUp(displayMessage);
+   const label = TIMELINE_TYPE_LABELS[item.type] || item.type || "Activity";
+   const date = item.date ? new Date(item.date) : null;
+   const timeStr = date && !Number.isNaN(date.getTime())
+      ? date.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
+      : "—";
+   
+   // Clean up message
+   const displayMessage = item.note ?? item.title ?? "";
+   const { message, followUpDate } = parseNoteAndFollowUp(displayMessage);
 
-  const name = (item.user || "System").toString();
-  const initials = name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join("") || "?";
+   // Type-specific config
+   const typeColors = {
+      email: { icon: <FiMail />, bg: "bg-indigo-50", text: "text-indigo-600", border: "border-indigo-100", accent: "bg-indigo-600" },
+      call: { icon: <FiPhone />, bg: "bg-teal-50", text: "text-teal-600", border: "border-teal-100", accent: "bg-teal-600" },
+      meeting: { icon: <FiCalendar />, bg: "bg-cyan-50", text: "text-cyan-600", border: "border-cyan-100", accent: "bg-cyan-600" },
+      note: { icon: <FiFileText />, bg: "bg-amber-50", text: "text-amber-600", border: "border-amber-100", accent: "bg-amber-600" },
+      lead_stage_changed: { icon: <FiLayers />, bg: "bg-violet-50", text: "text-violet-600", border: "border-violet-100", accent: "bg-violet-600" },
+      lead_assigned: { icon: <FiUser />, bg: "bg-gray-50", text: "text-gray-600", border: "border-gray-100", accent: "bg-gray-600" },
+      lead_lost: { icon: <FiX />, bg: "bg-rose-50", text: "text-rose-600", border: "border-rose-100", accent: "bg-rose-600" },
+      system: { icon: <FiInfo />, bg: "bg-slate-50", text: "text-slate-600", border: "border-slate-100", accent: "bg-slate-600" },
+      follow_up: { icon: <FiClock />, bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100", accent: "bg-emerald-600" },
+      whatsapp: { icon: <FiMessageSquare />, bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100", accent: "bg-emerald-600" },
+   };
 
-  return (
-    <div className="relative flex -ml-10">
-      {/* Avatar on the vertical line (overlaps into left padding so it sits on the line) */}
-      <div className="w-8 shrink-0 flex flex-col items-center">
-        <div className="w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-xs font-bold text-gray-700 shadow-sm z-[1]">
-          {initials}
-        </div>
-        {!isLast && <div className="w-0.5 flex-1 min-h-[12px] bg-gray-200" />}
+   const config = typeColors[item.type] || typeColors.system;
+
+   const userName = typeof item.user?.name === 'string' ? item.user.name : (item.user || "System").toString();
+   const userInitials = typeof userName === 'string' ? userName.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "?" : "?";
+
+   return (
+      <div className="relative group">
+         {/* Vertical Connector Line */}
+         {!isLast && (
+           <div className="absolute left-[31px] top-[48px] bottom-[-24px] w-px bg-gradient-to-b from-gray-100 via-gray-100 to-transparent z-0 group-last:hidden" />
+         )}
+
+         <div className="flex gap-8 relative z-10">
+            {/* Left Rail: Icon & Avatar */}
+            <div className="flex flex-col items-center">
+               <div className={`w-16 h-16 rounded-3xl ${config.bg} ${config.border} border flex items-center justify-center text-xl ${config.text} shadow-xl shadow-gray-100 group-hover:scale-110 transition-transform duration-300`}>
+                  {config.icon}
+               </div>
+            </div>
+
+            {/* Right Side: Content Card */}
+            <div className="flex-1 pb-16">
+               <div className="flex items-start justify-between mb-2">
+                  <div className="flex flex-col">
+                     <div className="flex items-center gap-3 mb-1">
+                        <span className="text-[12px] font-black text-gray-900 tracking-tight">{userName}</span>
+                        <span className={`px-2 py-0.5 rounded-full ${config.bg} ${config.text} text-[8px] font-black uppercase tracking-widest`}>
+                           {label}
+                        </span>
+                     </div>
+                     <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">{timeStr}</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-black text-slate-300">
+                     {userInitials}
+                  </div>
+               </div>
+
+               <div className="bg-white/50 hover:bg-white border border-gray-50 hover:border-gray-100 rounded-[32px] p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-gray-200/50">
+                  <p className="text-sm text-gray-700 leading-relaxed font-medium whitespace-pre-wrap">{message || "No additional notes provided."}</p>
+                  
+                  {followUpDate && (
+                    <div className={`mt-4 inline-flex items-center gap-3 px-4 py-2 rounded-2xl ${getFollowUpBadgeClass(followUpDate)} text-[10px] font-black uppercase tracking-widest`}>
+                       <FiClock size={14} />
+                       Follow-up scheduled: {formatDate(followUpDate)}
+                    </div>
+                  )}
+
+                  {item.attachments && item.attachments.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-gray-50 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                       {item.attachments.map((file, idx) => (
+                          <a
+                             key={idx}
+                             href={file.url}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-indigo-50 border border-gray-100 hover:border-indigo-100 rounded-2xl transition-all group/file"
+                          >
+                             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-400 group-hover/file:text-indigo-600 shadow-sm transition-colors">
+                                <FiFileText size={20} />
+                             </div>
+                             <div className="flex-1 min-w-0">
+                                <p className="text-[10px] font-black text-gray-900 uppercase truncate mb-0.5">{file.name}</p>
+                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Download Attachment</p>
+                             </div>
+                             <FiDownload size={14} className="text-gray-300 group-hover/file:text-indigo-600 transition-colors" />
+                          </a>
+                       ))}
+                    </div>
+                  )}
+               </div>
+            </div>
+         </div>
       </div>
-      <div className="flex-1 min-w-0 pl-4 pb-5">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-sm font-semibold text-gray-900">{name}</span>
-          <span className="text-xs text-gray-400">{timeStr}</span>
-        </div>
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mt-0.5">{label}</p>
-        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap mt-1">{message || "—"}</p>
-        {followUpDate && (
-          <div className={`mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium ${getFollowUpBadgeClass(followUpDate)}`}>
-            <FiClock size={10} />
-            Next activity: {formatDate(followUpDate)}
-          </div>
-        )}
-        {item.attachments && item.attachments.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {item.attachments.map((file, idx) => (
-              <a
-                key={idx}
-                href={file.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded text-xs text-gray-700 hover:border-teal-300 hover:bg-teal-50"
-              >
-                <FiFile size={12} />
-                <span className="truncate max-w-[100px]">{file.name}</span>
-                <FiDownload size={10} />
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+   );
 }
 
 const StageBreadcrumbs = ({ stages, currentStage, onUpdate, updating }) => {
@@ -261,68 +304,6 @@ const StageBreadcrumbs = ({ stages, currentStage, onUpdate, updating }) => {
   );
 };
 
-const EnrichmentCard = ({ lead }) => {
-  if (!lead?.companyName && !lead?.email) return null;
-  
-  const initials = (lead.companyName || lead.name || "G").charAt(0).toUpperCase();
-
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg p-5 mt-8 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex gap-4">
-        <div className="w-12 h-12 rounded-lg bg-teal-600 flex items-center justify-center text-white text-2xl font-black shrink-0">
-          {initials}
-        </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-900">{lead.companyName || lead.name}</h3>
-          <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-            {lead.companyName ? `${lead.companyName} specializes in providing industry-leading solutions in ${lead.industry || 'their sector'}$.` : 'No additional company description available.'}
-          </p>
-        </div>
-        <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${lead.companyName || lead.name}`} className="w-12 h-12 rounded-lg opacity-20" alt="logo" />
-      </div>
-      
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-        <div className="flex items-start gap-4">
-          <FiCalendar className="mt-0.5 text-gray-400" size={16} />
-          <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Type</p>
-            <p className="text-sm text-gray-700 font-medium">{lead.source || 'Lead'}</p>
-          </div>
-        </div>
-        <div className="flex items-start gap-4">
-          <FiTarget className="mt-0.5 text-gray-400" size={16} />
-          <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Industry</p>
-            <div className="flex flex-wrap gap-1 mt-1">
-              <span className="px-2 py-0.5 bg-cyan-50 text-cyan-700 text-[10px] font-bold rounded-full">
-                {lead.industry || 'General'}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-start gap-4">
-          <FiClock className="mt-0.5 text-gray-400" size={16} />
-          <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Location</p>
-            <p className="text-sm text-gray-700 font-medium">{lead.location || lead.city || 'Not specified'}</p>
-          </div>
-        </div>
-        <div className="flex items-start gap-4">
-          <FiLayers className="mt-0.5 text-gray-400" size={16} />
-          <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Course/Interest</p>
-            <div className="flex flex-wrap gap-1 mt-1">
-              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">
-                {lead.course || 'CRM'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export default function LeadDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -330,11 +311,12 @@ export default function LeadDetailPage() {
   const socket = useSocket();
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [chatterTab, setChatterTab] = useState("conversation");
+  const [chatterTab, setChatterTab] = useState("all");
   const [noteTitle, setNoteTitle] = useState("");
   const [noteText, setNoteText] = useState("");
   const [messageText, setMessageText] = useState("");
   const [emailTo, setEmailTo] = useState("");
+  const [emailFrom, setEmailFrom] = useState("Gitakshmi Group <support@gitakshmigroup.com>");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -349,14 +331,16 @@ export default function LeadDetailPage() {
   const [pipeline, setPipeline] = useState(null);
   const [savingNote, setSavingNote] = useState(false);
   const [savingMessage, setSavingMessage] = useState(false);
-  const [showAllActivities, setShowAllActivities] = useState(false);
-  const [activeTab, setActiveTab] = useState("notes"); // lead detail info tabs
+  const [activeTab, setActiveTab] = useState("notes");
   const [showLost, setShowLost] = useState(false);
   const [markingLost, setMarkingLost] = useState(false);
   const [updatingStage, setUpdatingStage] = useState(false);
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [users, setUsers] = useState([]);
+  const [editingSection, setEditingSection] = useState(null);
+  const [editedLead, setEditedLead] = useState({});
+  const [showHistory, setShowHistory] = useState(false);
   const [emailTemplates, setEmailTemplates] = useState([]);
   const [followUps, setFollowUps] = useState([]);
   const [followUpLoading, setFollowUpLoading] = useState(false);
@@ -364,28 +348,27 @@ export default function LeadDetailPage() {
   const [followUpDate, setFollowUpDate] = useState("");
   const [followUpTime, setFollowUpTime] = useState("10:00");
   const [followUpNote, setFollowUpNote] = useState("");
-  const [savingFollowUp, setSavingFollowUp] = useState(false);
+  const [activeQuickAction, setActiveQuickAction] = useState(null); 
 
   const fetchPipeline = useCallback(async () => {
     try {
-      // ONE PIPELINE PER COMPANY — single object response
       const res = await API.get("/pipeline");
       const data = res.data?.data || null;
       setPipeline(data);
     } catch (err) {
-      console.error("PIPELINE FETCH ERROR (LeadDetail):", err);
+      console.error("PIPELINE FETCH ERROR:", err);
     }
   }, []);
   const [showEnrichment, setShowEnrichment] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [editingSection, setEditingSection] = useState(null); // 'company', 'marketing', 'job', 'location'
-  const [editedLead, setEditedLead] = useState({});
-  const fileInputRef = React.useRef(null);
-  const tagDropdownRef = React.useRef(null);
-  const emojiPickerRef = React.useRef(null);
+   const [showTagDropdown, setShowTagDropdown] = useState(false);
+   const [mentionSearch, setMentionSearch] = useState("");
+   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+   const fileInputRef = React.useRef(null);
+   const tagDropdownRef = React.useRef(null);
+   const emojiPickerRef = React.useRef(null);
+   const mentionDropdownRef = React.useRef(null);
 
   useEffect(() => {
     const closeOverlay = (e) => {
@@ -395,19 +378,6 @@ export default function LeadDetailPage() {
     document.addEventListener("mousedown", closeOverlay);
     return () => document.removeEventListener("mousedown", closeOverlay);
   }, [showTagDropdown, showEmojiPicker]);
-
-  const addEmoji = (emoji) => {
-    if (chatterTab === "send_message") {
-      setMessageText(prev => prev + emoji);
-    } else if (chatterTab === "log_note") {
-      setNoteText(prev => prev + emoji);
-    } else {
-      setActivityNote(prev => prev + emoji);
-    }
-    setShowEmojiPicker(false);
-  };
-
-  const commonEmojis = ["😊", "👍", "🔥", "✅", "❌", "📞", "📅", "✉️", "🙌", "💡", "💰", "🚀"];
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -421,8 +391,21 @@ export default function LeadDetailPage() {
       const res = await API.post("/uploads/single", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setAttachments(prev => [...prev, { name: res.data.data.name, url: res.data.data.url }]);
+      const newFile = { name: res.data.data.name, url: res.data.data.url, size: (file.size / 1024 / 1024).toFixed(2) + " MB" };
+      setAttachments(prev => [...prev, newFile]);
+      
+      // Save it as an activity so it persists
+      await API.post("/activities", {
+        leadId: id,
+        type: "note",
+        note: `Document Uploaded: ${newFile.name}`,
+        attachments: [newFile]
+      });
+
       toast.success("File uploaded.");
+      fetchTimeline();
+      setActiveTab('docs');
+      setActiveQuickAction(null);
     } catch (err) {
       toast.error("Upload failed.");
     } finally {
@@ -431,27 +414,8 @@ export default function LeadDetailPage() {
     }
   };
 
-  const removeAttachment = (idx) => {
-    setAttachments(prev => prev.filter((_, i) => i !== idx));
-  };
-
   const openFileInput = () => {
     if (fileInputRef.current) fileInputRef.current.click();
-  };
-
-  const selectTaggedUser = (user) => {
-    const mention = `@${user.name}`;
-    if (chatterTab === "send_message") {
-      setMessageMentionedUserId(user._id);
-      setMessageText((prev) => (prev ? `${prev} ${mention}` : mention));
-    } else if (chatterTab === "log_note") {
-      setNoteMentionedUserId(user._id);
-      setNoteText((prev) => (prev ? `${prev} ${mention}` : mention));
-    } else {
-      setActivityMentionedUserId(user._id);
-      setActivityNote((prev) => (prev ? `${prev} ${mention}` : mention));
-    }
-    setShowTagDropdown(false);
   };
 
   const fetchLead = useCallback(async () => {
@@ -523,7 +487,7 @@ export default function LeadDetailPage() {
     if (!id) return;
     setFollowUpLoading(true);
     try {
-      const res = await API.get(`/follow-ups/lead/${id}`);
+      const res = await API.get(`/follow-ups/lead/${id}/follow-ups`);
       setFollowUps(res.data?.data || []);
     } catch {
       setFollowUps([]);
@@ -538,11 +502,6 @@ export default function LeadDetailPage() {
   }, [fetchTimeline, fetchFollowUps]);
 
   useEffect(() => {
-    const userRole = getCurrentUser()?.role;
-    if (userRole === "sales" || userRole === "support" || userRole === "marketing") {
-       // Only fetch if necessary or let it happen since backend is now open.
-       // Actually, we'll keep it but it's safe now.
-    }
     (async () => {
       try {
         const res = await API.get("/users?limit=500");
@@ -554,38 +513,14 @@ export default function LeadDetailPage() {
     })();
   }, []);
 
-  useEffect(() => {
-    if (chatterTab === "email") {
-      (async () => {
-        try {
-          const res = await API.get("/email/templates");
-          setEmailTemplates(res.data?.data || []);
-        } catch (err) {
-          console.error("TEMPLATE FETCH ERROR:", err);
-        }
-      })();
-    }
-  }, [chatterTab]);
-
-  const onSelectTemplate = (id) => {
-    setSelectedTemplate(id);
-    const t = emailTemplates.find(x => x._id === id);
-    if (t) {
-      setEmailSubject(t.subject);
-      setEmailBody(t.body);
-    } else {
-      setEmailSubject("");
-      setEmailBody("");
-    }
-  };
-
   const onSendEmail = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!emailBody.trim() || !id) return;
     setSendingEmail(true);
     try {
       await API.post("/email/send", {
         to: emailTo,
+        from: emailFrom,
         leadId: id,
         templateId: selectedTemplate || undefined,
         subject: emailSubject,
@@ -595,9 +530,9 @@ export default function LeadDetailPage() {
       setEmailSubject("");
       setEmailBody("");
       setSelectedTemplate("");
-      setChatterTab("log_note");
+      setActiveQuickAction(null);
       fetchTimeline();
-      fetchLead(); // Refresh score
+      fetchLead();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to send email");
     } finally {
@@ -620,17 +555,6 @@ export default function LeadDetailPage() {
     }
   };
 
-  const convertLead = async () => {
-    try {
-      await API.post(`/leads/${id}/convert`);
-      toast.success("Lead converted.");
-      fetchLead();
-      fetchTimeline();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Convert failed.");
-    }
-  };
-
   const markLost = async ({ reason, notes }) => {
     setMarkingLost(true);
     try {
@@ -647,7 +571,7 @@ export default function LeadDetailPage() {
   };
 
   const logNote = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const description = (noteText || "").trim();
     if (!description || !id) return;
     setSavingNote(true);
@@ -664,64 +588,13 @@ export default function LeadDetailPage() {
       setNoteText("");
       setNoteMentionedUserId("");
       setAttachments([]);
+      setActiveQuickAction(null);
       toast.success("Note saved.");
       fetchTimeline();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save note.");
     } finally {
       setSavingNote(false);
-    }
-  };
-
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    const text = (messageText || "").trim();
-    if (!text || !id) return;
-    setSavingMessage(true);
-    try {
-      await API.post("/activities", {
-        leadId: id,
-        type: "message",
-        note: text,
-        mentionedUserId: messageMentionedUserId || undefined,
-        attachments: attachments,
-      });
-      setMessageText("");
-      setMessageMentionedUserId("");
-      setAttachments([]);
-      toast.success("Message logged.");
-      fetchTimeline();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to send message.");
-    } finally {
-      setSavingMessage(false);
-    }
-  };
-
-  const addActivity = async (e) => {
-    e.preventDefault();
-    const note = (activityNote || "").trim();
-    if (!note || !id) return;
-    setSavingActivity(true);
-    try {
-      const notePayload = nextFollowUpDate ? `${note}. Next follow-up: ${nextFollowUpDate}` : note;
-      await API.post("/activities", {
-        leadId: id,
-        type: activityType,
-        note: notePayload,
-        mentionedUserId: activityMentionedUserId || undefined,
-        attachments: attachments,
-      });
-      setActivityNote("");
-      setNextFollowUpDate("");
-      setActivityMentionedUserId("");
-      setAttachments([]);
-      toast.success("Activity added.");
-      fetchTimeline();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to add activity.");
-    } finally {
-      setSavingActivity(false);
     }
   };
 
@@ -754,13 +627,12 @@ export default function LeadDetailPage() {
   const priorityStars = lead?.priorityStars || 0;
   const expectedRevenue = lead?.expectedRevenue ?? lead?.value ?? 0;
   const probability = lead?.probability ?? 10;
-  const stageDurations = getStageDurations(lead);
-
   const salesperson = lead?.assignedTo?.name || "Unassigned";
   const expectedClosing = lead?.wonAt || lead?.updatedAt || null;
   const leadTags = [lead?.source, lead?.course].filter(Boolean);
+
   return (
-    <div className="bg-[#f3f4f6] min-h-full">
+    <div className="bg-white min-h-screen overflow-x-hidden font-inter">
       <div className="w-full bg-white shadow-sm flex flex-col">
         {/* Status Header */}
         <div className="px-4 md:px-6 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between bg-white relative gap-4">
@@ -773,7 +645,7 @@ export default function LeadDetailPage() {
                   {statusNorm.toUpperCase()}
                 </span>
                 <div className="hidden sm:flex items-center text-xs font-bold text-gray-400 min-w-0 flex-1">
-                  <span>Pipeline</span>
+                  <span>{pipeline?.name || "Pipeline"}</span>
                   <FiChevronRight size={14} />
                   <span className="text-gray-900 truncate max-w-[200px]">{lead.customId || lead.name || "Opportunity"}</span>
 
@@ -809,40 +681,38 @@ export default function LeadDetailPage() {
                  </>
                )}
                <button 
-                onClick={() => setShowEnrichment(!showEnrichment)}
-                className={`px-4 py-1.5 border text-[11px] font-bold uppercase rounded-md transition-all ${showEnrichment ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                 onClick={() => setShowEnrichment(!showEnrichment)}
+                 className={`px-4 py-1.5 border text-[11px] font-bold uppercase rounded-md transition-all ${showEnrichment ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                >
                  Enrich
                </button>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="max-w-[400px] overflow-x-auto no-scrollbar">
+              <div className="flex-1 overflow-x-auto no-scrollbar">
                 <StageBreadcrumbs 
-                  stages={pipeline?.stages?.length > 0 ? pipeline.stages.map(s => ({ key: s.name, label: s.name })) : []} 
+                  stages={navStages} 
                   currentStage={currentStageKey} 
                   onUpdate={updateStage} 
                   updating={updatingStage} 
                 />
               </div>
-              <div className="hidden lg:flex items-center ml-2 text-gray-400 gap-1 text-sm border-l pl-4 border-gray-200">
-                 <span className="font-bold text-gray-900 shrink-0">1 / 1</span>
-                <button className="p-1 hover:text-gray-900"><FiChevronLeft size={20} /></button>
-                <button className="p-1 hover:text-gray-900"><FiChevronRight size={20} /></button>
+               <div className="hidden lg:flex items-center ml-2 text-gray-400 gap-1 text-sm border-l pl-4 border-gray-200">
+                 <button className="p-1 hover:text-gray-900" onClick={() => navigate(-1)} title="Back"><FiChevronLeft size={20} /></button>
+                 <button className="p-1 hover:text-gray-900" title="Next"><FiChevronRight size={20} /></button>
               </div>
             </div>
           </div>
-
         </div>
+      </div>
 
-        <div className="flex-1 flex flex-col xl:flex-row">
-          {/* Main Content (Left) */}
-          <div className="flex-1 p-8 border-r border-gray-100">
+      <div className="w-full px-4 md:px-6 py-6 font-inter">
+        <div className="w-full">
+          <div className="p-0">
             <div className="mb-8">
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight break-words">{lead.name || "Opportunity"}{"'s opportunity"}</h1>
                 
-                {/* Dynamic Engagement Star Rating */}
                 <div className="inline-flex items-center gap-0.5 px-3 py-1 bg-white border border-gray-100 rounded-full shadow-sm">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <span 
@@ -854,6 +724,12 @@ export default function LeadDetailPage() {
                   ))}
                   <span className="ml-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Engagement</span>
                 </div>
+
+                {lead.inquiryId && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full text-[10px] font-black text-emerald-600 uppercase tracking-widest animate-pulse">
+                    <FiInbox size={12} /> Converted from Inquiry
+                  </div>
+                )}
               </div>
                <div className="mt-2 flex items-center gap-2 text-sm text-gray-500 font-medium">
                 <FiUser size={14} className="text-indigo-400" />
@@ -872,20 +748,51 @@ export default function LeadDetailPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-              {/* Left Grid */}
-              <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 mb-12">
+               <div className="space-y-4">
                 <div className="flex items-start group">
                   <label className="w-32 shrink-0 text-sm font-bold text-gray-900 pt-0.5">Expected Revenue</label>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-gray-700">₹ {Number(expectedRevenue || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  <div className="flex-1 flex items-center gap-3">
+                    {editingSection === 'revenue' ? (
+                      <div className="flex items-center gap-2">
+                         <span className="text-xs font-bold text-gray-400">₹</span>
+                         <input 
+                           type="number"
+                           value={editedLead.expectedRevenue || 0}
+                           onChange={(e) => handleEditChange('expectedRevenue', e.target.value)}
+                           className="w-32 bg-gray-50 border border-gray-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-indigo-100"
+                         />
+                         <button onClick={() => saveDetails('revenue')} className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Apply</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-gray-700">₹ {Number(lead.expectedRevenue || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                        <button onClick={() => setEditingSection('revenue')} className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Edit</button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center group">
                   <label className="w-32 shrink-0 text-sm font-bold text-gray-900">Probability</label>
-                  <div className="flex-1 flex items-center gap-2">
-                    <span className="text-xs text-gray-400 font-medium italic">at</span>
-                    <span className="text-sm font-black text-gray-900">{probability.toFixed(2)} %</span>
+                  <div className="flex-1 flex items-center gap-3">
+                    {editingSection === 'probability' ? (
+                       <div className="flex items-center gap-2">
+                          <input 
+                            type="number"
+                            max="100"
+                            value={editedLead.probability || 0}
+                            onChange={(e) => handleEditChange('probability', e.target.value)}
+                            className="w-20 bg-gray-50 border border-gray-100 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-indigo-100"
+                          />
+                          <span className="text-xs font-bold text-gray-400">%</span>
+                          <button onClick={() => saveDetails('probability')} className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Apply</button>
+                       </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-black text-gray-900">{probability.toFixed(2)} %</span>
+                        <button onClick={() => setEditingSection('probability')} className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Edit</button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -905,7 +812,6 @@ export default function LeadDetailPage() {
                 </div>
               </div>
 
-              {/* Right Grid */}
               <div className="space-y-4 border-l pl-8 border-gray-100">
                 <div className="flex items-center">
                   <label className="w-32 shrink-0 text-sm font-bold text-gray-900">Assigned To</label>
@@ -929,607 +835,530 @@ export default function LeadDetailPage() {
               </div>
             </div>
 
-            {/* Content Tabs */}
-            <div className="mt-12 border-b border-gray-200 flex items-center gap-8">
-               <button 
-                onClick={() => setActiveTab('notes')}
-                className={`pb-3 text-sm font-bold transition-all relative ${activeTab === 'notes' ? 'text-teal-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-teal-600' : 'text-gray-500 hover:text-gray-900'}`}
-               >
-                 Notes
-               </button>
-               <button 
-                onClick={() => setActiveTab('extra')}
-                className={`pb-3 text-sm font-bold transition-all relative ${activeTab === 'extra' ? 'text-teal-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-teal-600' : 'text-gray-500 hover:text-gray-900'}`}
-               >
-                 Extra Info
-               </button>
+            {/* QUICK ACTION BAR */}
+            <div className="flex items-center gap-1.5 p-1 bg-gray-50/50 rounded-2xl border border-gray-100/50 my-12 shadow-sm overflow-x-auto no-scrollbar">
+               {[
+                  { id: 'task', label: 'New Task', icon: FiCheckSquare, color: 'text-amber-600', bg: 'bg-amber-50' },
+                  { id: 'meeting', label: 'Meeting', icon: FiCalendar, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                  { id: 'note', label: 'Add Note', icon: FiFileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                  { id: 'email', label: 'Send Email', icon: FiMail, color: 'text-violet-600', bg: 'bg-violet-50' },
+                  { id: 'doc', label: 'Attach Doc', icon: FiPaperclip, color: 'text-blue-600', bg: 'bg-blue-50' },
+               ].map((act) => (
+                  <button
+                    key={act.id}
+                    onClick={() => setActiveQuickAction(activeQuickAction === act.id ? null : act.id)}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all group min-w-fit ${activeQuickAction === act.id ? 'bg-white shadow-xl ring-1 ring-gray-100 scale-105' : 'hover:bg-white hover:shadow-md'}`}
+                  >
+                    <div className={`p-2 rounded-lg ${act.bg} ${act.color} group-hover:rotate-12 transition-transform`}>
+                       <act.icon size={16} strokeWidth={2.5} />
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-500 group-hover:text-gray-900">{act.label}</span>
+                  </button>
+               ))}
             </div>
 
-            <div className="py-6">
-              {activeTab === 'notes' && (
-                <div className="group">
-                  <textarea 
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
-                    placeholder="Add a description..."
-                    className="w-full min-h-[100px] text-sm text-gray-700 placeholder-gray-400 bg-transparent border-none focus:ring-0 resize-none"
-                  />
-                    <div className="mt-2 flex justify-end">
-                       <button 
-                        onClick={(e) => logNote(e)}
-                        disabled={savingNote || !noteText.trim()}
-                        className="px-4 py-1.5 bg-teal-600 text-white text-xs font-bold rounded shadow-sm hover:bg-teal-700 disabled:opacity-50"
-                       >
-                         {savingNote ? 'Saving...' : 'Save Note'}
-                       </button>
-                    </div>
-                </div>
-              )}
-              {activeTab === 'extra' && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    {/* SECTION: COMPANY & MARKETING */}
-                    <div className="space-y-6">
-                      <div className="group/sec">
-                        <div className="flex items-center justify-between border-b pb-1 mb-4">
-                           <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[2px]">Company Detail</h4>
-                           {editingSection === 'company' ? (
-                             <div className="flex gap-2">
-                               <button onClick={() => saveDetails('company')} className="text-[10px] font-bold text-teal-600 hover:bg-teal-50 px-2 py-0.5 rounded">SAVE</button>
-                               <button onClick={() => { setEditingSection(null); setEditedLead(lead); }} className="text-[10px] font-bold text-gray-400 hover:bg-gray-50 px-2 py-0.5 rounded">CANCEL</button>
-                             </div>
-                           ) : (
-                             <button onClick={() => setEditingSection('company')} className="text-[10px] font-bold text-teal-600 opacity-0 group-hover/sec:opacity-100 transition-opacity">EDIT</button>
-                           )}
-                        </div>
-                        <div className="space-y-4">
-                           <div className="flex items-center">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Company</label>
-                             {editingSection === 'company' ? (
-                               <input value={editedLead.companyName || ""} onChange={(e) => handleEditChange('companyName', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                             ) : (
-                               <span className="flex-1 text-sm text-gray-700">{lead.companyName || "—"}</span>
-                             )}
-                           </div>
-                           <div className="flex items-center">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Website</label>
-                             {editingSection === 'company' ? (
-                               <input value={editedLead.website || ""} onChange={(e) => handleEditChange('website', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                             ) : (
-                               <span className="flex-1 text-sm text-teal-600 hover:underline cursor-pointer">{lead.website || "—"}</span>
-                             )}
-                           </div>
-                           <div className="flex items-center">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Industry</label>
-                             {editingSection === 'company' ? (
-                               <input value={editedLead.industry || ""} onChange={(e) => handleEditChange('industry', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                             ) : (
-                               <span className="flex-1 text-sm text-gray-700">{lead.industry || "—"}</span>
-                             )}
-                           </div>
-                           <div className="flex items-center">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Size</label>
-                             {editingSection === 'company' ? (
-                               <input value={editedLead.companySize || ""} onChange={(e) => handleEditChange('companySize', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                             ) : (
-                               <span className="flex-1 text-sm text-gray-700">{lead.companySize || "—"}</span>
-                             )}
-                           </div>
-                        </div>
-                      </div>
-
-                      <div className="group/sec">
-                        <div className="flex items-center justify-between border-b pb-1 mb-4">
-                           <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[2px]">Marketing</h4>
-                           {editingSection === 'marketing' ? (
-                             <div className="flex gap-2">
-                               <button onClick={() => saveDetails('marketing')} className="text-[10px] font-bold text-teal-600 hover:bg-teal-50 px-2 py-0.5 rounded">SAVE</button>
-                               <button onClick={() => { setEditingSection(null); setEditedLead(lead); }} className="text-[10px] font-bold text-gray-400 hover:bg-gray-50 px-2 py-0.5 rounded">CANCEL</button>
-                             </div>
-                           ) : (
-                             <button onClick={() => setEditingSection('marketing')} className="text-[10px] font-bold text-teal-600 opacity-0 group-hover/sec:opacity-100 transition-opacity">EDIT</button>
-                           )}
-                        </div>
-                        <div className="space-y-4">
-                           <div className="flex items-center">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Source</label>
-                             {editingSection === 'marketing' ? (
-                               <input value={editedLead.source || ""} onChange={(e) => handleEditChange('source', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                             ) : (
-                               <span className="flex-1 text-sm text-gray-700">{lead.source || "—"}</span>
-                             )}
-                           </div>
-                           <div className="flex items-center">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Referred</label>
-                             {editingSection === 'marketing' ? (
-                               <input value={editedLead.referredBy || ""} onChange={(e) => handleEditChange('referredBy', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                             ) : (
-                               <span className="flex-1 text-sm text-gray-700">{lead.referredBy || "—"}</span>
-                             )}
-                           </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* SECTION: CONTACT & POSITION */}
-                    <div className="space-y-6">
-                      <div className="group/sec">
-                        <div className="flex items-center justify-between border-b pb-1 mb-4">
-                           <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[2px]">Job & Contact</h4>
-                           {editingSection === 'job' ? (
-                             <div className="flex gap-2">
-                               <button onClick={() => saveDetails('job')} className="text-[10px] font-bold text-teal-600 hover:bg-teal-50 px-2 py-0.5 rounded">SAVE</button>
-                               <button onClick={() => { setEditingSection(null); setEditedLead(lead); }} className="text-[10px] font-bold text-gray-400 hover:bg-gray-50 px-2 py-0.5 rounded">CANCEL</button>
-                             </div>
-                           ) : (
-                             <button onClick={() => setEditingSection('job')} className="text-[10px] font-bold text-teal-600 opacity-0 group-hover/sec:opacity-100 transition-opacity">EDIT</button>
-                           )}
-                        </div>
-                        <div className="space-y-4">
-                           <div className="flex items-center">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Job Title</label>
-                             {editingSection === 'job' ? (
-                               <input value={editedLead.jobTitle || ""} onChange={(e) => handleEditChange('jobTitle', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                             ) : (
-                               <span className="flex-1 text-sm text-gray-700">{lead.jobTitle || "—"}</span>
-                             )}
-                           </div>
-                           <div className="flex items-center">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Alt Phone</label>
-                             {editingSection === 'job' ? (
-                               <input value={editedLead.alternatePhone || ""} onChange={(e) => handleEditChange('alternatePhone', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                             ) : (
-                               <span className="flex-1 text-sm text-gray-700">{lead.alternatePhone || "—"}</span>
-                             )}
-                           </div>
-                           <div className="flex items-center">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Sec. Email</label>
-                             {editingSection === 'job' ? (
-                               <input value={editedLead.secondaryEmail || ""} onChange={(e) => handleEditChange('secondaryEmail', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                             ) : (
-                               <span className="flex-1 text-sm text-gray-700">{lead.secondaryEmail || "—"}</span>
-                             )}
-                           </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[2px] mb-4 border-b pb-1">System Info</h4>
-                        <div className="space-y-4">
-                           <div className="flex">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Created By</label>
-                             <span className="flex-1 text-sm text-gray-700">{lead.createdBy?.name || "System"}</span>
-                           </div>
-                           <div className="flex">
-                             <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Created At</label>
-                             <span className="flex-1 text-[11px] text-gray-500">{formatDateTime(lead.createdAt)}</span>
-                           </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* SECTION: LOCATION */}
-                    <div className="group/sec">
-                      <div className="flex items-center justify-between border-b pb-1 mb-4">
-                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[2px]">Location Address</h4>
-                        {editingSection === 'location' ? (
-                          <div className="flex gap-2">
-                             <button onClick={() => saveDetails('location')} className="text-[10px] font-bold text-teal-600 hover:bg-teal-50 px-2 py-0.5 rounded">SAVE</button>
-                             <button onClick={() => { setEditingSection(null); setEditedLead(lead); }} className="text-[10px] font-bold text-gray-400 hover:bg-gray-50 px-2 py-0.5 rounded">CANCEL</button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setEditingSection('location')} className="text-[10px] font-bold text-teal-600 opacity-0 group-hover/sec:opacity-100 transition-opacity">EDIT</button>
-                        )}
-                      </div>
-                      <div className="space-y-4">
-                         <div className="flex items-start">
-                           <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">Address</label>
-                           {editingSection === 'location' ? (
-                             <textarea value={editedLead.address || ""} onChange={(e) => handleEditChange('address', e.target.value)} className="flex-1 text-sm border border-teal-100 rounded p-1 outline-none focus:border-teal-500 bg-teal-50/10 min-h-[60px]" />
-                           ) : (
-                             <span className="flex-1 text-sm text-gray-700 whitespace-pre-wrap">{lead.address || "—"}</span>
-                           )}
-                         </div>
-                         <div className="flex items-center">
-                           <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">City</label>
-                           {editingSection === 'location' ? (
-                             <input value={editedLead.location || editedLead.city || ""} onChange={(e) => handleEditChange('location', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                           ) : (
-                             <span className="flex-1 text-sm text-gray-700">{lead.location || lead.city || "—"}</span>
-                           )}
-                         </div>
-                         <div className="flex items-center">
-                           <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">State</label>
-                           {editingSection === 'location' ? (
-                             <input value={editedLead.state || ""} onChange={(e) => handleEditChange('state', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                           ) : (
-                             <span className="flex-1 text-sm text-gray-700">{lead.state || "—"}</span>
-                           )}
-                         </div>
-                         <div className="flex items-center">
-                           <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Country</label>
-                           {editingSection === 'location' ? (
-                             <input value={editedLead.country || ""} onChange={(e) => handleEditChange('country', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                           ) : (
-                             <span className="flex-1 text-sm text-gray-700">{lead.country || "—"}</span>
-                           )}
-                         </div>
-                         <div className="flex items-center">
-                           <label className="w-1/3 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Zip Code</label>
-                           {editingSection === 'location' ? (
-                             <input value={editedLead.zipCode || ""} onChange={(e) => handleEditChange('zipCode', e.target.value)} className="flex-1 text-sm border-b border-teal-200 outline-none focus:border-teal-500 bg-transparent" />
-                           ) : (
-                             <span className="flex-1 text-sm text-gray-700">{lead.zipCode || "—"}</span>
-                           )}
-                         </div>
-                      </div>
-                    </div>
+            {/* DYNAMIC QUICK ACTION INPUT AREA */}
+            {activeQuickAction && (
+               <div className="mb-12 p-8 bg-white border border-indigo-100 shadow-2xl shadow-indigo-600/5 rounded-3xl animate-in slide-in-from-top-4 duration-500 relative z-50">
+                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-50">
+                     <h3 className="text-[11px] font-black uppercase tracking-[3px] text-gray-400">
+                        {activeQuickAction === 'task' ? 'Schedule Task' : activeQuickAction === 'meeting' ? 'Schedule Meeting' : activeQuickAction === 'note' ? 'Log Internal Note' : activeQuickAction === 'email' ? 'Compose Email' : 'Upload Documents'}
+                     </h3>
+                     <button onClick={() => setActiveQuickAction(null)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"><FiX size={18} /></button>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* CHATTER SECTION (Right / Bottom) */}
-          <div className="w-full xl:w-[600px] bg-white flex flex-col border-l border-gray-100 h-screen sticky top-0">
-             {/* Tab Switcher */}
-             <div className="px-6 py-4 border-b border-gray-100 bg-white z-20 shadow-sm flex items-center justify-between">
-                <div className="flex gap-1 overflow-x-auto no-scrollbar">
-                   {['conversation', 'notes', 'follow-ups', 'activity', 'emails'].map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => setChatterTab(tab)}
-                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap ${
-                           chatterTab === tab 
-                           ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' 
-                           : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                        }`}
-                      >
-                         {tab === 'follow-ups' ? 'FOLLOW-UPS' : tab}
-                      </button>
-                   ))}
-                </div>
-                <div className="flex items-center gap-2 text-gray-400 pl-4 border-l border-gray-100">
-                    <button type="button" onClick={openFileInput} className="hover:text-teal-600"><FiPaperclip size={16} /></button>
-                    <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="hover:text-amber-500"><FiSmile size={16} /></button>
-                </div>
-             </div>
-
-             {/* Feed Area */}
-             <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6 flex flex-col-reverse relative min-h-0">
-                {activityLoading || followUpLoading ? (
-                  <div className="h-full flex items-center justify-center py-20">
-                     <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : (() => {
-                   const filtered = activities.filter(item => {
-                      if (chatterTab === 'conversation') return ['email', 'message', 'whatsapp'].includes(item.type);
-                      if (chatterTab === 'notes') return item.type === 'note';
-                      if (chatterTab === 'activity') return ['lead_stage_changed', 'system', 'lead_assignment_changed', 'lead', 'deal_stage_changed', 'follow_up'].includes(item.type);
-                      if (chatterTab === 'emails') return item.type === 'email';
-                      if (chatterTab === 'follow-ups') return false; // Handled separately
-                      return false;
-                   });
-
-                   if (filtered.length === 0 && chatterTab !== 'follow-ups') {
-                      return (
-                        <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-20 px-8">
-                           <FiMessageSquare size={64} className="text-gray-200 mb-4" />
-                           <p className="text-sm font-black uppercase tracking-widest text-gray-400">No {chatterTab} history yet</p>
+                  {activeQuickAction === 'task' && (
+                     <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="flex gap-2">
+                              <input type="date" value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs font-bold" />
+                              <input type="time" value={followUpTime} onChange={(e) => setFollowUpTime(e.target.value)} className="w-32 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs font-bold" />
+                           </div>
+                           <select value={followUpType} onChange={(e) => setFollowUpType(e.target.value)} className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs font-bold">
+                              <option value="call">📞 Phone Call</option>
+                              <option value="whatsapp">💬 WhatsApp</option>
+                              <option value="email">📧 Send Email</option>
+                           </select>
                         </div>
-                      );
-                   }
+                        <textarea value={followUpNote} onChange={(e) => setFollowUpNote(e.target.value)} placeholder="Action details and context..." className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-6 text-sm min-h-[120px] focus:ring-2 focus:ring-indigo-100 outline-none transition-all" />
+                        <div className="flex justify-end"><button onClick={() => toast.info("Task scheduling logic... ")} className="px-12 py-4 bg-indigo-600 text-white rounded-xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:scale-105 active:scale-95 transition-all">Commit Task</button></div>
+                     </div>
+                  )}
 
-                   // Chat sort: Ascending by time if it's conversation
-                   const sorted = chatterTab === 'conversation' 
-                     ? [...filtered].sort((a,b) => new Date(a.date) - new Date(b.date))
-                     : [...filtered].sort((a,b) => new Date(b.date) - new Date(a.date));
-
-                   return (
-                     <div className={`flex flex-col gap-4`}>
-                        {groupActivitiesByDate(sorted).map((group) => (
-                           <div key={group.label} className="mt-4 first:mt-0">
-                              <div className="flex items-center justify-center my-6 sticky top-0 z-10">
-                                 <span className="px-3 py-1 bg-white border border-gray-100 text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 rounded-full shadow-sm">
-                                    {group.label}
-                                 </span>
-                              </div>
-                              <div className="space-y-4">
-                                 {group.items.map((item, idx) => {
-                                    const isSelf = true; // Assuming internal messages are outgoing for now
-                                    if (chatterTab === 'conversation') {
-                                       return (
-                                          <div key={item._id || idx} className={`flex ${isSelf ? 'justify-end' : 'justify-start'} animate-in slide-in-from-${isSelf ? 'right' : 'left'}-4 duration-300`}>
-                                             <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm relative group ${isSelf ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
-                                                <div className="flex items-center gap-2 mb-1">
-                                                   <span className={`text-[10px] font-bold ${isSelf ? 'text-indigo-100' : 'text-gray-400'}`}>{(item.user || 'User').split(' ')[0]}</span>
-                                                   <span className={`text-[9px] ${isSelf ? 'text-indigo-200 /80' : 'text-gray-300'}`}>{new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                </div>
-                                                <div className="text-sm leading-relaxed whitespace-pre-wrap">{parseNoteAndFollowUp(item.note || item.title).message}</div>
-                                                {item.type === 'email' && (
-                                                   <div className={`mt-2 pt-2 border-t text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 ${isSelf ? 'border-indigo-500 text-indigo-200' : 'border-gray-50 text-teal-600'}`}>
-                                                      <FiMail size={12} /> Email sent to recipient
-                                                   </div>
-                                                )}
-                                                {isSelf && (
-                                                   <div className="absolute -left-12 bottom-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 text-indigo-400 font-black text-[9px]">
-                                                      READ <FiCheckCircle size={10} className="text-indigo-600" />
-                                                   </div>
-                                                )}
-                                             </div>
-                                          </div>
-                                       );
-                                    }
-                       return <ActivityItem key={item._id || idx} item={item} isLast={idx === group.items.length - 1} />;
-                                  })}
-                               </div>
-                            </div>
-                         ))}
-                      </div>
-                    );
-                 })()}
-
-                 {chatterTab === 'follow-ups' && (
-                    <div className="h-full flex flex-col pt-4">
-                       <div className="flex-1 space-y-4">
-                          {followUps.length === 0 ? (
-                             <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-20 px-8">
-                                <FiCalendar size={64} className="text-gray-200 mb-4" />
-                                <p className="text-sm font-black uppercase tracking-widest text-gray-400">No scheduled follow-ups</p>
-                             </div>
-                          ) : (
-                             followUps.map((f) => {
-                                const isPending = f.status === 'pending';
-                                const isMissed = f.status === 'pending' && new Date(f.scheduledAt) < new Date();
-                                return (
-                                   <div key={f._id} className={`bg-white border p-4 rounded-xl shadow-sm border-gray-100 flex items-center justify-between group h-min`}>
-                                      <div className="flex items-start gap-4">
-                                         <div className={`p-3 rounded-lg ${f.type === 'call' ? 'bg-blue-50 text-blue-600' : f.type === 'whatsapp' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
-                                            {f.type === 'call' ? <FiPhone size={18} /> : f.type === 'whatsapp' ? <FiMessageSquare size={18} /> : <FiMail size={18} />}
-                                         </div>
-                                         <div className="min-w-0">
-                                            <div className="flex items-center gap-2">
-                                              <span className="text-sm font-bold text-gray-900 capitalize">{f.type} Follow-up</span>
-                                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isMissed ? 'bg-red-50 text-red-600' : isPending ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                                 {isMissed ? 'Missed' : f.status}
-                                              </span>
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-1 font-medium">{formatDateTime(f.scheduledAt)}</p>
-                                            {f.note && <p className="text-xs text-gray-400 mt-1 italic">"{f.note}"</p>}
-                                         </div>
-                                      </div>
-                                      {isPending && (
-                                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button 
-                                              onClick={() => API.patch(`/follow-ups/${f._id}/status`, { status: 'completed' }).then(() => { fetchFollowUps(); fetchTimeline(); })}
-                                              className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-emerald-100" title="Complete"
-                                            >
-                                               <FiCheckCircle size={14} />
-                                            </button>
-                                         </div>
-                                      )}
-                                   </div>
-                                );
-                             })
-                          )}
-                       </div>
-                    </div>
-                 )}
-              </div>
-
-             {/* Sticky Input Area */}
-             <div className="p-6 border-t border-gray-100 bg-white">
-                {chatterTab === 'conversation' && (
-                   <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-2">
-                         <div className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-indigo-100 flex items-center gap-1.5">
-                            <FiMessageSquare size={10} /> Mode: Message
-                         </div>
-                         <div className="px-3 py-1 bg-teal-50 text-teal-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-teal-100 cursor-pointer hover:bg-teal-100 transition-all" onClick={() => setChatterTab('emails')}>
-                            Switch to full email
-                         </div>
-                      </div>
-                      <div className="relative group">
-                         <textarea
-                            value={messageText}
-                            onChange={(e) => setMessageText(e.target.value)}
-                            placeholder="Type a message to recipient..."
-                            className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all min-h-[50px] max-h-[150px] resize-none pr-12 shadow-inner"
-                            onKeyDown={(e) => {
-                               if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  sendMessage(e);
+                  {activeQuickAction === 'note' && (
+                     <div className="space-y-6 relative">
+                        <div className="relative">
+                          <textarea 
+                            value={noteText} 
+                            onChange={(e) => {
+                               const val = e.target.value;
+                               setNoteText(val);
+                               const lastChar = val[val.length - 1];
+                               if (lastChar === '@') {
+                                  setShowTagDropdown(true);
+                                  setMentionSearch("");
+                               } else if (showTagDropdown) {
+                                  const parts = val.split('@');
+                                  setMentionSearch(parts[parts.length - 1] || "");
                                }
-                            }}
-                         />
-                         <button
-                            onClick={sendMessage}
-                            disabled={savingMessage || !messageText.trim()}
-                            className="absolute right-3 bottom-3 p-2 bg-indigo-600 text-white rounded-lg shadow-lg shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-30 transition-all active:scale-90"
-                         >
-                            <FiSend size={18} />
-                         </button>
-                      </div>
-                   </div>
-                )}
-
-                {chatterTab === 'notes' && (
-                   <div className="space-y-4">
-                      <textarea
-                         value={noteText}
-                         onChange={(e) => setNoteText(e.target.value)}
-                         placeholder="Add an internal note for your team..."
-                         className="w-full bg-amber-50/20 border border-amber-200/50 rounded-xl p-4 text-sm focus:outline-none focus:ring-4 focus:ring-amber-500/5 focus:border-amber-500 transition-all min-h-[100px]"
-                      />
-                      <div className="flex justify-end">
-                         <button
-                            onClick={logNote}
-                            disabled={savingNote || !noteText.trim()}
-                            className="px-6 py-2 bg-amber-500 text-white text-[11px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-amber-100 hover:bg-amber-600 transition-all"
-                         >
-                            POST INTERNAL NOTE
-                         </button>
-                      </div>
-                   </div>
-                )}
-
-                {chatterTab === 'emails' && (
-                   <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-dashed border-gray-200">
-                      <div className="grid grid-cols-1 gap-4">
-                          <input 
-                              placeholder="To: (Enter email)"
-                              value={emailTo}
-                              onChange={e => setEmailTo(e.target.value)}
-                              className="w-full bg-white border border-gray-100 rounded-lg px-3 py-2 text-xs font-bold"
+                            }} 
+                            placeholder="Enter internal collaboration notes... Type @ to tag a team member" 
+                            className="w-full bg-amber-50/10 border border-amber-200/40 rounded-2xl p-6 text-sm min-h-[150px] focus:ring-2 focus:ring-amber-100 outline-none transition-all" 
                           />
-                          <select 
-                            value={selectedTemplate}
-                            onChange={e => onSelectTemplate(e.target.value)}
-                            className="w-full bg-white border border-gray-100 rounded-lg px-3 py-2 text-xs font-bold"
-                          >
-                             <option value="">Select a template...</option>
-                             {emailTemplates.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
-                          </select>
-                          <input 
-                              placeholder="Subject"
-                              value={emailSubject}
-                              onChange={e => setEmailSubject(e.target.value)}
-                              className="w-full bg-white border border-gray-100 rounded-lg px-3 py-2 text-xs font-bold"
-                          />
-                          <textarea
-                             value={emailBody}
-                             onChange={(e) => setEmailBody(e.target.value)}
-                             placeholder="Write full email here..."
-                             className="w-full bg-white border border-gray-100 rounded-lg p-3 text-sm min-h-[120px]"
-                          />
-                      </div>
-                      <div className="flex justify-end pt-2">
-                         <button
-                            onClick={onSendEmail}
-                            disabled={sendingEmail || !emailBody.trim()}
-                            className="flex items-center gap-2 px-8 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg hover:bg-indigo-700 shadow-indigo-100 transition-all"
-                         >
-                            {sendingEmail ? 'Sending...' : 'SEND TRACKED EMAIL'} <FiMail size={14} />
-                         </button>
-                      </div>
-                   </div>
-                )}
+                          
+                          {showTagDropdown && (
+                             <div ref={mentionDropdownRef} className="absolute bottom-full left-0 mb-2 w-64 bg-white border border-gray-100 shadow-2xl rounded-2xl overflow-hidden animate-in slide-in-from-bottom-2 duration-300 z-[100]">
+                                <div className="p-3 border-b border-gray-50 bg-gray-50/50">
+                                   <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Mention Team Member</span>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto no-scrollbar">
+                                   {users.filter(u => u.name?.toLowerCase().includes(mentionSearch.toLowerCase())).length > 0 ? (
+                                      users.filter(u => u.name?.toLowerCase().includes(mentionSearch.toLowerCase())).map(u => (
+                                         <button 
+                                           key={u._id}
+                                           onClick={() => {
+                                              setNoteMentionedUserId(u._id);
+                                              const parts = noteText.split('@');
+                                              parts[parts.length - 1] = u.name + " ";
+                                              setNoteText(parts.join('@'));
+                                              setShowTagDropdown(false);
+                                              toast.success(`Tagged ${u.name}`);
+                                           }}
+                                           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 transition-colors text-left group"
+                                         >
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-black border border-indigo-100 group-hover:bg-white transition-colors">{u.name?.charAt(0)}</div>
+                                            <div className="flex-1 min-w-0">
+                                               <p className="text-xs font-bold text-gray-900 truncate">{u.name}</p>
+                                               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{u.role || 'Member'}</p>
+                                            </div>
+                                         </button>
+                                      ))
+                                   ) : (
+                                      <div className="p-4 text-center text-gray-400 text-xs italic">No team members found</div>
+                                   )}
+                                </div>
+                             </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              {noteMentionedUserId && (
+                                 <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-100 rounded-full animate-in zoom-in-50 duration-300">
+                                    <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Mentioned: {users.find(u => u._id === noteMentionedUserId)?.name}</span>
+                                    <button onClick={() => setNoteMentionedUserId("")} className="text-amber-300 hover:text-amber-600"><FiX size={10} /></button>
+                                 </div>
+                              )}
+                           </div>
+                           <button onClick={logNote} className="px-12 py-4 bg-amber-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-xl shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all">Post Note</button>
+                        </div>
+                     </div>
+                  )}
 
-                {chatterTab === 'follow-ups' && (
-                    <div className="space-y-4">
-                       <div className="grid grid-cols-2 gap-3">
-                          <select 
-                            value={followUpType}
-                            onChange={(e) => setFollowUpType(e.target.value)}
-                            className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-xs font-bold"
-                          >
-                             <option value="call">📞 Phone Call</option>
-                             <option value="whatsapp">💬 WhatsApp</option>
-                             <option value="email">📧 Send Email</option>
-                          </select>
-                          <div className="flex gap-1">
-                             <input 
-                               type="date" 
-                               value={followUpDate}
-                               onChange={(e) => setFollowUpDate(e.target.value)}
-                               className="flex-1 bg-gray-50 border border-gray-100 rounded-lg px-2 py-2 text-[10px] font-bold"
-                             />
-                             <input 
-                               type="time" 
-                               value={followUpTime}
-                               onChange={(e) => setFollowUpTime(e.target.value)}
-                               className="w-20 bg-gray-50 border border-gray-100 rounded-lg px-2 py-2 text-[10px] font-bold"
-                             />
-                          </div>
-                       </div>
-                       <textarea
-                          value={followUpNote}
-                          onChange={(e) => setFollowUpNote(e.target.value)}
-                          placeholder="What is the goal of this follow-up?"
-                          className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 text-sm min-h-[80px]"
-                       />
-                       <div className="flex justify-end">
-                          <button
-                             onClick={async () => {
-                                if (!followUpDate || !followUpTime) return toast.error("Select date and time");
-                                setSavingFollowUp(true);
-                                try {
-                                   const scheduledAt = new Date(`${followUpDate}T${followUpTime}:00`);
-                                   await API.post(`/follow-ups/lead/${id}/follow-up`, {
-                                      type: followUpType,
-                                      scheduledAt,
-                                      note: followUpNote
-                                   });
-                                   toast.success("Follow-up scheduled!");
-                                   setFollowUpNote("");
-                                   fetchFollowUps();
-                                   fetchTimeline();
-                                } catch (err) {
-                                   toast.error(err.response?.data?.message || "Failed to schedule");
-                                } finally { setSavingFollowUp(false); }
-                             }}
-                             disabled={savingFollowUp || !followUpDate}
-                             className="px-8 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg hover:bg-indigo-700 shadow-indigo-100 transition-all"
-                          >
-                             {savingFollowUp ? '...' : 'Schedule Follow-up'}
-                          </button>
-                       </div>
+                  {activeQuickAction === 'email' && (
+                     <div className="space-y-4 font-inter">
+                        <div className="grid grid-cols-1 gap-4 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                           <div className="flex items-center gap-4">
+                              <span className="w-16 text-[10px] font-black uppercase tracking-widest text-gray-400">From</span>
+                              <input 
+                                 placeholder="Sender email name <email@example.com>..." 
+                                 value={emailFrom} 
+                                 onChange={e => setEmailFrom(e.target.value)} 
+                                 className="flex-1 bg-white border border-gray-100 rounded-lg px-3 py-1 text-sm font-bold text-gray-700 placeholder-gray-300 focus:ring-2 focus:ring-indigo-50 focus:border-indigo-200 transition-all font-inter" 
+                              />
+                           </div>
+                           <div className="flex items-center gap-4 border-t border-gray-100 pt-4">
+                              <span className="w-16 text-[10px] font-black uppercase tracking-widest text-gray-400">To</span>
+                              <input 
+                                 placeholder="Recipient email address..." 
+                                 value={emailTo} 
+                                 onChange={e => setEmailTo(e.target.value)} 
+                                 className="flex-1 bg-white border border-gray-100 rounded-lg px-3 py-1 text-sm font-bold text-teal-600 placeholder-gray-300 focus:ring-2 focus:ring-teal-50 focus:border-teal-200 transition-all font-inter" 
+                              />
+                           </div>
+                           <div className="flex items-center gap-4 border-t border-gray-100 pt-4">
+                              <span className="w-16 text-[10px] font-black uppercase tracking-widest text-gray-400">Subject</span>
+                              <input 
+                                 placeholder="Enter message subject..." 
+                                 value={emailSubject} 
+                                 onChange={e => setEmailSubject(e.target.value)} 
+                                 className="flex-1 bg-white border border-gray-100 rounded-lg px-3 py-1 text-sm font-bold text-gray-900 placeholder-gray-300 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200 transition-all" 
+                              />
+                           </div>
+                        </div>
+                        <div className="relative group">
+                           <textarea 
+                              value={emailBody} 
+                              onChange={(e) => setEmailBody(e.target.value)} 
+                              placeholder="Write your email here..." 
+                              className="w-full bg-white border border-gray-200 rounded-2xl p-6 text-sm min-h-[250px] shadow-inner focus:ring-4 focus:ring-indigo-50 outline-none transition-all leading-relaxed" 
+                           />
+                           <div className="absolute bottom-4 right-4 flex items-center gap-3">
+                              <button onClick={() => setEmailBody('')} className="p-2 text-gray-300 hover:text-rose-500 transition-colors"><FiX size={16} /></button>
+                           </div>
+                        </div>
+                        <div className="flex justify-end pt-2">
+                           <button 
+                              onClick={() => {
+                                 if (!emailTo.trim()) {
+                                    toast.error("Please enter a recipient email.");
+                                    return;
+                                 }
+                                 if (!emailBody.trim()) {
+                                    toast.error("Please enter an email body.");
+                                    return;
+                                 }
+                                 onSendEmail();
+                              }} 
+                              className={`px-12 py-4 bg-indigo-600 text-white rounded-xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:translate-y-[-2px] active:translate-y-[0px] transition-all flex items-center gap-2 ${sendingEmail ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                           >
+                              <FiSend size={14} />
+                              {sendingEmail ? 'Sending...' : 'Send Message'}
+                           </button>
+                        </div>
+                     </div>
+                  )}
+
+                  {activeQuickAction === 'doc' && (
+                     <div className="border-4 border-dashed border-gray-50 rounded-[40px] p-20 text-center hover:bg-indigo-50/5 hover:border-indigo-100 transition-all cursor-pointer group" onClick={openFileInput}>
+                        <div className="p-6 bg-indigo-50 text-indigo-600 rounded-3xl w-fit mx-auto mb-6 scale-125 group-hover:rotate-12 transition-transform"><FiPaperclip size={32} /></div>
+                        <p className="text-sm font-black text-gray-900 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">Select documents to upload</p>
+                        <p className="text-xs text-gray-400 mt-3 font-medium">PDF, DOCX, JPG supported (Max 10MB)</p>
+                        <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
+                     </div>
+                  )}
+               </div>
+            )}
+
+            {/* Content Tabs */}
+            <div className="border-b border-gray-100 flex items-center gap-12">
+               {['notes', 'extra', 'docs'].map((tab) => (
+                  <button 
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`pb-4 text-[11px] font-black uppercase tracking-[2px] transition-all relative ${activeTab === tab ? 'text-teal-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-teal-600 after:rounded-t-full' : 'text-gray-400 hover:text-gray-900'}`}
+                  >
+                    {tab === 'notes' ? 'Description' : tab === 'extra' ? 'Extra Info' : 'Attachments'}
+                  </button>
+               ))}
+            </div>
+
+            <div className="py-8">
+              {activeTab === 'notes' && (
+                <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
+                  <div className="group bg-slate-50/30 p-8 rounded-3xl border border-dashed border-gray-100 min-h-[300px] relative">
+                     <textarea 
+                       value={editedLead.notes || ""}
+                       onChange={(e) => handleEditChange('notes', e.target.value)}
+                       placeholder="Enter internal lead description, situational context, or important context here..."
+                       className="w-full h-full text-sm text-gray-700 placeholder-gray-300 bg-transparent border-none focus:ring-0 resize-none leading-relaxed"
+                     />
+                     <div className="absolute top-4 right-4 flex items-center gap-2">
+                        <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Auto-saved to lead file</span>
+                     </div>
+                  </div>
+                  <div className="flex justify-end">
+                     <button 
+                       onClick={() => saveDetails('notes')}
+                       className="px-8 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-600/20 hover:scale-105 transition-all"
+                     >
+                        Update Description
+                     </button>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'docs' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in slide-in-from-top-4 duration-500">
+                   {activities.filter(a => a.attachments && a.attachments.length > 0).flatMap(a => a.attachments).map((doc, idx) => (
+                      <div key={idx} className="p-6 bg-white border border-gray-100 rounded-[32px] shadow-sm hover:shadow-2xl hover:shadow-indigo-600/5 transition-all group relative overflow-hidden">
+                         <div className="aspect-square bg-indigo-50/30 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:rotate-3 group-hover:scale-95">
+                            <FiFileText size={40} className="text-gray-300 group-hover:text-indigo-600 transition-colors" strokeWidth={1.5} />
+                         </div>
+                         <h5 className="text-[11px] font-black uppercase tracking-tight text-gray-900 truncate mb-1">{doc.name || 'document.pdf'}</h5>
+                         <div className="flex items-center justify-between mt-2">
+                           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{doc.size || '1.2 MB'}</p>
+                           <button className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"><FiDownload size={14} /></button>
+                         </div>
+                      </div>
+                   ))}
+                   <div 
+                      onClick={() => setActiveQuickAction('doc')}
+                      className="p-6 border-2 border-dashed border-gray-100 rounded-[32px] flex flex-col items-center justify-center cursor-pointer hover:bg-indigo-50/10 hover:border-indigo-200 transition-all text-gray-300 min-h-[200px] group"
+                   >
+                      <div className="p-4 bg-gray-50 rounded-full group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors mb-4">
+                         <FiPlus size={24} />
+                      </div>
+                      <span className="text-[11px] font-black uppercase tracking-[2px]">Upload</span>
+                   </div>
+                </div>
+              )}
+
+              {activeTab === 'extra' && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
+                    {/* Section: Company */}
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between border-b border-gray-50 pb-2 mb-4">
+                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[3px]">Company</h4>
+                        <button onClick={() => setEditingSection(editingSection === 'company' ? null : 'company')} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">{editingSection === 'company' ? 'SAVE' : 'EDIT'}</button>
+                      </div>
+                      
+                      {editingSection === 'company' ? (
+                        <div className="space-y-4">
+                          {[
+                            { label: 'Name', key: 'companyName' },
+                            { label: 'Website', key: 'website' },
+                            { label: 'Industry', key: 'industry' },
+                            { label: 'Size', key: 'companySize' },
+                          ].map(f => (
+                            <div key={f.key}>
+                              <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{f.label}</label>
+                              <input 
+                                value={editedLead[f.key] || ""} 
+                                onChange={e => handleEditChange(f.key, e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-indigo-100 transition-all"
+                              />
+                            </div>
+                          ))}
+                          <button onClick={() => saveDetails('company')} className="w-full py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-indigo-600/20 mt-2">Update Company</button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {[
+                            { label: 'Name', val: lead.companyName },
+                            { label: 'Website', val: lead.website },
+                            { label: 'Industry', val: lead.industry },
+                            { label: 'Size', val: lead.companySize },
+                          ].map(row => (
+                            <div key={row.label} className="flex items-center justify-between group/row">
+                              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{row.label}</span>
+                              <span className="text-sm font-medium text-gray-700 truncate max-w-[150px]">{row.val || '—'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                 )}
 
-                {chatterTab === 'activity' && (
-                   <div className="flex flex-col gap-4">
-                      <div className="grid grid-cols-2 gap-3">
-                         <select
-                            value={activityType}
-                            onChange={e => setActivityType(e.target.value)}
-                            className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold outline-none"
-                         >
-                            {ACTIVITY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                         </select>
-                         <input
-                            type="date"
-                            value={nextFollowUpDate}
-                            onChange={e => setNextFollowUpDate(e.target.value)}
-                            className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold outline-none"
-                         />
+                    {/* Section: Marketing */}
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between border-b border-gray-50 pb-2 mb-4">
+                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[3px]">Marketing</h4>
+                        <button onClick={() => setEditingSection(editingSection === 'marketing' ? null : 'marketing')} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">{editingSection === 'marketing' ? 'SAVE' : 'EDIT'}</button>
                       </div>
-                      <div className="relative">
-                         <textarea
-                            value={activityNote}
-                            onChange={e => setActivityNote(e.target.value)}
-                            placeholder="Brief summary of activity..."
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100 min-h-[80px]"
-                         />
-                         <button
-                            onClick={addActivity}
-                            disabled={savingActivity || !activityNote.trim()}
-                            className="absolute right-2 bottom-2 px-4 py-1.5 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-[0.1em] rounded shadow-md hover:bg-indigo-700"
-                         >
-                            SCHEDULE
-                         </button>
-                      </div>
-                   </div>
-                )}
-
-                {showEmojiPicker && (
-                    <div className="absolute bottom-[200px] right-8 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 grid grid-cols-4 gap-2 z-[60] animate-in zoom-in-95 duration-200">
-                        {commonEmojis.map(emoji => (
-                           <button key={emoji} onClick={() => addEmoji(emoji)} className="text-xl hover:scale-125 transition-transform p-1">{emoji}</button>
-                        ))}
+                      
+                      {editingSection === 'marketing' ? (
+                        <div className="space-y-4">
+                          {[
+                            { label: 'Source', key: 'source' },
+                            { label: 'Campaign', key: 'campaign' },
+                            { label: 'Medium', key: 'medium' },
+                          ].map(f => (
+                            <div key={f.key}>
+                              <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{f.label}</label>
+                              <input 
+                                value={editedLead[f.key] || ""} 
+                                onChange={e => handleEditChange(f.key, e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-indigo-100 transition-all"
+                              />
+                            </div>
+                          ))}
+                          <button onClick={() => saveDetails('marketing')} className="w-full py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-indigo-600/20 mt-2">Update Marketing</button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {[
+                            { label: 'Source', val: lead.source },
+                            { label: 'Campaign', val: lead.campaign },
+                            { label: 'Medium', val: lead.medium },
+                          ].map(row => (
+                            <div key={row.label} className="flex items-center justify-between group/row">
+                              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{row.label}</span>
+                              <span className="text-sm font-medium text-gray-700 truncate max-w-[150px] font-bold text-teal-600">{row.val || '—'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                )}
-             </div>
+
+                    {/* Section: Location */}
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between border-b border-gray-50 pb-2 mb-4">
+                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[3px]">Location</h4>
+                        <button onClick={() => setEditingSection(editingSection === 'location' ? null : 'location')} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">{editingSection === 'location' ? 'SAVE' : 'EDIT'}</button>
+                      </div>
+                      
+                      {editingSection === 'location' ? (
+                        <div className="space-y-4">
+                          {[
+                            { label: 'City', key: 'city' },
+                            { label: 'Address', key: 'address' },
+                            { label: 'Location', key: 'location' },
+                          ].map(f => (
+                            <div key={f.key}>
+                              <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{f.label}</label>
+                              <input 
+                                value={editedLead[f.key] || ""} 
+                                onChange={e => handleEditChange(f.key, e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-indigo-100 transition-all"
+                              />
+                            </div>
+                          ))}
+                          <button onClick={() => saveDetails('location')} className="w-full py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-indigo-600/20 mt-2">Update Location</button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {[
+                            { label: 'City', val: lead.city },
+                            { label: 'Address', val: lead.address },
+                            { label: 'Location', val: lead.location },
+                          ].map(row => (
+                            <div key={row.label} className="flex items-center justify-between group/row">
+                              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{row.label}</span>
+                              <span className="text-sm font-medium text-gray-700 truncate max-w-[150px]">{row.val || '—'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Section: Academic */}
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between border-b border-gray-50 pb-2 mb-4">
+                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[3px]">Academic</h4>
+                        <button onClick={() => setEditingSection(editingSection === 'academic' ? null : 'academic')} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">{editingSection === 'academic' ? 'SAVE' : 'EDIT'}</button>
+                      </div>
+                      
+                      {editingSection === 'academic' ? (
+                        <div className="space-y-4">
+                          {[
+                            { label: 'Course', key: 'course' },
+                            { label: 'Degree', key: 'courseSelected' },
+                            { label: 'Score', key: 'testScore', type: 'number' },
+                          ].map(f => (
+                            <div key={f.key}>
+                              <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{f.label}</label>
+                              <input 
+                                type={f.type || 'text'}
+                                value={editedLead[f.key] || ""} 
+                                onChange={e => handleEditChange(f.key, e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-xs font-bold text-gray-900 focus:ring-2 focus:ring-indigo-100 transition-all"
+                              />
+                            </div>
+                          ))}
+                          <button onClick={() => saveDetails('academic')} className="w-full py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-indigo-600/20 mt-2">Update Academic</button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {[
+                            { label: 'Course', val: lead.course },
+                            { label: 'Degree', val: lead.courseSelected },
+                            { label: 'Score', val: lead.testScore },
+                          ].map(row => (
+                            <div key={row.label} className="flex items-center justify-between group/row">
+                              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{row.label}</span>
+                              <span className="text-sm font-black text-indigo-600 truncate max-w-[150px]">{row.val || '—'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <LostModal
-          isOpen={showLost}
-          onClose={() => setShowLost(false)}
-          onConfirm={markLost}
-          loading={markingLost}
-        />
+        {/* UNIFIED ACTIVITY TIMELINE */}
+        <div className="mt-16 w-full space-y-12 mb-32 border-t border-gray-100 pt-16 px-6">
+          <div className="px-4 text-center mb-16">
+            <div className="w-px h-16 bg-gradient-to-b from-transparent to-indigo-200 mx-auto mb-8" />
+            <button 
+              onClick={() => setShowHistory(!showHistory)}
+              className="group inline-flex items-center gap-4 px-10 py-4 bg-white border border-gray-100 rounded-full shadow-2xl shadow-indigo-600/5 hover:shadow-indigo-600/10 hover:border-indigo-100 transition-all duration-500"
+            >
+              <div className={`w-8 h-8 rounded-full ${showHistory ? 'bg-rose-50 text-rose-600 rotate-45' : 'bg-indigo-50 text-indigo-600'} flex items-center justify-center transition-all duration-500`}>
+                <FiPlus size={16} />
+              </div>
+              <span className="text-[14px] font-black uppercase tracking-[8px] text-gray-400 group-hover:text-indigo-600 transition-colors">
+                {showHistory ? 'Hide Interaction History' : 'View Interaction History'}
+              </span>
+            </button>
+          </div>
+
+          {showHistory && (
+            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-12 px-4 font-inter">
+                 <div className="flex gap-1 bg-white p-1 rounded-2xl shadow-sm border border-gray-100 overflow-x-auto no-scrollbar">
+                    {['all', 'conversation', 'notes', 'activity'].map((tab) => (
+                       <button
+                         key={tab}
+                         onClick={() => setChatterTab(tab)}
+                         className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all whitespace-nowrap ${
+                            chatterTab === tab 
+                            ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20' 
+                            : 'bg-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                         }`}
+                       >
+                          {tab === 'all' ? 'Timeline' : tab}
+                       </button>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="space-y-8 pl-10 pr-4">
+                 {activityLoading ? (
+                    <div className="h-40 flex items-center justify-center">
+                       <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                 ) : (() => {
+                    const filtered = (activities || []).filter(item => {
+                       if (chatterTab === 'all') return true;
+                       if (chatterTab === 'conversation') return ['email', 'message', 'whatsapp'].includes(item.type);
+                       if (chatterTab === 'notes') return item.type === 'note';
+                       if (chatterTab === 'activity') return ['lead_stage_changed', 'system', 'lead_assignment_changed', 'lead', 'deal_stage_changed', 'follow_up'].includes(item.type);
+                       return false;
+                    });
+
+                    if (filtered.length === 0) return (
+                       <div className="text-center py-20 bg-white rounded-[40px] border border-gray-100 shadow-sm">
+                          <FiInbox size={32} className="mx-auto text-gray-200 mb-4" />
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No activities found</p>
+                       </div>
+                    );
+
+                    const groups = filtered.reduce((acc, item) => {
+                       const dateLabel = getDateGroupKey(item.date);
+                       if (!acc[dateLabel]) acc[dateLabel] = [];
+                       acc[dateLabel].push(item);
+                       return acc;
+                    }, {});
+
+                    return Object.entries(groups).map(([date, groupItems]) => (
+                       <div key={date} className="relative pb-12">
+                          <div className="sticky top-4 z-[5] mb-12 flex justify-center">
+                             <span className="bg-white border border-gray-100 shadow-sm px-6 py-2 rounded-full text-[10px] font-black tracking-[3px] text-gray-400 uppercase">{date}</span>
+                          </div>
+                          <div className="space-y-12">
+                             {groupItems.map((item, idx) => (
+                                <ActivityItem key={item._id || idx} item={item} isLast={idx === groupItems.length - 1} />
+                             ))}
+                          </div>
+                       </div>
+                    ));
+                 })()}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      <LostModal
+        isOpen={showLost}
+        onClose={() => setShowLost(false)}
+        onConfirm={markLost}
+        loading={markingLost}
+      />
     </div>
   );
 }

@@ -71,17 +71,29 @@ exports.getCoursesByCompany = async (req, res, next) => {
 exports.startTest = async (req, res, next) => {
   try {
     const { courseId, companyId } = req.body;
-    if (!courseId || !companyId) return res.status(400).json({ success: false, message: "Identify assessment first." });
+    console.log("START TEST REQUEST:", { courseId, companyId });
+    if (!courseId || !companyId) {
+       console.error("Missing courseId or companyId");
+       return res.status(400).json({ success: false, message: "Identify assessment first." });
+    }
 
     const course = await Course.findById(courseId);
-    if (!course || !course.isActive) return res.status(404).json({ success: false, message: "Assessment inactive." });
+    console.log(`COURSE STATUS ${courseId}: ${course ? (course.isActive ? 'Active' : 'Inactive') : 'NOT FOUND'}`);
+    if (!course || !course.isActive) {
+       console.error(`Course ${courseId} is inactive or not found`);
+       return res.status(404).json({ success: false, message: "Assessment inactive." });
+    }
 
     // Generate UUID token
     const token = crypto.randomUUID();
 
     // Snapshot questions
     let pool = await Question.find({ courseId }).lean();
-    if (pool.length === 0) return res.status(400).json({ success: false, message: "Queue empty." });
+    console.log(`POLL FOUND FOR COURSE ${courseId}: ${pool.length} items`);
+    if (pool.length === 0) {
+       console.error(`Empty question pool for course ${courseId}`);
+       return res.status(400).json({ success: false, message: "Queue empty." });
+    }
 
     // Filter, Shuffle, Limit 10, Shuffle options, Remove correctAnswers
     let snapshot = pool.sort(() => 0.5 - Math.random()).slice(0, 10).map(q => {
@@ -172,57 +184,84 @@ exports.submitTest = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-// ── Lead Generation ─────────────────────────────────────────────────────────
+// ── Inquiry-Based Capture ───────────────────────────────────────────────────
 exports.submitLead = async (req, res, next) => {
   try {
-    const { token, name, email, phone } = req.body;
-    if (!token || !name || !email || !phone) return res.status(400).json({ success: false, message: "Verification required." });
+    const { token, name, email, phone, location } = req.body;
+    if (!token || !name || !email) return res.status(400).json({ success: false, message: "Identification required." });
 
-    // Validate token exists in TestSubmission
     const submission = await TestSubmission.findOne({ token });
-    if (!submission) return res.status(404).json({ success: false, message: "Link record not found." });
-
-    // Prevent duplicate lead (email + course)
-    const duplicate = await Lead.findOne({ email: email.toLowerCase(), companyId: submission.companyId, source: new RegExp(`Test Campaign`, 'i') });
-    // Note: We check source to avoid blocking regular leads
-    if (duplicate) return res.status(400).json({ success: false, message: "Duplicate record detected." });
+    if (!submission) return res.status(404).json({ success: false, message: "Assessment record not found." });
 
     const course = await Course.findById(submission.courseId);
+    const Inquiry = require("../models/Inquiry");
+    const Activity = require("../models/Activity");
+    const inquiryCtrl = require("./inquiryController");
 
-    // Round-robin
-    const sales = await User.find({ companyId: submission.companyId, role: "sales", status: "active" }).sort({ lastAssignedAt: 1 });
-    let assignedTo = null;
-    if (sales.length > 0) {
-      assignedTo = sales[0]._id;
-      await User.findByIdAndUpdate(assignedTo, { lastAssignedAt: new Date() });
+    const companyId = submission.companyId;
+    const phoneStr = phone ? String(phone).trim() : "";
+    const emailStr = String(email).trim().toLowerCase();
+    const testScorePerc = Math.round((submission.score / (submission.totalMarks || 10)) * 100);
+
+    // 1. DUPLICATE CHECK (24H)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    let inquiry = await Inquiry.findOne({
+      companyId,
+      $or: [{ email: emailStr }, { phone: phoneStr || "NONE" }],
+      createdAt: { $gte: twentyFourHoursAgo }
+    });
+
+    if (inquiry) {
+      // Update existing
+      inquiry.name = name;
+      inquiry.courseSelected = course?.title || inquiry.courseSelected;
+      inquiry.testScore = testScorePerc;
+      inquiry.location = location || inquiry.location;
+      inquiry.message = `Updated via Test Portal (Score: ${testScorePerc}%)`;
+      await inquiry.save();
+    } else {
+      // Create new
+      inquiry = await Inquiry.create({
+        name,
+        email: emailStr,
+        phone: phoneStr,
+        location: location || "",
+        companyId,
+        source: "test_portal",
+        courseSelected: course?.title || "Unknown",
+        testScore: testScorePerc,
+        status: "new",
+        message: `Captured via Test Portal Assessment (Result: ${submission.score}/${submission.totalMarks})`
+      });
+
+      // Log activity
+      await Activity.create({
+        inquiryId: inquiry._id,
+        companyId,
+        type: "inquiry",
+        note: "New inquiry created from test portal"
+      });
     }
 
-    const companyAdmin = await User.findOne({ companyId: submission.companyId, role: "company_admin" });
+    // ── AUTO CONVERSION: If testScore >= 70% ──
+    let leadId = null;
+    if (testScorePerc >= 70 && inquiry.status !== "converted") {
+      try {
+        const lead = await inquiryCtrl.performConversion(inquiry, null);
+        leadId = lead._id;
+      } catch (convErr) {
+        console.error("Test Portal Auto-conversion failed:", convErr);
+      }
+    }
 
-    const lead = await Lead.create({
-      name,
-      email: email.toLowerCase(),
-      phone,
-      companyId: submission.companyId,
-      source: `Test Campaign - ${course?.title || 'Unknown'}`,
-      status: "New",
-      assignedTo,
-      notes: `Test Performance: ${submission.score}/${submission.totalMarks || 10}`,
-      createdBy: assignedTo || companyAdmin?._id || submission.companyId
+    // ── Notification (Legacy/Manual) ────────────
+    sendResultEmail(emailStr, name, submission.score, submission.totalMarks || 10);
+
+    res.json({ 
+      success: true, 
+      message: leadId ? "Elite performance! Lead generated automatically." : "Profile linked. Inquiry captured.",
+      inquiryId: inquiry._id,
+      leadId: leadId
     });
-
-    // ── Final Automation ────────────────────────────────
-    const sendWhatsApp = require("../services/whatsappService");
-    
-    // Non-blocking notifications
-    sendResultEmail(email, name, submission.score, submission.totalMarks || 10);
-    sendWhatsApp({
-      phone: lead.phone,
-      name: lead.name,
-      score: submission.score,
-      leadId: lead._id
-    });
-
-    res.json({ success: true, message: "Profile linked. Counselor will contact you." });
   } catch (error) { next(error); }
 };

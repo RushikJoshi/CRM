@@ -28,6 +28,7 @@ const Todos = lazy(() => import("./pages/Todos"));
 const Calendar = lazy(() => import("./pages/Calendar"));
 const Automation = lazy(() => import("./pages/Automation"));
 const Inquiries = lazy(() => import("./pages/Inquiries"));
+const InquiryDetailPage = lazy(() => import("./pages/InquiryDetailPage"));
 const CustomerDetails = lazy(() => import("./pages/CustomerDetails"));
 const Activities = lazy(() => import("./pages/Activities"));
 const Tasks = lazy(() => import("./pages/Tasks"));
@@ -180,6 +181,7 @@ function App() {
           <Route path="/company/customers/:id" element={<CustomerDetails />} />
           <Route path="/company/customers/:id/edit" element={<CustomerFormPage />} />
           <Route path="/company/inquiries" element={<Inquiries />} />
+          <Route path="/company/inquiries/:id" element={<InquiryDetailPage />} />
           <Route path="/company/inquiries/create" element={<InquiryFormPage />} />
           <Route path="/company/inquiries/:id/edit" element={<InquiryFormPage />} />
           <Route path="/company/inquiries/:id/convert" element={<ConvertInquiryFormPage />} />
@@ -228,6 +230,7 @@ function App() {
           <Route path="/branch/customers/:id" element={<CustomerDetails />} />
           <Route path="/branch/customers/:id/edit" element={<CustomerFormPage />} />
           <Route path="/branch/inquiries" element={<Inquiries />} />
+          <Route path="/branch/inquiries/:id" element={<InquiryDetailPage />} />
           <Route path="/branch/inquiries/create" element={<InquiryFormPage />} />
           <Route path="/branch/inquiries/:id/edit" element={<InquiryFormPage />} />
           <Route path="/branch/inquiries/:id/convert" element={<ConvertInquiryFormPage />} />
@@ -272,6 +275,7 @@ function App() {
           <Route path="/sales/customers/:id" element={<CustomerDetails />} />
           <Route path="/sales/customers/:id/edit" element={<CustomerFormPage />} />
           <Route path="/sales/inquiries" element={<Inquiries />} />
+          <Route path="/sales/inquiries/:id" element={<InquiryDetailPage />} />
           <Route path="/sales/inquiries/create" element={<InquiryFormPage />} />
           <Route path="/sales/inquiries/:id/edit" element={<InquiryFormPage />} />
           <Route path="/sales/inquiries/:id/convert" element={<ConvertInquiryFormPage />} />

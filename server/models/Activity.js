@@ -12,6 +12,11 @@ const activitySchema = new mongoose.Schema(
             ref: "Deal",
             default: null
         },
+        inquiryId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Inquiry",
+            default: null
+        },
         customerId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Customer",
@@ -57,7 +62,8 @@ const activitySchema = new mongoose.Schema(
                 "task",
                 "message",
                 "follow_up",
-                "engagement"
+                "engagement",
+                "inquiry"
             ],
             required: true
         },
@@ -93,6 +99,7 @@ activitySchema.index({ leadId: 1, createdAt: -1 });
 activitySchema.index({ dealId: 1, createdAt: -1 });
 activitySchema.index({ customerId: 1, createdAt: -1 });
 activitySchema.index({ contactId: 1, createdAt: -1 });
+activitySchema.index({ inquiryId: 1, createdAt: -1 });
 activitySchema.index({ companyId: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Activity", activitySchema);

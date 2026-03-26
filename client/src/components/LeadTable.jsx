@@ -71,9 +71,6 @@ const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, 
                                     </td>
                                     <td className="saas-td-excel" onClick={() => onView?.(lead)}>
                                         <div className="flex items-center gap-2.5 cursor-pointer">
-                                            <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-slate-500 font-black text-[9px] uppercase shrink-0 border border-slate-200">
-                                                {lead.name?.charAt(0)}
-                                            </div>
                                             <div className="min-w-0">
                                                 <div className="font-bold text-slate-800 text-[12px] hover:text-indigo-600 truncate transition-colors leading-tight">{lead.name || "Unknown"}</div>
                                                 <div className="text-[10px] text-slate-400 font-black uppercase tracking-tighter truncate opacity-70">
@@ -89,20 +86,17 @@ const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, 
                                         </div>
                                     </td>
                                     <td className="saas-td-excel" onClick={(e) => e.stopPropagation()}>
-                                        <div className="flex items-center justify-center gap-1">
+                                        <div className="flex items-center justify-center gap-3">
                                             {lead.phone && (
-                                                <a href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-1 hover:text-emerald-600 transition-colors text-slate-300"><FaWhatsapp size={14} /></a>
+                                                <a href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black hover:text-emerald-600 transition-colors text-slate-400 uppercase tracking-widest">WA</a>
                                             )}
                                             {lead.email && (
-                                                <a href={`mailto:${lead.email}`} className="p-1 hover:text-indigo-600 transition-colors text-slate-300"><FiMail size={14} /></a>
+                                                <a href={`mailto:${lead.email}`} className="text-[10px] font-black hover:text-indigo-600 transition-colors text-slate-400 uppercase tracking-widest">Mail</a>
                                             )}
                                         </div>
                                     </td>
                                     <td className="saas-td-excel" onClick={(e) => { e.stopPropagation(); onAssign(lead); }}>
                                         <div className="flex items-center gap-2 cursor-pointer group/user">
-                                            <div className="w-4.5 h-4.5 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[8px] font-black text-slate-400 uppercase shrink-0">
-                                                {lead.assignedTo?.name?.charAt(0) || "U"}
-                                            </div>
                                             <span className="text-[11px] font-bold text-slate-600 truncate group-hover/user:text-indigo-600 transition-colors uppercase tracking-tight">{lead.assignedTo?.name?.split(' ')[0] || "Unassigned"}</span>
                                         </div>
                                     </td>
@@ -112,27 +106,18 @@ const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, 
                                         </span>
                                     </td>
                                     <td className="saas-td-excel text-right px-6" onClick={(e) => e.stopPropagation()}>
-                                        <div className="flex items-center justify-end gap-1.5 translate-x-3">
+                                        <div className="flex items-center justify-end gap-3 translate-x-3">
                                             <button 
                                                 onClick={() => onView?.(lead)} 
-                                                className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                                title="View Details"
+                                                className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all"
                                             >
-                                                <FiEye size={13} />
+                                                <FiEye size={13} /> View
                                             </button>
                                             <button 
                                                 onClick={() => onEdit(lead)} 
-                                                className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                                                title="Edit Lead"
+                                                className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 hover:text-amber-600 uppercase tracking-widest transition-all"
                                             >
-                                                <FiEdit2 size={13} />
-                                            </button>
-                                            <button 
-                                                onClick={() => onDelete?.(lead)} 
-                                                className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                                                title="Delete Lead"
-                                            >
-                                                <FiTrash2 size={13} />
+                                                <FiEdit2 size={13} /> Edit
                                             </button>
                                         </div>
                                     </td>

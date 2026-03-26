@@ -9,15 +9,24 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
         name: "",
         email: "",
         phone: "",
-        companyName: "",
-        source: "Manual",
-        website: "",
+        source: "manual",
+        status: "new",
         message: ""
     });
 
     const SOURCES = [
-        "Manual", "Phone Call", "Walk-in", "Email",
-        "Referral", "Social Media", "Website", "Other"
+        { value: "website", label: "Website" },
+        { value: "whatsapp", label: "WhatsApp" },
+        { value: "manual", label: "Manual" },
+        { value: "ads", label: "Ads" }
+    ];
+
+    const STATUSES = [
+        { value: "new", label: "New" },
+        { value: "contacted", label: "Contacted" },
+        { value: "qualified", label: "Qualified" },
+        { value: "converted", label: "Converted" },
+        { value: "rejected", label: "Rejected" }
     ];
 
     useEffect(() => {
@@ -26,9 +35,8 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
                 name: editingData.name || "",
                 email: editingData.email || "",
                 phone: editingData.phone || "",
-                companyName: editingData.companyName || "",
-                source: editingData.source || "Manual",
-                website: editingData.website || "",
+                source: editingData.source || "manual",
+                status: editingData.status || "new",
                 message: editingData.message || ""
             });
         } else {
@@ -36,9 +44,8 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
                 name: "",
                 email: "",
                 phone: "",
-                companyName: "",
-                source: "Manual",
-                website: "",
+                source: "manual",
+                status: "new",
                 message: ""
             });
         }
@@ -50,7 +57,7 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
         setError("");
         try {
             if (editingData) {
-                await API.put(`/inquiries/${editingData._id}`, formData);
+                await API.patch(`/inquiries/${editingData._id}`, formData);
             } else {
                 await API.post("/inquiries", formData);
             }
@@ -136,21 +143,6 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
                         </div>
                     </div>
 
-                    {/* Company */}
-                    <div className="space-y-1.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Entity Context</label>
-                        <div className="relative group">
-                            <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={14} />
-                            <input
-                                type="text"
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
-                                placeholder="Organization"
-                                value={formData.companyName}
-                                onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                            />
-                        </div>
-                    </div>
-
                     {/* Source */}
                     <div className="space-y-1.5">
                         <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Origin Vector</label>
@@ -160,23 +152,22 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
                                 value={formData.source}
                                 onChange={e => setFormData({ ...formData, source: e.target.value })}
                             >
-                                {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+                                {SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                             </select>
                         </div>
                     </div>
 
-                    {/* Website */}
+                    {/* Status */}
                     <div className="space-y-1.5">
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Global Web URI</label>
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Engagement Status</label>
                         <div className="relative group">
-                            <FiGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-600 transition-colors" size={14} />
-                            <input
-                                type="text"
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
-                                placeholder="https://..."
-                                value={formData.website}
-                                onChange={e => setFormData({ ...formData, website: e.target.value })}
-                            />
+                            <select
+                                className="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-teal-600/10 focus:border-teal-400 focus:bg-white transition-all font-bold text-gray-700 text-xs appearance-none shadow-inner cursor-pointer"
+                                value={formData.status}
+                                onChange={e => setFormData({ ...formData, status: e.target.value })}
+                            >
+                                {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                            </select>
                         </div>
                     </div>
                 </div>

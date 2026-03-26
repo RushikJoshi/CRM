@@ -4,7 +4,7 @@ import API from '../../services/api';
 import { 
   FiUser, FiMail, FiPhone, FiCheckCircle, FiShield, 
   FiFileText, FiAward, FiArrowRight, FiZap, FiTarget, 
-  FiBarChart2, FiDownload, FiStar
+  FiBarChart2, FiDownload, FiStar, FiMapPin
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,16 +15,16 @@ const AssessmentResult = () => {
   const scoreData = location.state?.scoreData;
 
   const [step, setStep] = useState('score'); // 'score' -> 'lead' -> 'final'
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', token });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', location: '', token });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleLeadSubmit = async (e) => {
+  const handleInquirySubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
-      await API.post('/test/public/submit-lead', formData);
+      await API.post('/test/public/inquiry/create', formData);
       setStep('final');
     } catch (err) {
       setError(err.response?.data?.message || "Linking failed. Try again.");
@@ -146,7 +146,7 @@ const AssessmentResult = () => {
                      <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em]">Unlock certification and mentorship</p>
                   </div>
 
-                  <form onSubmit={handleLeadSubmit} className="space-y-6">
+                  <form onSubmit={handleInquirySubmit} className="space-y-6">
                      <div className="group">
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Identity</label>
                         <div className="relative">
@@ -161,7 +161,7 @@ const AssessmentResult = () => {
                         </div>
                      </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div className="group">
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Work Email</label>
                             <div className="relative">
@@ -172,6 +172,19 @@ const AssessmentResult = () => {
                                     className="w-full bg-slate-50 border-0 rounded-2xl p-5 pl-14 focus:ring-4 focus:ring-indigo-100 font-bold transition-all text-gray-800"
                                     value={formData.email}
                                     onChange={e => setFormData({...formData, email: e.target.value})}
+                                />
+                            </div>
+                        </div>
+                        <div className="group">
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Current City</label>
+                            <div className="relative">
+                                <FiMapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                                <input 
+                                    type="text" required
+                                    placeholder="Enter City"
+                                    className="w-full bg-slate-50 border-0 rounded-2xl p-5 pl-14 focus:ring-4 focus:ring-indigo-100 font-bold transition-all text-gray-800"
+                                    value={formData.location}
+                                    onChange={e => setFormData({...formData, location: e.target.value})}
                                 />
                             </div>
                         </div>

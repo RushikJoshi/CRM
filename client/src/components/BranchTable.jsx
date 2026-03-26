@@ -30,9 +30,6 @@ const BranchTable = ({ branches, onEdit, onDelete, onToggleStatus }) => {
               <tr key={branch._id} className="saas-tr-excel group">
                 <td className="saas-td-excel">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-slate-500 font-black text-[9px] uppercase shrink-0 border border-slate-200">
-                      {branch.name?.charAt(0)}
-                    </div>
                     <div className="min-w-0">
                       <div className="font-bold text-slate-800 text-[12px] truncate transition-colors leading-tight">{branch.name}</div>
                       <div className="text-[10px] text-slate-400 font-black uppercase tracking-tighter truncate opacity-70">
@@ -48,17 +45,16 @@ const BranchTable = ({ branches, onEdit, onDelete, onToggleStatus }) => {
                   {BRANCH_TYPE_LABELS[branch.branchType] || branch.branchType || "—"}
                 </td>
                 <td className="saas-td-excel">
-                  <span
-                    className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider inline-block ${
+                  <button
+                    onClick={() => onToggleStatus?.(branch)}
+                    className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider inline-block transition-all hover:scale-105 active:scale-95 ${
                       branch.status === "active"
-                        ? "bg-emerald-50 text-emerald-600"
-                        : branch.status === "closed"
-                        ? "bg-slate-100 text-slate-400"
-                        : "bg-amber-50 text-amber-600"
+                        ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                        : "bg-rose-50 text-rose-600 hover:bg-rose-100"
                     }`}
                   >
-                    {branch.status || "—"}
-                  </span>
+                    {branch.status === 'active' ? 'ACTIVE' : 'UNACTIVE'}
+                  </button>
                 </td>
                 <td className="saas-td-excel text-[12px] font-bold text-slate-700 uppercase tracking-tight">
                   {branch.branchManagerId?.name || "Unassigned"}
@@ -70,29 +66,12 @@ const BranchTable = ({ branches, onEdit, onDelete, onToggleStatus }) => {
                   </div>
                 </td>
                 <td className="saas-td-excel text-right px-6">
-                  <div className="flex items-center justify-end gap-1.5 translate-x-3">
-                    {onToggleStatus && branch.status !== "closed" && (
-                      <button 
-                        onClick={() => onToggleStatus(branch)} 
-                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
-                        title="Toggle Status"
-                      >
-                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-                      </button>
-                    )}
+                  <div className="flex items-center justify-end gap-3 translate-x-3">
                     <button 
                       onClick={() => onEdit(branch)} 
-                      className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                      title="Edit Branch"
+                      className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 hover:text-amber-600 uppercase tracking-widest transition-all"
                     >
-                      <FiEdit2 size={13} />
-                    </button>
-                    <button 
-                      onClick={() => onDelete?.(branch)} 
-                      className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                      title="Delete Branch"
-                    >
-                      <FiTrash2 size={13} />
+                      <FiEdit2 size={13} /> Edit
                     </button>
                   </div>
                 </td>

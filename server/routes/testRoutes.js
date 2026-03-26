@@ -12,6 +12,7 @@ router.post("/public/start-test", publicTestController.startTest);
 router.get("/public/test/:token", publicTestController.getTestByToken);
 router.post("/public/submit-test", publicTestController.submitTest);
 router.post("/public/submit-lead", publicTestController.submitLead);
+router.post("/public/inquiry/create", publicTestController.submitLead); // Unified inquiry capture
 
 // ADMIN/SUPERADMIN ROUTES (Auth Required)
 router.use(auth);

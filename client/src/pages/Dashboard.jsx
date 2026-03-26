@@ -12,6 +12,7 @@ import {
     FiBriefcase,
     FiZap,
     FiAward,
+    FiInbox,
 } from "react-icons/fi";
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import API from "../services/api";
@@ -53,9 +54,10 @@ const Dashboard = () => {
     ];
 
     const crmMetrics = [
+        { label: "Total Inquiries", value: stats?.totalInquiries ?? 0, icon: <FiInbox />, link: `${basePath}/inquiries`, color: "bg-blue-400" },
         { label: "Total Leads", value: stats?.totalLeads ?? 0, icon: <FiTrendingUp />, link: `${basePath}/leads`, color: "bg-cyan-400" },
         { label: "Active Deals", value: stats?.totalDeals ?? 0, icon: <FiAward />, link: `${basePath}/deals`, color: "bg-purple-400" },
-        { label: "Revenue", value: formatCurrency(stats?.totalRevenue ?? 0), icon: <FaIndianRupeeSign />, link: `${basePath}/reports`, color: "bg-emerald-400" },
+        // { label: "Revenue", value: formatCurrency(stats?.totalRevenue ?? 0), icon: <FaIndianRupeeSign />, link: `${basePath}/reports`, color: "bg-emerald-400" },
         { label: "Conversion", value: `${stats?.conversionRate ?? 0}%`, icon: <FiZap />, link: `${basePath}/reports`, color: "bg-amber-400" },
     ];
 
@@ -153,8 +155,38 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Right Card: New Companies / Leads */}
+                {/* Right Card: New Companies / Leads / Inquiries */}
                 <div className="space-y-8">
+                    {!isSuperAdmin && (
+                        <div className="saas-table-container p-0">
+                            <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between">
+                                <h2 className="text-[16px] font-bold text-slate-800 poppins">Recent Inquiries</h2>
+                                <button onClick={() => navigate(`${basePath}/inquiries`)} className="text-[12px] font-bold text-blue-500 hover:text-blue-600 transition-colors">View All</button>
+                            </div>
+                            <div className="divide-y divide-slate-50">
+                                {(stats?.recentInquiries || [])?.slice(0, 4).map((item, i) => (
+                                    <div key={i} className="p-4 px-6 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group" onClick={() => navigate(`${basePath}/inquiries/${item._id}`)}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-blue-100/50 flex items-center justify-center text-blue-600 text-[14px] font-black group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                                {(item.name || "?").charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-slate-700 text-[14px]">{item.name}</div>
+                                                <div className="text-[11px] text-slate-400 font-bold uppercase tracking-tight mt-0.5">
+                                                    {item.source || "Landing Page"} • {item.status}
+                                                    {item.courseSelected && ` • ${item.courseSelected}`}
+                                                    {item.testScore > 0 && ` (${item.testScore}%)`}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <FiArrowUpRight size={14} className="text-slate-300 group-hover:text-blue-500 group-hover:scale-125 transition-all" />
+                                    </div>
+                                ))}
+                                {(stats?.recentInquiries || []).length === 0 && <div className="p-10 text-center text-slate-300 text-[12px] font-bold uppercase tracking-widest">No inquiries</div>}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="saas-table-container p-0">
                         <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between">
                             <h2 className="text-[16px] font-bold text-slate-800 poppins">
@@ -163,7 +195,7 @@ const Dashboard = () => {
                             <button onClick={() => navigate(`${basePath}/${isSuperAdmin ? "companies" : "leads"}`)} className="text-[12px] font-bold text-cyan-500 hover:text-cyan-600 transition-colors">View All</button>
                         </div>
                         <div className="divide-y divide-slate-50">
-                            {(isSuperAdmin ? stats?.recentCompanies : stats?.recentLeads || [])?.slice(0, 6).map((item, i) => (
+                            {(isSuperAdmin ? stats?.recentCompanies : stats?.recentLeads || [])?.slice(0, 4).map((item, i) => (
                                 <div key={i} className="p-4 px-6 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group" onClick={() => navigate(`${basePath}/${isSuperAdmin ? "companies" : "leads"}/${item._id}`)}>
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-xl bg-cyan-100/50 flex items-center justify-center text-cyan-600 text-[14px] font-black group-hover:bg-cyan-500 group-hover:text-white transition-all">

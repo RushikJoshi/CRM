@@ -78,9 +78,6 @@ const CustomersPage = () => {
                                     >
                                         <td className="saas-td-excel">
                                             <div className="flex items-center gap-2.5">
-                                                <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-slate-500 font-black text-[9px] uppercase shrink-0 border border-slate-200">
-                                                    {(item.name || "?").charAt(0).toUpperCase()}
-                                                </div>
                                                 <div className="min-w-0">
                                                     <div className="font-bold text-slate-800 text-[12px] truncate transition-colors leading-tight group-hover:text-emerald-600">{item.name}</div>
                                                     <div className="text-[10px] text-slate-400 font-black uppercase tracking-tighter truncate opacity-70 mt-0.5">
@@ -101,15 +98,15 @@ const CustomersPage = () => {
                                             </div>
                                         </td>
                                         <td className="saas-td-excel text-right px-6" onClick={(e) => e.stopPropagation()}>
-                                            <div className="flex items-center justify-end gap-1.5 translate-x-3">
-                                                <button onClick={() => setTaskCustomer(item)} className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Add Task">
-                                                    <FiCalendar size={13} />
+                                            <div className="flex items-center justify-end gap-3 translate-x-3">
+                                                <button onClick={() => setTaskCustomer(item)} className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 hover:text-emerald-600 uppercase tracking-widest transition-all">
+                                                    <FiCalendar size={13} strokeWidth={3} /> Task
                                                 </button>
-                                                <button onClick={() => navigate(`${basePath}/customers/${item._id}/edit`)} className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Edit">
-                                                    <FiEdit2 size={13} />
+                                                <button onClick={() => navigate(`${basePath}/customers/${item._id}/edit`)} className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 hover:text-amber-600 uppercase tracking-widest transition-all">
+                                                    <FiEdit2 size={13} strokeWidth={3} /> Edit
                                                 </button>
-                                                <button onClick={() => navigate(`${basePath}/customers/${item._id}`)} className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Full Profile">
-                                                    <FiExternalLink size={13} />
+                                                <button onClick={() => navigate(`${basePath}/customers/${item._id}`)} className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-all">
+                                                    <FiExternalLink size={13} strokeWidth={3} /> View
                                                 </button>
                                             </div>
                                         </td>

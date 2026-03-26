@@ -72,6 +72,7 @@ exports.getDashboardStats = async (req, res) => {
       recentLeads,
       recentDeals,
       totalInquiries,
+      recentInquiries,
       hotLeads,
       overdueTasks,
       agingLeads,
@@ -98,6 +99,7 @@ exports.getDashboardStats = async (req, res) => {
       }),
       Todo.countDocuments({
         ...filter,
+        status: { $ne: "Completed" },
         dueDate: { $gte: todayStart, $lte: todayEnd }
       }),
       Deal.aggregate([
@@ -111,14 +113,16 @@ exports.getDashboardStats = async (req, res) => {
       Lead.find(filter).sort({ createdAt: -1 }).limit(5).populate("assignedTo", "name"),
       Deal.find(dealFilter).sort({ createdAt: -1 }).limit(5).populate("assignedTo", "name"),
       (() => {
-        let inquiryFilter = {};
-        if (role !== "super_admin") {
-          inquiryFilter.companyId = companyId;
-          if (role === "branch_manager" || role === "sales") {
-            if (branchId) inquiryFilter.branchId = branchId;
-          }
-        }
+        let inquiryFilter = { companyId };
+        if (role === "branch_manager") inquiryFilter.branchId = branchId;
+        if (role === "sales") inquiryFilter.assignedTo = userId;
         return require("../models/Inquiry").countDocuments(inquiryFilter);
+      })(),
+      (() => {
+        let inquiryFilter = { companyId };
+        if (role === "branch_manager") inquiryFilter.branchId = branchId;
+        if (role === "sales") inquiryFilter.assignedTo = userId;
+        return require("../models/Inquiry").find(inquiryFilter).sort({ createdAt: -1 }).limit(5).populate("assignedTo", "name");
       })(),
       Lead.find({ ...filter, score: { $gte: 60 } }).sort({ score: -1 }).limit(5).populate("assignedTo", "name"),
       Todo.countDocuments({
@@ -195,7 +199,7 @@ exports.getDashboardStats = async (req, res) => {
       const [calls, meetings, tasks] = await Promise.all([
         Call.find({ ...activityFilter, status: 'Scheduled', startDate: { $gte: now } }).sort({ startDate: 1 }).limit(10).populate("assignedTo", "name"),
         Meeting.find({ ...activityFilter, startDate: { $gte: now } }).sort({ startDate: 1 }).limit(10).populate("assignedTo", "name"),
-        Todo.find({ ...activityFilter, status: { $ne: 'Completed' }, dueDate: { $gte: now } }).sort({ dueDate: 1 }).limit(5)
+        Todo.find({ ...activityFilter, status: { $ne: 'Completed' }, dueDate: { $get: now } }).sort({ dueDate: 1 }).limit(5)
       ]);
 
       recentActivities = [
@@ -231,6 +235,7 @@ exports.getDashboardStats = async (req, res) => {
         recentLeads,
         recentDeals,
         totalInquiries,
+        recentInquiries,
         totalProspects: totalQualifiedLeads,
         hotLeads,
         overdueTasks,

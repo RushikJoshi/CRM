@@ -68,7 +68,7 @@ exports.deleteTemplate = async (req, res) => {
 };
 
 exports.sendEmail = async (req, res) => {
-  const { leadId, templateId, subject, body, to } = req.body;
+  const { leadId, templateId, subject, body, to, from } = req.body;
   try {
     const lead = await Lead.findById(leadId);
     if (!lead) return res.status(404).json({ status: "error", message: "Lead not found" });
@@ -128,7 +128,7 @@ exports.sendEmail = async (req, res) => {
 
     // Send via Nodemailer
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"CRM Notification" <${process.env.SMTP_USER}>`,
+      from: from || process.env.SMTP_FROM || `"CRM Notification" <${process.env.SMTP_USER}>`,
       to: recipientEmail,
       subject: finalSubject,
       html: finalBody,

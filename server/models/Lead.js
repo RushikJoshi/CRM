@@ -100,13 +100,38 @@ const leadSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    courseSelected: {
+      type: String,
+      default: ""
+    },
+    testScore: {
+      type: Number,
+      default: 0
+    },
+    website: {
+      type: String,
+      default: ""
+    },
+    companySize: {
+      type: String,
+      default: ""
+    },
+    campaign: {
+      type: String,
+      default: ""
+    },
+    medium: {
+      type: String,
+      default: ""
+    },
     location: {
       type: String,
       default: ""
     },
-    inquiryStatus: {
-      type: String,
-      default: ""
+    inquiryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Inquiry",
+      default: null
     },
     companyId: {
       type: mongoose.Schema.Types.ObjectId,

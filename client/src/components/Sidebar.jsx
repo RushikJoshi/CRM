@@ -83,6 +83,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             items: [
                 { name: "Branches", icon: <FiGitBranch />, path: "/branches", roles: ["company_admin"] },
                 { name: "Users", icon: <FiUsers />, path: "/users", roles: ["company_admin", "branch_manager"] },
+                { name: "Inquiries", icon: <FiInbox />, path: "/inquiries", roles: ["company_admin", "branch_manager", "sales"] },
                 { name: "Leads", icon: <FiTrendingUp />, path: "/leads", roles: ["company_admin", "branch_manager", "sales"], labelMap: { sales: "My Leads" } },
                 // { name: "Prospects", icon: <FiZap />, path: "/prospects", roles: ["company_admin", "branch_manager", "sales"] },
                 { name: "Accounts", icon: <FiUserCheck />, path: "/customers", roles: ["company_admin", "branch_manager", "sales"] }

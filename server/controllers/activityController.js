@@ -29,18 +29,36 @@ exports.createActivity = async (req, res) => {
             attachments: attachments || []
         });
 
+        // ── Team Collaboration: Trigger Notification for mentions ──
+        if (mentionedUserId) {
+            const Notification = require("../models/Notification");
+            await Notification.create({
+                userId: mentionedUserId,
+                companyId: req.user.companyId,
+                type: "info",
+                title: "You were mentioned",
+                message: `${req.user.name} mentioned you in a ${type} note for lead.`,
+                metadata: { leadId, activityId: activity._id }
+            });
+        }
+
         const io = req.app.get("io");
         if (io && req.user?.companyId) {
-            io.to(`company:${req.user.companyId}`).emit("activity:created", {
+            const broadcastData = {
                 id: activity._id,
                 leadId: activity.leadId,
-                dealId: activity.dealId,
-                customerId: activity.customerId,
                 type: activity.type,
                 note: activity.note,
                 userId: req.user.id,
                 createdAt: activity.createdAt
-            });
+            };
+            io.to(`company:${req.user.companyId}`).emit("activity:created", broadcastData);
+            if (mentionedUserId) {
+                io.to(`user:${mentionedUserId}`).emit("notification:new", { 
+                    message: `${req.user.name} tagged you in a note.`,
+                    type: 'mention'
+                });
+            }
         }
 
         res.status(201).json({ success: true, data: activity });

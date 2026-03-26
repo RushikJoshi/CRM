@@ -4,73 +4,58 @@ const inquirySchema = new mongoose.Schema(
     {
         name: {
             type: String,
-            required: true
+            required: true,
+            trim: true
         },
         email: {
             type: String,
-            required: true
+            required: true,
+            trim: true,
+            lowercase: true
         },
         phone: {
-            type: String
+            type: String,
+            trim: true
         },
-        companyName: {
-            type: String
+        source: {
+            type: String,
+            enum: ["website", "whatsapp", "manual", "ads", "landing_page", "test_portal"],
+            default: "manual"
         },
         message: {
-            type: String
-        },
-        value: {
-            type: Number,
-            default: 0
-        },
-        source: { // Legacy Support
             type: String,
-            default: "Other"
-        },
-        sourceId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "LeadSource"
-        },
-        website: {
-            type: String,
-            default: ""
-        },
-        city: {
-            type: String,
-            default: ""
-        },
-        address: {
-            type: String,
-            default: ""
-        },
-        course: {
-            type: String,
-            default: ""
+            trim: true
         },
         location: {
             type: String,
-            default: ""
+            trim: true
         },
-        inquiryStatus: {
+        courseSelected: {
             type: String,
-            default: "Fresh"
+            trim: true
+        },
+        testScore: {
+            type: Number,
+            default: 0
         },
         status: {
             type: String,
-            enum: ["Open", "Converted", "Ignored"],
-            default: "Open"
-        },
-        companyId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Company"
-        },
-        branchId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Branch"
+            enum: ["new", "contacted", "qualified", "converted", "rejected"],
+            default: "new"
         },
         assignedTo: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
+            default: null
+        },
+        companyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Company",
+            required: true
+        },
+        branchId: { // Keeping for CRM consistency
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Branch",
             default: null
         }
     },
@@ -80,5 +65,7 @@ const inquirySchema = new mongoose.Schema(
 inquirySchema.index({ companyId: 1 });
 inquirySchema.index({ email: 1 });
 inquirySchema.index({ phone: 1 });
+inquirySchema.index({ status: 1 });
 
 module.exports = mongoose.model("Inquiry", inquirySchema);
+
