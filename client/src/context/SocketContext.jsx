@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import { readSession } from './AuthContext';
 import { useToast } from './ToastContext';
 import { useNavigate } from 'react-router-dom';
+import { SOCKET_URL } from '../config/api';
 
 const SocketContext = createContext();
 
@@ -30,11 +31,10 @@ export const SocketProvider = ({ children }) => {
         return;
     }
 
-    // const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    const apiUrl = import.meta.env.VITE_API_URL || "https://app.gitakshmilabs.com";
-    const newSocket = io(apiUrl, {
+    const newSocket = io(SOCKET_URL, {
       auth: { token: session.token },
-      transports: ['websocket']
+      transports: ['websocket', 'polling'],
+      withCredentials: true
     });
 
     newSocket.on('connect', () => {

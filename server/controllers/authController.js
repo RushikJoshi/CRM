@@ -162,7 +162,7 @@ exports.login = async (req, res) => {
       console.error("Error creating system log:", logErr);
     }
 
-    const baseUrl = process.env.BASE_URL || "http://localhost:5000";
+    const baseUrl = process.env.BASE_URL || "http://localhost:5003";
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 
     // Fetch subscription info

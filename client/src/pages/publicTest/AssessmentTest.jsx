@@ -88,11 +88,14 @@ const AssessmentTest = () => {
   };
 
   const startProctoring = async () => {
+    // Step 4: Add permission check before request
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error("Camera not supported");
+      alert("Camera or Microphone is not supported in this browser or environment (requires HTTPS).");
+      throw new Error("Hardware access not supported");
     }
 
     try {
+      // Step 3: Trigger camera & mic request
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
@@ -107,12 +110,13 @@ const AssessmentTest = () => {
       setMicStatus("active");
       return stream;
     } catch (error) {
-      if (error.name === "NotAllowedError") {
+      console.error("Permission denied", error);
+      if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
         setCameraStatus("denied");
         setMicStatus("denied");
         throw new Error("Permission denied");
       }
-      if (error.name === "NotFoundError") {
+      if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
         throw new Error("Camera or mic not found");
       }
       throw new Error("Unknown media error");

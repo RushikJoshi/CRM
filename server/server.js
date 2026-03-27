@@ -13,55 +13,50 @@ const app = express();
 const server = http.createServer(app);
 
 // ── Dynamic CORS configuration ────────────────────────────────────────────────
-const allowedOrigins = [
-    process.env.FRONTEND_URL,
-    ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : [])
-].filter(Boolean).map(o => o.trim());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map(o => o.trim()).filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps or curl)
-        if (!origin) return callback(null, true);
-
-        // Allow all localhost origins for development
-        if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+        if (!origin || allowedOrigins.includes(origin) || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
             return callback(null, true);
         }
-
-        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*")) {
-            callback(null, true);
-        } else {
-            console.warn(`Blocked by CORS: ${origin}`);
-            callback(new Error("Not allowed by CORS"));
-        }
+        console.warn(`Blocked by CORS: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "cache-control", "Pragma", "pragma", "Expires", "expires", "Accept", "X-Requested-With"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma", "Expires", "Accept", "X-Requested-With"],
     credentials: true
 }));
 
 /* ================= SECURITY ================= */
 app.use(helmet());
 
-// Rate limiting for login/auth
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: "Too many login attempts, please try again after 15 minutes"
+// CSP Fix (Production Safe) - Add as middleware
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; " +
+      "connect-src 'self' https://app.gitakshmilabs.com wss://app.gitakshmilabs.com http://localhost:5003 ws://localhost:5003; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "img-src 'self' data: blob:; " +
+      "media-src 'self' blob:;"
+    );
+  }
+  next();
 });
-app.use("/api/auth/login", authLimiter);
 
-// Global API rate limit (per IP) for production resilience
-const apiLimiter = rateLimit({
+// Global Rate Limiter (Prevent 429 Errors & stabilize production)
+const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: process.env.API_RATE_LIMIT_MAX || 500,
+    max: 5000, // Increased as requested
     standardHeaders: true,
     legacyHeaders: false,
     message: "Too many requests, please try again later"
 });
-app.use("/api/", apiLimiter);
+app.use("/api/", limiter);
 
 // ── Origins handled above ──
 
@@ -141,22 +136,8 @@ const PORT = process.env.PORT || 5000;
 // ── Socket.IO (real-time updates) ─────────────────────────────────────────────
 const io = new Server(server, {
     cors: {
-        origin: (origin, callback) => {
-            if (!origin) return callback(null, true);
-            if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
-                return callback(null, true);
-            }
-            const allowedOrigins = [
-                process.env.FRONTEND_URL,
-                ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : [])
-            ].filter(Boolean).map(o => o.trim());
-            if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes("*")) {
-                callback(null, true);
-            } else {
-                callback(new Error("Not allowed by CORS"));
-            }
-        },
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        origin: allowedOrigins.concat(["http://localhost:5173", "http://localhost:3000"]),
+        methods: ["GET", "POST"],
         credentials: true
     }
 });

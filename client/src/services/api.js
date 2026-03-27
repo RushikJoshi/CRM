@@ -6,6 +6,8 @@ const API = axios.create({
   baseURL: API_BASE_URL,
 });
 
+axios.defaults.baseURL = API_BASE_URL; // Consistent with user request
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const isRetryable = (err) => {
@@ -14,7 +16,23 @@ const isRetryable = (err) => {
   return status >= 500 && status <= 599;
 };
 
-// ── Prevent Stale Cache (Step 9) ──────────────────────────────────────────────
+// Global error handler (per user request)
+axios.interceptors.response.use(
+  res => res,
+  err => {
+    console.error("API ERROR:", err);
+    return Promise.reject(err);
+  }
+);
+API.interceptors.response.use(
+  res => res,
+  err => {
+    console.error("API ERROR (Scoped):", err);
+    return Promise.reject(err);
+  }
+);
+
+// ── Prevent Stale Cache ───────────────────────────────────────────────────────
 API.defaults.headers.common["Cache-Control"] = "no-cache";
 API.defaults.headers.common["Pragma"] = "no-cache";
 API.defaults.headers.common["Expires"] = "0";
