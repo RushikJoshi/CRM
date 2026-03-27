@@ -16,17 +16,14 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // Group React core together to avoid circular dependencies with sub-packages
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-core';
-            }
-            // Separate these large modules to keep the core bundle small
+            // 🚨 Keep heavy modules separate to prevent bloating the main bundle
             if (id.includes('face-api')) return 'vendor-faceapi';
             if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
             if (id.includes('framer-motion')) return 'vendor-motion';
             
-            // Allow everything else to bundle normally or into a general libs chunk
-            return 'vendor-libs';
+            // ✅ Consolidate React and all other libraries into one chunk
+            // This fixes 'Circular chunk' warnings and 'undefined useLayoutEffect' errors
+            return 'vendor-main';
           }
         }
       }
