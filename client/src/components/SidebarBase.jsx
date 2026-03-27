@@ -14,7 +14,7 @@ const SidebarBase = ({
   onToggleCollapse,
   onLogout,
   logoLabel = "EduPath Pro",
-  logoIcon = <img src={logo} alt="EduPath Pro" className="w-9 h-9 object-contain" />,
+  logoIcon = <img src={logo} alt="EduPath Pro" className="w-11 h-11 object-contain" />,
 }) => {
   const location = useLocation();
 
@@ -37,11 +37,11 @@ const SidebarBase = ({
         `}
       >
         {/* Brand */}
-        <div className={`shrink-0 border-b border-gray-200 ${isCollapsed ? "px-0 py-4" : "px-4 py-4"}`}>
+        <div className={`shrink-0 border-b border-gray-200 ${isCollapsed ? "px-0 py-4" : "px-4 py-6"}`}>
           <div className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : ""}`}>
             {logoIcon || (
-              <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center text-white shrink-0 shadow-sm">
-                <FiGrid size={18} strokeWidth={2.5} />
+              <div className="w-11 h-11 rounded-xl bg-teal-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+                <FiGrid size={22} strokeWidth={2.5} />
               </div>
             )}
             {!isCollapsed && (

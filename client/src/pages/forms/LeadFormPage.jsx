@@ -29,9 +29,9 @@ export default function LeadFormPage() {
     });
 
     const schema = {
-        name: [rules.required("Lead name"), rules.minLength(2, "Lead name")],
-        email: [rules.email()],
-        phone: [rules.phone()],
+        name: [rules.required("Lead name")],
+        email: [],
+        phone: [],
     };
     const { errors, validate, clearError } = useFormValidation(schema);
 

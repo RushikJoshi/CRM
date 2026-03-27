@@ -8,7 +8,7 @@ router.post("/single", upload.single("file"), (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded." });
         
-        const fileUrl = `${process.env.BACKEND_URL || "http://localhost:5003"}/uploads/attachments/${req.file.filename}`;
+        const fileUrl = `${process.env.BACKEND_URL || process.env.BASE_URL || "http://localhost:5003"}/uploads/attachments/${req.file.filename}`;
         
         res.json({
             success: true,

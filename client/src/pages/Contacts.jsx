@@ -15,7 +15,7 @@ const ContactsPage = () => {
     const [page, setPage] = useState(page || 1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const pageSize = 10;
+    const pageSize = 100;
 
     const currentUser = getCurrentUser();
     const role = currentUser?.role;

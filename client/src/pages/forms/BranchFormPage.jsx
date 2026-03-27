@@ -97,9 +97,9 @@ export default function BranchFormPage() {
   });
 
   const fullSchema = {
-    name: [rules.required("Branch name"), rules.minLength(2, "Branch name")],
-    email: [rules.email()],
-    managerEmail: [rules.email()],
+    name: [rules.required("Branch name")],
+    email: [],
+    managerEmail: [],
     ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
   };
 

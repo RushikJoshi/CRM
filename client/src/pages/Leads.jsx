@@ -19,7 +19,7 @@ function Leads() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const pageSize = 10;
+    const pageSize = 100;
     const [assignLead, setAssignLead] = useState(null);
     const [taskLead, setTaskLead] = useState(null);
     const [importLead, setImportLead] = useState(false);

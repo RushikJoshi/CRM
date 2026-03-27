@@ -13,8 +13,8 @@ export const rules = {
 
     phone: () =>
         (val) =>
-            val && !/^[6-9]\d{9}$/.test(val.replace(/\D/g, ""))
-                ? "Enter a valid 10-digit Indian mobile number"
+            val && !/^\d{10,15}$/.test(val.replace(/\D/g, ""))
+                ? "Enter a valid phone number"
                 : null,
 
     minLength: (n, label = "This field") =>

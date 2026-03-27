@@ -17,7 +17,7 @@ const { getNextCustomId } = require("../utils/idGenerator");
 // Get All Companies (Search & Pagination)
 exports.getAllCompanies = async (req, res, next) => {
   try {
-    const { search, page = 1, limit = 10 } = req.query;
+    const { search, page = 1, limit = 100 } = req.query;
     let query = {};
     if (search) {
       query.$or = [

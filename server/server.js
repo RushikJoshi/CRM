@@ -30,7 +30,11 @@ app.use(cors({
 }));
 
 /* ================= SECURITY ================= */
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false, // We have custom CSP middleware below
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false
+}));
 
 // CSP Fix (Production Safe) - Add as middleware
 app.use((req, res, next) => {
@@ -38,9 +42,10 @@ app.use((req, res, next) => {
     res.setHeader(
       "Content-Security-Policy",
       "default-src 'self'; " +
-      "connect-src 'self' https://app.gitakshmilabs.com wss://app.gitakshmilabs.com http://localhost:5003 ws://localhost:5003; " +
+      "connect-src 'self' https://app.gitakshmilabs.com wss://app.gitakshmilabs.com http://localhost:5003 ws://localhost:5003 https://fonts.googleapis.com https://fonts.gstatic.com; " +
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-      "style-src 'self' 'unsafe-inline'; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com data:; " +
       "img-src 'self' data: blob:; " +
       "media-src 'self' blob:;"
     );

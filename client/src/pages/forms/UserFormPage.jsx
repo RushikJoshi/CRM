@@ -138,21 +138,20 @@ export default function UserFormPage() {
     const schemas = [
       // 0 Personal + Contact
       {
-        firstName: [rules.required("First name"), rules.minLength(1, "First name")],
-        lastName: [rules.required("Last name"), rules.minLength(1, "Last name")],
-        email: [rules.required("Email"), rules.email()],
-        workEmail: [rules.email()],
-        personalEmail: [rules.email()],
+        firstName: [rules.required("First name")],
+        lastName: [],
+        workEmail: [],
+        personalEmail: [],
       },
       // 1 Branch + Work
       {
-        ...(!isBranchManager && { primaryBranchId: [rules.required("Primary branch")] }),
-        ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
+        primaryBranchId: [],
+        companyId: [],
       },
       // 2 CRM + Login
       {
-        email: [rules.required("Email"), rules.email()],
-        ...(!isEdit && { password: [rules.required("Password"), rules.passwordStrength()] }),
+        email: [rules.required("Email")],
+        ...(!isEdit && { password: [rules.required("Password")] }),
       },
       // 3 Role + Account
       {
