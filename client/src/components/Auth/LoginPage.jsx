@@ -22,7 +22,10 @@ const LoginPage = () => {
                     <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                 </div>
                 <div className="min-w-0">
-                    <p className="font-black text-white leading-none truncate text-lg tracking-tight">EduPathpro</p>
+                <div className="flex items-center gap-2">
+                    <p className="font-black text-white text-xl tracking-tighter">EduPath</p>
+                    <span className="text-[9px] font-black bg-white/20 text-white px-1.5 py-0.5 rounded-md uppercase tracking-[0.2em] border border-white/20 backdrop-blur-sm">PRO</span>
+                </div>
                     <p className="text-slate-400 text-[10px] font-black tracking-[0.25em] uppercase mt-1">
                         Smart Platform
                     </p>

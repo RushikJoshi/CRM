@@ -16,7 +16,7 @@ function Tasks() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const pageSize = 10;
+    const pageSize = 100;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [viewMode, setViewMode] = useState("kanban");
     const toast = useToast();

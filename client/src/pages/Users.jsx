@@ -15,7 +15,7 @@ function Users() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const pageSize = 10;
+    const pageSize = 100;
     
     const [activeTask, setActiveTask] = useState(null); // 'create', 'edit'
     const [editingUser, setEditingUser] = useState(null);
@@ -70,7 +70,7 @@ function Users() {
                 await API.put(`${apiBase}/${editingUser._id}`, formData);
                 toast.success("Identity updated successfully.");
             } else {
-                await API.post(`${apiBase}/create`, formData);
+                await API.post(apiBase, formData);
                 toast.success("New user onboarded successfully.");
             }
             setActiveTask(null);

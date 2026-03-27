@@ -33,14 +33,14 @@ export default function CompanyFormPage() {
 
     // ── Validation schema ────────────────────────────────────────────────────────
     const schema = {
-        name: [rules.required("Company name"), rules.minLength(2, "Company name")],
-        email: [rules.required("Email"), rules.email()],
-        phone: [rules.phone()],
-        website: [rules.url()],
+        name: [rules.required("Company name")],
+        email: [rules.required("Email")],
+        phone: [],
+        website: [],
         ...(!isEdit && {
-            adminName: [rules.required("Admin name"), rules.minLength(2, "Admin name")],
-            adminEmail: [rules.required("Admin email"), rules.email()],
-            adminPassword: [rules.required("Password"), rules.passwordStrength()],
+            adminName: [rules.required("Admin name")],
+            adminEmail: [rules.required("Admin email")],
+            adminPassword: [rules.required("Password")],
         }),
     };
     const { errors, validate, clearError } = useFormValidation(schema);

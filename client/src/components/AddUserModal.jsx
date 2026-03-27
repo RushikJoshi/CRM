@@ -60,7 +60,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData, isStandalone = f
     const fetchCompanies = async () => {
         try {
             const res = await API.get("/super-admin/companies");
-            setCompanies(res.data.companies || []);
+            setCompanies(res.data.data || []);
         } catch (err) {
             console.error(err);
         }
@@ -70,7 +70,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit, editingData, isStandalone = f
         try {
             const apiBase = isSuperAdmin ? "/super-admin/branches" : "/branches";
             const res = await API.get(`${apiBase}?companyId=${cId}`);
-            setBranches(res.data || []);
+            setBranches(res.data.data || []);
         } catch (err) {
             console.error(err);
         }

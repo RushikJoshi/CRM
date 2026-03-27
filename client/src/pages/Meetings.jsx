@@ -13,7 +13,7 @@ const MeetingsPage = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const pageSize = 10;
+    const pageSize = 100;
 
     const [formData, setFormData] = useState({
         title: "",
