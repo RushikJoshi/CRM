@@ -33,12 +33,12 @@ const LeftSection = () => {
                     </div>
                 </div>
 
-                <h1 className="text-[72px] font-black tracking-tighter leading-tight mb-8 text-white poppins drop-shadow-sm">
-                    CRM
-                </h1>
+                {/* <h1 className="text-[72px] font-black tracking-tighter leading-tight mb-8 text-white poppins drop-shadow-sm"> */}
+
+                {/* </h1> */}
 
                 <p className="text-blue-100 text-lg max-w-md mx-auto leading-relaxed font-medium">
-                    Manage your business easily with our simple CRM. Track your leads, deals, and customers all in one place.
+                    Manage your business easily with simple CRM. Track your leads, deals, and customers all in one place.
                 </p>
 
                 <div className="mt-16 w-16 h-1 bg-white/20 rounded-full" />
