@@ -89,18 +89,23 @@ exports.startTest = async (req, res, next) => {
     const token = crypto.randomUUID();
 
     // Snapshot questions
-    let pool = await Question.find({ courseId }).lean();
-    console.log(`POLL FOUND FOR COURSE ${courseId}: ${pool.length} items`);
+    const pool = await Question.find({ courseId }).lean();
+    const globalCount = await Question.countDocuments();
+    console.log(`[Lifecycle] StartTest - Requested: ${courseId}, Pool size: ${pool.length}, Total Questions in DB: ${globalCount}`);
+    
     if (pool.length === 0) {
-       console.error(`Empty question pool for course ${courseId}`);
-       return res.status(400).json({ success: false, message: "Queue empty." });
+       console.error(`ERROR: Assessment "${course.title}" has zero questions. (ID: ${courseId})`);
+       return res.status(400).json({ 
+         success: false, 
+         message: "Course content is currently empty. Please add at least 1-10 questions for this assessment in the Admin Dashboard under Test Management." 
+       });
     }
 
-    // Filter, Shuffle, Limit 10, Shuffle options, Remove correctAnswers
-    let snapshot = pool.sort(() => 0.5 - Math.random()).slice(0, 10).map(q => {
+    // Filter, Shuffle, Limit 10 (or pool size if < 10), Shuffle options, Remove correctAnswers
+    const snapshot = pool.sort(() => 0.5 - Math.random()).slice(0, 10).map(q => {
       const { correctAnswer, ...safe } = q;
       safe.options = [...q.options].sort(() => 0.5 - Math.random());
-      return { ...safe, originalAnswer: correctAnswer }; // We keep originalAnswer in snapshot for calculation later
+      return { ...safe, originalAnswer: correctAnswer }; 
     });
 
     const session = await TestSession.create({
