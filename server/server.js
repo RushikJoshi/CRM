@@ -42,7 +42,7 @@ app.use((req, res, next) => {
     res.setHeader(
       "Content-Security-Policy",
       "default-src 'self'; " +
-      "connect-src 'self' https://app.gitakshmilabs.com wss://app.gitakshmilabs.com http://localhost:5003 ws://localhost:5003 https://fonts.googleapis.com https://fonts.gstatic.com; " +
+      "connect-src 'self' https://app.gitakshmilabs.com https://app.dev.gitakshmilabs.com wss://app.gitakshmilabs.com wss://app.dev.gitakshmilabs.com http://localhost:5003 ws://localhost:5003 https://fonts.googleapis.com https://fonts.gstatic.com; " +
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "font-src 'self' https://fonts.gstatic.com data:; " +
