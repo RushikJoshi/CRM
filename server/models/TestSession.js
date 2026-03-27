@@ -16,6 +16,5 @@ const testSessionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-testSessionSchema.index({ token: 1 });
 testSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index
 module.exports = mongoose.model("TestSession", testSessionSchema);

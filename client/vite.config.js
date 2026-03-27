@@ -16,16 +16,22 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react')) return 'vendor-react';
+            // Group React core together to avoid circular dependencies with sub-packages
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor-core';
+            }
+            // Separate these large modules to keep the core bundle small
             if (id.includes('face-api')) return 'vendor-faceapi';
-            if (id.includes('recharts')) return 'vendor-charts';
+            if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
             if (id.includes('framer-motion')) return 'vendor-motion';
+            
+            // Allow everything else to bundle normally or into a general libs chunk
             return 'vendor-libs';
           }
         }
       }
     },
-    chunkSizeWarningLimit: 1200
+    chunkSizeWarningLimit: 1600
   },
 
   server: {

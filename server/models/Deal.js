@@ -82,8 +82,6 @@ const dealSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-dealSchema.index({ customId: 1 });
-
 
 dealSchema.index({ companyId: 1 });
 dealSchema.index({ companyId: 1, updatedAt: -1 });

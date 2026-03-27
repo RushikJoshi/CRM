@@ -17,6 +17,5 @@ const testSubmissionSchema = new mongoose.Schema(
 );
 
 testSubmissionSchema.index({ email: 1, courseId: 1 });
-testSubmissionSchema.index({ token: 1 });
 
 module.exports = mongoose.model("TestSubmission", testSubmissionSchema);

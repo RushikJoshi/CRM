@@ -30,6 +30,5 @@ const messageTrackingSchema = new mongoose.Schema(
 );
 
 messageTrackingSchema.index({ leadId: 1 });
-messageTrackingSchema.index({ messageId: 1 });
 
 module.exports = mongoose.model("MessageTracking", messageTrackingSchema);

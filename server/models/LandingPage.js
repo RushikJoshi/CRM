@@ -13,7 +13,6 @@ const landingPageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-landingPageSchema.index({ slug: 1 });
 landingPageSchema.index({ companyId: 1, slug: 1 }, { unique: true });
 
 module.exports = mongoose.model("LandingPage", landingPageSchema);

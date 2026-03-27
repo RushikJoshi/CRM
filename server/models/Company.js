@@ -17,8 +17,5 @@ const companySchema = new mongoose.Schema({
   code: { type: String, unique: true }
 }, { timestamps: true });
 
-companySchema.index({ customId: 1 });
-companySchema.index({ code: 1 });
-
 
 module.exports = mongoose.model("Company", companySchema);

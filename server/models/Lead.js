@@ -187,8 +187,6 @@ const leadSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-leadSchema.index({ customId: 1 });
-
 
 leadSchema.index({ companyId: 1 });
 leadSchema.index({ companyId: 1, updatedAt: -1 });
