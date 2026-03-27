@@ -130,8 +130,19 @@ function Leads() {
 
     const closeTask = () => setActiveTask(null);
 
-    useEffect(() => { setPage(1); }, [search, statusFilter]);
-    useEffect(() => { fetchLeads(); }, [search, statusFilter, page]);
+    const prevFiltersRef = { current: { search, statusFilter } }; // Simplified for initial local ref
+    const [prevFilters, setPrevFilters] = useState({ search, statusFilter });
+
+    useEffect(() => {
+        const filtersChanged = prevFilters.search !== search || prevFilters.statusFilter !== statusFilter;
+        if (filtersChanged && page !== 1) {
+            setPage(1);
+            setPrevFilters({ search, statusFilter });
+            return;
+        }
+        setPrevFilters({ search, statusFilter });
+        fetchLeads();
+    }, [search, statusFilter, page]);
 
     if (activeTask === 'import') {
         return (

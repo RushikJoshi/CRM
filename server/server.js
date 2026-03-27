@@ -10,6 +10,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const app = express();
+app.set("trust proxy", 1); // Trust first proxy (Plesk/Nginx) for correct IP detection
 const server = http.createServer(app);
 
 // ── Dynamic CORS configuration ────────────────────────────────────────────────
@@ -56,7 +57,7 @@ app.use((req, res, next) => {
 // Global Rate Limiter (Prevent 429 Errors & stabilize production)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5000, // Increased as requested
+    max: 10000, // Significant overhead for busy production environment
     standardHeaders: true,
     legacyHeaders: false,
     message: "Too many requests, please try again later"

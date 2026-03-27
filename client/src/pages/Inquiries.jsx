@@ -50,8 +50,24 @@ const InquiriesPage = () => {
         }
     };
 
-    useEffect(() => { setPage(1); }, [search, statusFilter, typeFilter]);
-    useEffect(() => { fetchInquiries(); }, [page, search, statusFilter, typeFilter]);
+    const prevFiltersRef = React.useRef({ search, statusFilter, typeFilter });
+
+    useEffect(() => {
+        // Intelligent Fetch Logic: Prevents double-hits when filters change
+        const filtersChanged = 
+            prevFiltersRef.current.search !== search || 
+            prevFiltersRef.current.statusFilter !== statusFilter || 
+            prevFiltersRef.current.typeFilter !== typeFilter;
+
+        if (filtersChanged && page !== 1) {
+            setPage(1);
+            prevFiltersRef.current = { search, statusFilter, typeFilter };
+            return; // Let the next cycle triggered by setPage(1) do the fetch
+        }
+
+        prevFiltersRef.current = { search, statusFilter, typeFilter };
+        fetchInquiries();
+    }, [page, search, statusFilter, typeFilter]);
 
     const handleConvert = (id) => {
         const base = role === 'super_admin' ? '/superadmin' : (role === 'sales' ? '/sales' : (role === 'branch_manager' ? '/branch' : '/company'));
