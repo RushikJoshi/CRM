@@ -214,24 +214,25 @@ const PublicAssessmentLanding = () => {
                 <p className="text-slate-500 text-lg">Visit us at any of our state-of-the-art facilities or call us directly.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                {[
                  { title: "Ahmedabad", desc: "701, 7th floor, 'Kalvanna', Off C. G. Road, Panchvati, Ahmedabad, Gujarat - 380006.", icon: <FiMapPin /> },
                  { title: "Mundra (Main)", desc: "20-22, Punam Arcade, Baroi Road, Near Taluka Panchayat, Mundra - Kachchh, Gujarat - 370421.", icon: <FiBriefcase /> },
-                 { title: "Mundra (Branch)", desc: "8, Sadguru Plaza, Nana Kapaya, Mundra, Gujarat - 370405.", icon: <FiMapPin /> },
-                 { title: "International", desc: "Offices operating in USA (New Jersey) & India (Kerala).", icon: <FiGlobe /> }
+                 { title: "Chennai", desc: "Strategic operational hub serving the South India region from Chennai, Tamil Nadu.", icon: <FiMapPin /> },
+                 { title: "New Jersey", desc: "International presence catering to global clients from New Jersey, United States.", icon: <FiGlobe /> },
+                 { title: "Kozhikode", desc: "Regional center in Kozhikode, Kerala, supporting academic and training operations.", icon: <FiMapPin /> }
                ].map((office, i) => (
                  <motion.div 
                     initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }}
                     variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1, transition: { duration: 0.5, delay: i * 0.1 } } }}
                     key={i} 
-                    className="bg-slate-50 p-8 rounded-[2rem] shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 group flex flex-col"
+                    className="bg-slate-50 p-10 rounded-[2.5rem] shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 group flex flex-col items-center text-center"
                  >
-                    <div className="w-14 h-14 bg-[#6b46c1]/10 rounded-2xl flex items-center justify-center text-[#6b46c1] mb-6 group-hover:scale-110 group-hover:bg-[#6b46c1] group-hover:text-white transition-all duration-300">
-                       {React.cloneElement(office.icon, { size: 24 })}
+                    <div className="w-16 h-16 bg-[#6b46c1]/10 rounded-2xl flex items-center justify-center text-[#6b46c1] mb-8 group-hover:scale-110 group-hover:bg-[#6b46c1] group-hover:text-white transition-all duration-300 shadow-inner">
+                       {React.cloneElement(office.icon, { size: 28 })}
                     </div>
-                    <h4 className="text-xl font-black text-[#1a202c] mb-3">{office.title}</h4>
-                    <p className="text-slate-500 text-sm leading-relaxed flex-1">{office.desc}</p>
+                    <h4 className="text-2xl font-black text-[#1a202c] mb-4">{office.title}</h4>
+                    <p className="text-slate-500 text-sm leading-relaxed flex-1 max-w-xs">{office.desc}</p>
                  </motion.div>
                ))}
             </div>

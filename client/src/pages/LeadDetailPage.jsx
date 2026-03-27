@@ -279,8 +279,8 @@ const StageBreadcrumbs = ({ stages, currentStage, onUpdate, updating }) => {
         return (
           <button
             key={s.key}
-            onClick={() => !isWon && onUpdate(s.key)}
-            disabled={updating || (isWon && !isCurrent)}
+            onClick={() => onUpdate(s.key)}
+            disabled={updating || (isWon && isCurrent)}
             className={`
               relative h-8 px-5 text-[11px] font-bold uppercase tracking-wider transition-all flex items-center
               ${isCurrent ? 'bg-teal-600 text-white z-10' : isPast ? 'bg-white text-gray-900 border-r border-gray-200' : 'bg-transparent text-gray-400'}
@@ -439,7 +439,11 @@ export default function LeadDetailPage() {
   const saveDetails = async (section) => {
     try {
       setLoading(true);
-      const res = await API.patch(`/leads/${id}`, editedLead);
+      
+      // Clean up payload — never send system fields or IDs back in a patch
+      const { _id, companyId, branchId, createdBy, createdAt, updatedAt, __v, customId, ...payload } = editedLead;
+      
+      const res = await API.patch(`/leads/${id}`, payload);
       setLead(res.data?.data || res.data);
       setEditingSection(null);
       toast.success("Details updated!");

@@ -11,7 +11,7 @@ export default function SystemLogs() {
     const fetchLogs = async () => {
         setLoading(true);
         try {
-            const res = await API.get(`/super-admin/system-logs?page=${page}&limit=50`);
+            const res = await API.get(`/super-admin/system-logs?page=${page}&limit=10`);
             if (res.data.success) {
                 setLogs(res.data.data);
                 setTotalPages(res.data.totalPages);

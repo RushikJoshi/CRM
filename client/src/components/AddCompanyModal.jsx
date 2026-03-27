@@ -171,7 +171,7 @@ const AddCompanyModal = ({ isOpen, onClose, onSubmit, editingData, isStandalone 
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                              <FiShield size={12} /> Admin Provisioning
                         </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-1.5">
                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Admin Name *</label>
                                 <div className="relative group">
@@ -183,6 +183,21 @@ const AddCompanyModal = ({ isOpen, onClose, onSubmit, editingData, isStandalone 
                                         className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
                                         placeholder="Admin Full Name"
                                         value={formData.adminName}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Admin Login Email *</label>
+                                <div className="relative group">
+                                    <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors" size={14} />
+                                    <input
+                                        required={!editingData}
+                                        name="adminEmail"
+                                        type="email"
+                                        className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-gray-700 text-xs shadow-inner"
+                                        placeholder="admin@company.com"
+                                        value={formData.adminEmail || formData.email}
                                         onChange={handleChange}
                                     />
                                 </div>

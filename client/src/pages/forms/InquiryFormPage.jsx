@@ -24,8 +24,8 @@ export default function InquiryFormPage() {
     const [leadSources, setLeadSources] = useState([]);
     const [formData, setFormData] = useState({
         name: "", email: "", phone: "", companyName: "",
-        source: "Manual", sourceId: "", website: "", message: "",
-        branchId: "", inquiryStatus: "", course: "", location: "",
+        source: "manual", sourceId: "", website: "", message: "",
+        branchId: "", inquiryStatus: "", courseSelected: "", location: "",
         city: "", address: "", value: 0
     });
 
@@ -192,9 +192,9 @@ export default function InquiryFormPage() {
                                     <div className="relative group">
                                         <FiBook size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors z-10" />
                                         <select
-                                            name="course"
-                                            className={inputCls("course").replace("pl-12", "pl-12 appearance-none")}
-                                            value={formData.course}
+                                            name="courseSelected"
+                                            className={inputCls("courseSelected").replace("pl-12", "pl-12 appearance-none")}
+                                            value={formData.courseSelected}
                                             onChange={handleChange}
                                         >
                                             <option value="">Select</option>

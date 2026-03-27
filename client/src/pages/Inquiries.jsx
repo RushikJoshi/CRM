@@ -21,7 +21,7 @@ const InquiriesPage = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const pageSize = 100;
+    const pageSize = 10;
 
     const [activeTask, setActiveTask] = useState(null); // 'create', 'edit'
     const [editingInquiry, setEditingInquiry] = useState(null);
@@ -126,10 +126,19 @@ const InquiriesPage = () => {
                                 <option value="ads">Ads</option>
                             </select>
                         </div>
-                    </div>
                 </div>
 
-                {loading ? (
+                <div className="h-4 w-px bg-slate-100 mx-1" />
+
+                <button
+                    onClick={() => setActiveTask('create')}
+                    className="h-8 px-4 bg-teal-600 text-white rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-teal-700 transition-all flex items-center gap-2 shrink-0 shadow-sm ml-auto"
+                >
+                    <FiPlus size={14} /> Manual Entry
+                </button>
+            </div>
+
+            {loading ? (
                     <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center space-y-4">
                         <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Hydrating Records...</p>
@@ -212,10 +221,7 @@ const InquiriesPage = () => {
                                 </tbody>
                             </table>
                     </div>
-                    <div className="flex items-center justify-between">
-                         <div className="text-[12px] text-slate-500 font-medium">
-                            Showing <span className="text-slate-900 font-bold">{inquiries.length}</span> of <span className="text-slate-900 font-bold">{total}</span> total inquires
-                         </div>
+                    <div className="flex items-center justify-end">
                          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} total={total} pageSize={pageSize} />
                     </div>
                 </div>

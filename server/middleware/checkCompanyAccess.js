@@ -14,10 +14,14 @@ module.exports = (req, res, next) => {
     // This middleware assumes that controllers will use req.user.companyId
     // but we can also check if req.params.companyId matches if present.
 
-    const targetCompanyId = req.params?.companyId || req.body?.companyId || req.query?.companyId;
+    let targetCompanyId = req.params?.companyId || req.body?.companyId || req.query?.companyId;
+
+    if (targetCompanyId && typeof targetCompanyId === "object") {
+        targetCompanyId = targetCompanyId._id || targetCompanyId.id || targetCompanyId;
+    }
 
     if (targetCompanyId && String(targetCompanyId) !== String(companyId)) {
-        return res.status(403).json({ message: "Forbidden: Cross-company access denied" });
+        return res.status(403).json({ success: false, message: "Forbidden: Cross-company access denied" });
     }
 
     // Branch Manager isolation (if branchId is relevant for the route)

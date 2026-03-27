@@ -318,7 +318,7 @@ const MeetingCalendar = () => {
                         </div>
                     </div>
                     <div className="grid grid-cols-7 text-center gap-y-2">
-                        {['m', 't', 'w', 't', 'f', 's', 's'].map(d => <div key={d} className="text-[9px] font-black text-slate-400 uppercase">{d}</div>)}
+                        {['m', 't', 'w', 't', 'f', 's', 's'].map((d, i) => <div key={`${d}-${i}`} className="text-[9px] font-black text-slate-400 uppercase">{d}</div>)}
                         {Array.from({ length: 35 }).map((_, i) => {
                             const day = addDays(startOfMonth(currentDate), i - startOfMonth(currentDate).getDay() + 1);
                             const isCurrentMonth = day.getMonth() === currentDate.getMonth();

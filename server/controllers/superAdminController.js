@@ -49,17 +49,30 @@ exports.getAllCompanies = async (req, res, next) => {
 // Create Company + Auto Company Admin
 exports.createCompany = async (req, res, next) => {
   try {
+    console.log("🏙️ ONBOARDING COMPANY REQ:", JSON.stringify(req.body, null, 2));
     const { name, email, phone, website, industry, address, adminName, adminEmail, adminPassword } = req.body;
 
-    const targetEmail = adminEmail || email;
+    const targetEmail = (adminEmail || email).toLowerCase();
+    const companyEmail = email.toLowerCase();
 
-    // A. Verify if user already exists (critical check)
-    const existingUser = await User.findOne({ email: targetEmail.toLowerCase() });
-    if (existingUser) {
+    // A. Verify if target admin email already exists
+    const existingAdminUser = await User.findOne({ email: targetEmail });
+    if (existingAdminUser) {
       return res.status(400).json({
         success: false,
-        message: `An account with ${targetEmail} is already registered as a ${existingUser.role}. Please use a different admin email.`
+        message: `Administrative Login ID '${targetEmail}' is already registered as a ${existingAdminUser.role}. Please use a unique login email.`
       });
+    }
+
+    // B. Verify if company contact email already exists (if different)
+    if (companyEmail !== targetEmail) {
+        const existingContactUser = await User.findOne({ email: companyEmail });
+        if (existingContactUser) {
+            return res.status(400).json({
+                success: false,
+                message: `Company Email '${companyEmail}' is already linked to an existing account. Suggest choosing a dedicated login email.`
+            });
+        }
     }
 
     // B. Get or Create Demo Plan
@@ -80,7 +93,17 @@ exports.createCompany = async (req, res, next) => {
     endDate.setDate(startDate.getDate() + demoPlan.duration);
 
     const customId = await getNextCustomId({ module: "company", companyName: name });
-    const companyCode = customId.split('-')[0];
+    let companyCode = customId.split('-')[0];
+
+    // Ensure companyCode is unique before creation
+    let codeConflict = await Company.findOne({ code: companyCode });
+    let suffix = 1;
+    let baseCode = companyCode;
+    while (codeConflict) {
+      companyCode = `${baseCode}${suffix}`;
+      codeConflict = await Company.findOne({ code: companyCode });
+      suffix++;
+    }
 
     const newCompany = await Company.create({
       name,
@@ -121,6 +144,14 @@ exports.createCompany = async (req, res, next) => {
       data: newCompany
     });
   } catch (error) {
+    console.error("CREATE COMPANY ERROR:", error);
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0];
+      return res.status(400).json({ 
+        success: false, 
+        message: `This ${field} is already in use. Please use a unique ${field}.` 
+      });
+    }
     next(error);
   }
 };

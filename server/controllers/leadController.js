@@ -195,35 +195,45 @@ exports.getLeads = async (req, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
     const skip = (pageNum - 1) * limitNum;
 
-    let filter = { isDeleted: false };
-    if (search) filter.name = { $regex: search, $options: "i" };
+    const filter = { $and: [{ isDeleted: false }] };
+    
+    if (search) {
+        filter.$and.push({ name: { $regex: search, $options: "i" } });
+    }
     if (status) {
       if (status.includes(",")) {
-        filter.status = { $in: status.split(",").map((s) => s.trim()) };
+        filter.$and.push({ status: { $in: status.split(",").map((s) => s.trim()) } });
       } else {
-        filter.status = status;
+        filter.$and.push({ status });
       }
     }
     if (stage) {
       const stages = stage.split(",").map((s) => s.trim()).filter(Boolean);
       if (stages.length > 0) {
-        filter.stage = stages.length === 1 ? stages[0] : { $in: stages };
+        filter.$and.push({ stage: stages.length === 1 ? stages[0] : { $in: stages } });
       }
     }
 
     if (req.user.role !== "super_admin") {
-      filter.companyId = req.user.companyId;
+      filter.$and.push({ companyId: req.user.companyId });
       if (req.user.role === "branch_manager") {
-        filter.branchId = req.user.branchId;
+        filter.$and.push({ branchId: req.user.branchId });
       }
       if (req.user.role === "sales") {
-        filter.assignedTo = req.user.id;
+        filter.$and.push({
+            $or: [
+                { assignedTo: req.user.id },
+                { assignedTo: null }
+            ]
+        });
       }
     }
 
+    const finalFilter = filter.$and.length > 0 ? filter : {};
+
     const [total, leads] = await Promise.all([
-      Lead.countDocuments(filter),
-      Lead.find(filter)
+      Lead.countDocuments(finalFilter),
+      Lead.find(finalFilter)
         .populate("assignedTo", "name email role")
         .populate("createdBy", "name email")
         .populate("sourceId")
@@ -595,8 +605,15 @@ exports.getLeadsPipeline = async (req, res) => {
     let filter = { isDeleted: false, isLost: { $ne: true } };
     if (req.user.role !== "super_admin") {
       filter.companyId = companyId;
-      if (req.user.role === "branch_manager" && req.user.branchId) filter.branchId = req.user.branchId;
-      if (req.user.role === "sales") filter.assignedTo = req.user.id;
+      if (req.user.role === "branch_manager" && req.user.branchId) {
+        filter.branchId = req.user.branchId;
+      }
+      if (req.user.role === "sales") {
+        filter.$or = [
+          { assignedTo: req.user.id },
+          { assignedTo: null }
+        ];
+      }
     }
 
     // STEP 1: FETCH / CREATE PIPELINE (Autoritative)
@@ -710,6 +727,34 @@ exports.updateLeadStage = async (req, res) => {
       lead.lostAt = null;
       lead.lostReason = "";
       lead.lostNotes = "";
+
+      // CONVERSION LOGIC (Missing from this endpoint previously)
+      if (!lead.isConverted) {
+        const Customer = require("../models/Customer");
+        const Contact = require("../models/Contact");
+
+        const customer = await Customer.create({
+          name: lead.companyName || lead.name + " Account",
+          phone: lead.phone,
+          email: lead.email,
+          companyId: lead.companyId,
+          branchId: lead.branchId,
+          createdBy: req.user.id
+        });
+
+        const contact = await Contact.create({
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone,
+          customerId: customer._id,
+          companyId: lead.companyId,
+          branchId: lead.branchId,
+          assignedTo: lead.assignedTo || req.user.id,
+          createdBy: req.user.id
+        });
+
+        lead.isConverted = true;
+      }
     }
 
     await lead.save();
@@ -719,11 +764,12 @@ exports.updateLeadStage = async (req, res) => {
       userId: req.user.id,
       companyId: req.user.companyId,
       type: "lead_stage_changed",
-      note: `Stage changed from ${formatStageLabel(oldStage)} → ${formatStageLabel(newStage)}`,
+      note: `Stage changed from ${formatStageLabel(oldStage)} → ${formatStageLabel(exactStageName)}`,
       previousStage: oldStage,
-      newStage,
+      newStage: exactStageName,
     });
-    if (newStage === "won") {
+
+    if (exactStageName.toLowerCase() === "won") {
       await Activity.create({
         leadId: lead._id,
         userId: req.user.id,

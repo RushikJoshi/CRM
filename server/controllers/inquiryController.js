@@ -22,16 +22,19 @@ exports.createInquiry = async (req, res) => {
             return res.status(400).json({ success: false, message: "Name and Email are required fields." });
         }
 
-        // 1. DUPLICATE PREVENTION: Check same phone OR email within last 24 hours
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        let inquiry = await Inquiry.findOne({
-            companyId,
-            $or: [{ email }, { phone: phone || "NONE" }],
-            createdAt: { $gte: twentyFourHoursAgo }
-        });
+        // 1. DUPLICATE PREVENTION: Only for landing pages/automated sources
+        let inquiry = null;
+        if (source !== "manual") {
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            inquiry = await Inquiry.findOne({
+                companyId,
+                $or: [{ email }, { phone: phone || "NONE" }],
+                createdAt: { $gte: twentyFourHoursAgo }
+            });
+        }
 
         if (inquiry) {
-            // Update existing inquiry
+            // Update existing inquiry (Landing Page Spam Prevention)
             inquiry.name = name;
             inquiry.message = message || inquiry.message;
             inquiry.courseSelected = courseSelected || inquiry.courseSelected;
@@ -158,23 +161,38 @@ exports.getInquiries = async (req, res) => {
         const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
         const skip = (pageNum - 1) * limitNum;
 
-        let query = {};
+        const query = { $and: [] };
+        
         if (req.user.role !== "super_admin") {
-            query.companyId = req.user.companyId;
-            if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
-            if (req.user.role === "sales") query.assignedTo = req.user.id;
+            query.$and.push({ companyId: req.user.companyId });
+            if (req.user.role === "branch_manager") {
+                query.$and.push({ branchId: req.user.branchId });
+            }
+            if (req.user.role === "sales") {
+                query.$and.push({
+                    $or: [
+                        { assignedTo: req.user.id },
+                        { assignedTo: null }
+                    ]
+                });
+            }
         }
 
         if (search && String(search).trim()) {
             const regex = { $regex: String(search).trim(), $options: "i" };
-            query.$or = [{ name: regex }, { email: regex }, { phone: regex }];
+            query.$and.push({
+                $or: [{ name: regex }, { email: regex }, { phone: regex }]
+            });
         }
-        if (status && status !== "all") query.status = status;
-        if (source && source !== "all") query.source = source;
+        if (status && status !== "all") query.$and.push({ status });
+        if (source && source !== "all") query.$and.push({ source });
+
+        // Clean query if nothing in $and
+        const finalQuery = query.$and.length > 0 ? query : {};
 
         const [total, inquiries] = await Promise.all([
-            Inquiry.countDocuments(query),
-            Inquiry.find(query)
+            Inquiry.countDocuments(finalQuery),
+            Inquiry.find(finalQuery)
                 .sort({ createdAt: -1 })
                 .populate("companyId", "name")
                 .populate("assignedTo", "name email role")

@@ -7,6 +7,7 @@ const API = axios.create({
 });
 
 axios.defaults.baseURL = API_BASE_URL; // Consistent with user request
+console.log("🌐 SERVICE BASE URL:", API_BASE_URL);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

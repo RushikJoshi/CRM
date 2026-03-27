@@ -69,14 +69,17 @@ const AssessmentTest = () => {
 
       enterFullscreen();
     } catch (error) {
+      console.error("Hardware Permission Error:", error);
       if (error.message === "Permission denied") {
         setProctoringStatus("denied");
-        alert("WARNING: Camera access denied. Monitoring limited.");
+        alert("CRITICAL: Camera/Microphone access is REQUIRED for this assessment. Please enable permissions in your browser settings and reload.");
       } else if (error.message === "Camera not supported") {
         setProctoringStatus("not_supported");
-        alert("Your browser does not support proctoring hardware. Proceeding...");
+        alert("This browser/device does not support the required proctoring hardware. Please use a modern browser (Chrome/Edge) with a camera.");
+      } else {
+        alert("Could not initialize security hardware. Please ensure your camera is connected and you are using a secure (HTTPS) connection.");
       }
-      setIsExamStarted(true);
+      // DO NOT setIsExamStarted(true) here. Force them to solve permission or stay on landing.
     } finally {
       setHardwareVerifying(false);
     }
@@ -163,6 +166,18 @@ const AssessmentTest = () => {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-xl w-full bg-white rounded-[2.5rem] p-10 lg:p-14 shadow-2xl flex flex-col items-center text-center border border-gray-200">
                <h1 className="text-3xl font-black text-[#1a202c] mb-2 tracking-tight">Ready to begin?</h1>
                <p className="text-slate-500 font-bold uppercase tracking-[0.25em] text-[10px] mb-10">SECURE ASSESSMENT PROTOCOL V2.0</p>
+               
+               {/* HTTPS Protocol Check Warning */}
+               {window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && (
+                  <div className="w-full bg-rose-50 border border-rose-100 p-5 rounded-3xl mb-8 text-left animate-pulse">
+                     <div className="flex items-center gap-3 text-rose-600 mb-2 font-black text-xs uppercase tracking-widest">
+                        <FiAlertTriangle /> Security Violation
+                     </div>
+                     <p className="text-xs text-rose-500 font-bold leading-relaxed">
+                        Hardware proctoring (Camera/Mic) is blocked because this site is not using a secure (HTTPS) connection. Please contact the administrator.
+                     </p>
+                  </div>
+               )}
                
                <div className="w-full text-left space-y-4 mb-10">
                   {!isProctoringStarted ? (

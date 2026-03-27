@@ -19,7 +19,7 @@ function Leads() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const pageSize = 100;
+    const pageSize = 10;
     const [assignLead, setAssignLead] = useState(null);
     const [taskLead, setTaskLead] = useState(null);
     const [importLead, setImportLead] = useState(false);
@@ -266,10 +266,7 @@ function Leads() {
                         onAddTask={(l) => { setTaskLead(l); setActiveTask('task'); }}
                         onBulkAction={handleBulkAction}
                     />
-                    <div className="flex items-center justify-between">
-                         <div className="text-[12px] text-slate-500 font-medium">
-                            Showing <span className="text-slate-900 font-bold">{leads.length}</span> of <span className="text-slate-900 font-bold">{total}</span> total leads
-                         </div>
+                    <div className="flex items-center justify-end">
                          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} total={total} pageSize={pageSize} />
                     </div>
                 </div>

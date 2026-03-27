@@ -95,6 +95,7 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/deals", require("./routes/dealRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api/super-admin", require("./routes/superAdminRoutes"));
+app.use("/api/super_admin", require("./routes/superAdminRoutes"));
 app.use("/api/reports", require("./routes/reportRoutes"));
 app.use("/api/master", require("./routes/masterRoutes"));
 app.use("/api/crm", require("./routes/crmRoutes"));

@@ -5,7 +5,10 @@ const requireRole = require("../middleware/requireRole");
 const controller = require("../controllers/superAdminController");
 
 // All routes in this file require super_admin role
-router.use(auth, requireRole("super_admin"));
+router.use(auth, requireRole("super_admin"), (req, res, next) => {
+    console.log(`🛡️ SUPER ADMIN ACCESS: ${req.method} ${req.originalUrl}`);
+    next();
+});
 
 router.get("/companies", controller.getAllCompanies);
 router.post("/companies", controller.createCompany);

@@ -16,7 +16,7 @@ const buildPages = (currentPage, totalPages) => {
 };
 
 const Pagination = ({ currentPage, totalPages, onPageChange, total, pageSize = 10 }) => {
-  if (!totalPages || totalPages <= 1) return null;
+  if (!totalPages || total === 0) return null;
 
   const start = (currentPage - 1) * pageSize + 1;
   const end = Math.min(currentPage * pageSize, total ?? currentPage * pageSize);

@@ -22,7 +22,7 @@ export default function DealFormPage() {
     const [fetching, setFetching] = useState(isEdit);
     const [formData, setFormData] = useState({
         title: "", value: 0, stage: "New", lostReason: "",
-        leadId: "", companyId: "", assignedTo: ""
+        leadId: "", companyId: currentUser?.companyId || "", assignedTo: ""
     });
 
     const [companies, setCompanies] = useState([]);
