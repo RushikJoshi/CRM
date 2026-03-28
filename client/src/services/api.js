@@ -69,20 +69,19 @@ API.interceptors.response.use(
     if (err.response?.status === 401) {
       const isLoginRequest = err.config?.url?.includes("/auth/login");
       const path = window.location.pathname;
-      const isPublicPath = path === "/" || path === "/login";
+      const isPublicPath = path === "/" || path === "/login" || path.startsWith("/assessment/");
 
       if (!isLoginRequest && !isPublicPath) {
-        // Only redirect if absolutely no token is found in ANY panel
-        const hasAnyToken =
-          localStorage.getItem("superAdminToken") ||
-          localStorage.getItem("companyToken") ||
-          localStorage.getItem("branchToken") ||
-          localStorage.getItem("salesToken");
-
-        if (!hasAnyToken) {
-          tokenManager.clearTokenByPath(path);
-          window.location.replace("/login");
-        }
+        // Aggressively clear session and redirect on 401 (session expired)
+        console.warn("🔐 Session expired (401), redirecting to login...");
+        tokenManager.clearTokenByPath(path);
+        // Also clear from sessionStorage directly to be safe
+        sessionStorage.removeItem("superAdminUser");
+        sessionStorage.removeItem("companyUser");
+        sessionStorage.removeItem("branchUser");
+        sessionStorage.removeItem("salesUser");
+        
+        window.location.replace("/login?session=expired");
       }
     }
 

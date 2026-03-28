@@ -132,34 +132,43 @@ export default function UserFormPage() {
   const [formData, setFormData] = useState(() => defaultForm(currentUser));
   const [step, setStep] = useState(0);
 
+  const fullSchema = useMemo(() => ({
+    firstName: [rules.required("First name")],
+    lastName: [],
+    workEmail: [],
+    personalEmail: [],
+    email: [rules.required("Email")],
+    password: [rules.required("Password")],
+    role: [rules.required("Role")],
+    ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
+  }), [isSuperAdmin]);
+
   const stepSchema = useMemo(() => {
-    const idx = step;
-    // Minimal draft-safe validation is handled separately on Save Draft.
-    const schemas = [
-      // 0 Personal + Contact
-      {
-        firstName: [rules.required("First name")],
-        lastName: [],
-        workEmail: [],
-        personalEmail: [],
-      },
-      // 1 Branch + Work
-      {
-        primaryBranchId: [],
-        companyId: [],
-      },
-      // 2 CRM + Login
-      {
-        email: [rules.required("Email")],
-        ...(!isEdit && { password: [rules.required("Password")] }),
-      },
-      // 3 Role + Account
-      {
-        role: [rules.required("Role")],
-      },
-    ];
-    return schemas[idx] || {};
-  }, [step, isBranchManager, isSuperAdmin, isEdit]);
+    switch (step) {
+      case 0:
+        return {
+          firstName: fullSchema.firstName,
+          lastName: fullSchema.lastName,
+          workEmail: fullSchema.workEmail,
+          personalEmail: fullSchema.personalEmail,
+        };
+      case 1:
+        return {
+          ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}),
+        };
+      case 2:
+        return {
+          email: fullSchema.email,
+          ...(!isEdit && { password: fullSchema.password }),
+        };
+      case 3:
+        return {
+          role: fullSchema.role,
+        };
+      default:
+        return {};
+    }
+  }, [step, isSuperAdmin, isEdit, fullSchema]);
 
   const { errors, validate, clearError } = useFormValidation(stepSchema);
 
@@ -179,49 +188,62 @@ export default function UserFormPage() {
   }, [clearError]);
 
   useEffect(() => {
+    let active = true;
     (async () => {
       try {
         const res = await API.get(branchesBase + "?limit=500");
         const data = res.data?.data || res.data?.branches || res.data || [];
-        setBranches(Array.isArray(data) ? data : []);
-      } catch (_) {}
+        if (active) setBranches(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (err.response?.status === 429) {
+          console.error("Rate limit hit during branch fetch");
+        }
+      }
     })();
+    return () => { active = false; };
   }, [branchesBase]);
 
   useEffect(() => {
     if (!isSuperAdmin) return;
+    let active = true;
     (async () => {
       try {
         const res = await API.get("/super-admin/companies?limit=500");
         const data = res.data?.data || res.data?.companies || res.data || [];
-        setCompanies(Array.isArray(data) ? data : []);
+        if (active) setCompanies(Array.isArray(data) ? data : []);
       } catch (_) {}
     })();
+    return () => { active = false; };
   }, [isSuperAdmin]);
 
+  const memoizedId = isSuperAdmin ? (currentUser?.companyId || "sa") : "na";
   useEffect(() => {
     if (!currentUser?.companyId && !isSuperAdmin) return;
+    let active = true;
     (async () => {
       try {
         const res = await API.get(apiBase + "?limit=500");
         const data = res.data?.data || res.data || [];
-        setUsers(Array.isArray(data) ? data : []);
+        if (active) setUsers(Array.isArray(data) ? data : []);
       } catch (_) {}
     })();
-  }, [apiBase, isSuperAdmin, currentUser?.companyId]);
+    return () => { active = false; };
+  }, [apiBase, isSuperAdmin, memoizedId]);
 
   useEffect(() => {
     if (isSuperAdmin) return; // Super admin doesn't have a company pipeline
+    let active = true;
     (async () => {
       try {
         // ONE PIPELINE PER COMPANY — GET /pipeline returns a single object
         const res = await API.get("/pipeline");
         const pl = res.data?.data;
-        setPipelines(pl ? [pl] : []); // Wrap in array for the select dropdown
+        if (active) setPipelines(pl ? [pl] : []); // Wrap in array for the select dropdown
       } catch (_) {
-        setPipelines([]);
+        if (active) setPipelines([]);
       }
     })();
+    return () => { active = false; };
   }, [isSuperAdmin]);
 
   useEffect(() => {
@@ -229,11 +251,12 @@ export default function UserFormPage() {
       setFetching(false);
       return;
     }
+    let active = true;
     (async () => {
       try {
         const res = await API.get(`${apiBase}/${id}`);
         const u = res.data?.data || res.data;
-        if (!u) return;
+        if (!u || !active) return;
         setFormData({
           ...defaultForm(currentUser),
           firstName: u.firstName || (u.name ? u.name.split(" ")[0] : ""),
@@ -274,12 +297,13 @@ export default function UserFormPage() {
         });
         setStep(0);
       } catch (_) {
-        toast.error("Failed to load user");
+        if (active) toast.error("Failed to load user");
       } finally {
-        setFetching(false);
+        if (active) setFetching(false);
       }
     })();
-  }, [id, isEdit, apiBase]);
+    return () => { active = false; };
+  }, [id, isEdit, apiBase, currentUser]);
 
   const buildPayload = (statusOverride) => {
     const payload = {

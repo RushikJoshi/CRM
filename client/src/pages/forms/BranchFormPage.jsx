@@ -96,24 +96,20 @@ export default function BranchFormPage() {
     companyId: currentUser?.companyId || "",
   });
 
-  const fullSchema = {
+  const fullSchema = React.useMemo(() => ({
     name: [rules.required("Branch name")],
     email: [],
     managerEmail: [],
     ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
-  };
+  }), [isSuperAdmin]);
 
-  const stepSchema = (() => {
+  const stepSchema = React.useMemo(() => {
     // Validate only current step fields.
-    // Step 1: Branch name (+ companyId for super admin)
-    // Step 2: Manager email format (optional)
-    // Step 3: Branch email format (optional)
-    // Step 4/5: no required validations
     if (step === 0) return { name: fullSchema.name, ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}) };
     if (step === 1) return { managerEmail: fullSchema.managerEmail };
     if (step === 2) return { email: fullSchema.email };
     return {};
-  })();
+  }, [step, isSuperAdmin, fullSchema]);
 
   const { errors, validate, clearError, clearAllErrors } = useFormValidation(stepSchema);
 
@@ -134,12 +130,15 @@ export default function BranchFormPage() {
   // Fetch companies (super admin)
   useEffect(() => {
     if (!isSuperAdmin) return;
+    let active = true;
     API.get("/super-admin/companies?limit=500")
       .then((res) => {
+        if (!active) return;
         const data = res.data?.data || res.data?.companies || res.data;
         setCompanies(Array.isArray(data) ? data : []);
       })
       .catch(() => {});
+    return () => { active = false; };
   }, [isSuperAdmin]);
 
   // Fetch users for manager/assigned (when company known)
@@ -149,13 +148,18 @@ export default function BranchFormPage() {
       setUsers([]);
       return;
     }
+    let active = true;
     const url = isSuperAdmin ? `${usersBase}?companyId=${companyIdForUsers}` : usersBase;
     API.get(url)
       .then((res) => {
+        if (!active) return;
         const data = res.data?.data || res.data || [];
         setUsers(Array.isArray(data) ? data : []);
       })
-      .catch(() => setUsers([]));
+      .catch(() => {
+        if (active) setUsers([]);
+      });
+    return () => { active = false; };
   }, [companyIdForUsers, isSuperAdmin, usersBase]);
 
   // Fetch branch for edit

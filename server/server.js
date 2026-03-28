@@ -10,7 +10,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const app = express();
-app.set("trust proxy", 1); // Trust first proxy (Plesk/Nginx) for correct IP detection
+app.set("trust proxy", true); // Full proxy trust for accurate IP detection
 const server = http.createServer(app);
 
 // ── Dynamic CORS configuration ────────────────────────────────────────────────
@@ -43,7 +43,7 @@ app.use((req, res, next) => {
     res.setHeader(
       "Content-Security-Policy",
       "default-src 'self'; " +
-      "connect-src 'self' https://app.gitakshmilabs.com https://app.dev.gitakshmilabs.com wss://app.gitakshmilabs.com wss://app.dev.gitakshmilabs.com http://localhost:5003 ws://localhost:5003 https://fonts.googleapis.com https://fonts.gstatic.com; " +
+      "connect-src 'self' https://app.gitakshmilabs.com https://app.dev.gitakshmilabs.com wss://app.gitakshmilabs.com wss://app.dev.gitakshmilabs.com http://localhost:5003 ws://localhost:5003 https://fonts.googleapis.com https://fonts.gstatic.com https://api.postalpincode.in; " +
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "font-src 'self' https://fonts.gstatic.com data:; " +
@@ -57,10 +57,14 @@ app.use((req, res, next) => {
 // Global Rate Limiter (Prevent 429 Errors & stabilize production)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10000, // Significant overhead for busy production environment
+    max: 50000, // Very high limit for production-grade stability
     standardHeaders: true,
     legacyHeaders: false,
-    message: "Too many requests, please try again later"
+    message: {
+        success: false,
+        message: "Your session has too many requests or is looping. Please refresh the page.",
+        code: 429
+    }
 });
 app.use("/api/", limiter);
 

@@ -1,15 +1,24 @@
-import React, { useState, useContext } from "react";
-import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight, FiAlertCircle } from "react-icons/fi";
+import React, { useState, useContext, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight, FiAlertCircle, FiClock } from "react-icons/fi";
 import API from "../../services/api";
 import { AuthContext, ROLE_HOME } from "../../context/AuthContext";
 
 const LoginForm = () => {
+    const [searchParams] = useSearchParams();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPass, setShowPass] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const { login } = useContext(AuthContext);
+
+    // Show session expired message if redirected
+    useEffect(() => {
+        if (searchParams.get("session") === "expired") {
+            setError("Your session has timed out. Please sign in again.");
+        }
+    }, [searchParams]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
