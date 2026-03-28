@@ -131,6 +131,7 @@ export default function UserFormPage() {
   const [companies, setCompanies] = useState([]);
   const [formData, setFormData] = useState(() => defaultForm(currentUser));
   const [step, setStep] = useState(0);
+  const [isStepChanging, setIsStepChanging] = useState(false);
 
   const fullSchema = useMemo(() => ({
     firstName: [rules.required("First name")],
@@ -361,20 +362,47 @@ export default function UserFormPage() {
     }
   };
 
+  const canGoNext = async () => validate(formData);
+
   const goNext = async () => {
-    if (isView) return;
-    if (!validate(formData)) {
+    console.info("UserForm: Navigating from Step Index", step, "to", step + 1);
+    const valid = await canGoNext();
+    if (!valid) {
       toast.error("Please fix the errors before continuing.");
       return;
     }
+    setIsStepChanging(true);
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    setTimeout(() => setIsStepChanging(false), 500);
   };
 
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
+  const handleKeyDown = (e) => {
+    // Only allow "Enter" to submit on the final step to prevent premature creation
+    if (e.key === "Enter") {
+      if (step < STEPS.length - 1) {
+        e.preventDefault();
+        goNext();
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.info("handleSubmit triggered at User Step:", step + 1);
+
+    // CRITICAL: Block any API submission unless the user is on the VERY LAST step (Index 3)
+    if (step < STEPS.length - 1) {
+      console.warn("Blocked premature submission attempt from Step:", step + 1);
+      goNext();
+      return;
+    }
+
+    console.log("Final submission initiated at User Step 4 (Role & Account).");
+
     if (isView) return;
+
     if (formData.password && formData.password !== formData.confirmPassword) {
       toast.error("Password and Confirm Password do not match.");
       return;
@@ -431,7 +459,7 @@ export default function UserFormPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="flex-1 min-h-0 overflow-auto pb-4">
+      <form id="user-form" onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate className="flex-1 min-h-0 overflow-auto pb-4">
         <div className="p-4 md:p-5 w-full">
           <div className="mb-4 bg-white rounded-xl border border-[#E5E7EB] shadow-sm px-3 py-2.5">
             <div className="flex flex-wrap items-center gap-2">
@@ -736,47 +764,50 @@ export default function UserFormPage() {
           </div>
         </div>
 
-        <div className="shrink-0 sticky bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] shadow-lg py-4 px-5 md:px-6">
-          <div className="w-full max-w-[1400px] flex flex-wrap items-center justify-end gap-2">
+      </form>
+
+      {/* Sticky actions - Moved OUTSIDE form to prevent accidental submission */}
+      <div className="shrink-0 sticky bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] shadow-lg py-4 px-5 md:px-6">
+        <div className="w-full max-w-[1400px] flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={step === 0 ? () => navigate(-1) : goBack}
+            className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm disabled:opacity-50"
+          >
+            Back
+          </button>
+          {!isView && (
             <button
               type="button"
-              onClick={step === 0 ? () => navigate(-1) : goBack}
-              className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm disabled:opacity-50"
+              onClick={handleSaveDraft}
+              disabled={loading}
+              className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#111827] font-semibold hover:bg-[#F8FAFC] text-sm disabled:opacity-50"
             >
-              Back
+              Save Draft
             </button>
-            {!isView && (
-              <button
-                type="button"
-                onClick={handleSaveDraft}
-                disabled={loading}
-                className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#111827] font-semibold hover:bg-[#F8FAFC] text-sm disabled:opacity-50"
-              >
-                Save Draft
-              </button>
-            )}
-            {!isView && step < STEPS.length - 1 ? (
-              <button
-                type="button"
-                onClick={goNext}
-                disabled={loading}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
-              >
-                Next
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={loading || isView}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
-              >
-                {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSave size={16} />}
-                {isEdit ? "Update User" : "Create User"}
-              </button>
-            )}
-          </div>
+          )}
+          {!isView && step < STEPS.length - 1 ? (
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={loading || isStepChanging}
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm transition-all"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              type="submit"
+              form="user-form"
+              disabled={loading || isView || isStepChanging}
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] text-white font-semibold hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm transition-all"
+            >
+              {loading || isStepChanging ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSave size={16} />}
+              {isEdit ? "Update User" : "Create User"}
+            </button>
+          )}
         </div>
-      </form>
+      </div>
     </div>
   );
 }

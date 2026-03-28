@@ -65,6 +65,7 @@ export default function BranchFormPage() {
   const [step, setStep] = useState(0);
   const [companies, setCompanies] = useState([]);
   const [users, setUsers] = useState([]);
+  const [isStepChanging, setIsStepChanging] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     branchCode: "",
@@ -106,8 +107,10 @@ export default function BranchFormPage() {
   const stepSchema = React.useMemo(() => {
     // Validate only current step fields.
     if (step === 0) return { name: fullSchema.name, ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}) };
-    if (step === 1) return { managerEmail: fullSchema.managerEmail };
-    if (step === 2) return { email: fullSchema.email };
+    if (step === 1) return { managerEmail: fullSchema.managerEmail || [] };
+    if (step === 2) return { email: fullSchema.email || [] };
+    if (step === 3) return { city: [], state: [], postalCode: [] }; // Explicit but optional
+    if (step === 4) return { openingDate: [], workingHours: [] }; 
     return {};
   }, [step, isSuperAdmin, fullSchema]);
 
@@ -213,7 +216,17 @@ export default function BranchFormPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Final submit: still validate current step only (per requirement)
+    console.info("handleSubmit triggered at Step:", step + 1);
+
+    // CRITICAL: Block any API submission unless the user is on the VERY LAST step (Index 4)
+    if (step < STEPS.length - 1) {
+      console.warn("Blocked premature submission attempt from Step:", step + 1);
+      goNext(); // Just advance the step instead of saving
+      return;
+    }
+
+    console.log("Final submission initiated at Step 5 (Operational).");
+
     if (!validate(formData)) {
       toast.error("Please fix the errors before saving.");
       return;
@@ -292,14 +305,27 @@ export default function BranchFormPage() {
   const canGoNext = () => validate(formData);
 
   const goNext = () => {
+    console.info(`Navigating: Step ${step + 1} -> Step ${step + 2}`);
     if (!canGoNext()) {
       toast.error("Please fix the errors before continuing.");
       return;
     }
+    setIsStepChanging(true);
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
+    setTimeout(() => setIsStepChanging(false), 500);
   };
 
   const goBack = () => setStep((s) => Math.max(0, s - 1));
+
+  const handleKeyDown = (e) => {
+    // Only allow "Enter" to submit on the final step to prevent premature creation
+    if (e.key === "Enter") {
+      if (step < STEPS.length - 1) {
+        e.preventDefault();
+        goNext();
+      }
+    }
+  };
 
   // Indian Postal API: pincode -> city, state, country
   const fetchAddressByPincode = useCallback(async (pincode) => {
@@ -307,6 +333,7 @@ export default function BranchFormPage() {
     if (pin.length !== 6 || !/^\d{6}$/.test(pin)) return;
     try {
       const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+      if (!res.ok) return;
       const data = await res.json();
       if (data && data[0]?.Status === "Success" && data[0].PostOffice?.length) {
         const po = data[0].PostOffice[0];
@@ -317,7 +344,10 @@ export default function BranchFormPage() {
           country: po.Country || prev.country || "India",
         }));
       }
-    } catch (_) {}
+    } catch (_) {
+      // If external API fails (ERR_CONNECTION_RESET), we log it but don't clear fields
+      console.warn("Pincode API unavailable or blocked.");
+    }
   }, []);
 
   // Levenshtein distance for typo-tolerant city match
@@ -419,7 +449,7 @@ export default function BranchFormPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="flex-1 min-h-0 overflow-auto pb-4">
+      <form id="branch-form" onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate className="flex-1 min-h-0 overflow-auto pb-4">
         <div className="p-4 md:p-6 w-full">
           <div className="max-w-[1100px] mx-auto space-y-6">
             {/* Stepper */}
@@ -631,53 +661,56 @@ export default function BranchFormPage() {
           </div>
         </div>
 
-        {/* Sticky actions */}
-        <div className="shrink-0 sticky bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] shadow-lg py-4 px-5 md:px-6">
-          <div className="max-w-[1100px] mx-auto w-full flex flex-wrap items-center justify-between gap-4">
-            <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm">
-              Cancel
-            </button>
-            <div className="flex items-center gap-3">
-              {step > 0 && (
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm"
-                >
-                  ← Back
-                </button>
-              )}
+      </form>
+
+      {/* Sticky actions - Moved OUTSIDE form to prevent accidental submission */}
+      <div className="shrink-0 sticky bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] shadow-lg py-4 px-5 md:px-6">
+        <div className="max-w-[1100px] mx-auto w-full flex flex-wrap items-center justify-between gap-4">
+          <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm">
+            Cancel
+          </button>
+          <div className="flex items-center gap-3">
+            {step > 0 && (
               <button
                 type="button"
-                onClick={handleSaveDraft}
-                disabled={loading}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-white border border-[#E5E7EB] text-[#111827] font-semibold hover:bg-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+                onClick={goBack}
+                className="px-4 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] font-semibold hover:bg-[#F8FAFC] text-sm"
               >
-                <FiSave size={16} />
-                Save Draft
+                ← Back
               </button>
-              {step < STEPS.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={goNext}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#0D9488] text-white font-semibold hover:bg-[#0F766E] shadow-sm text-sm"
-                >
-                  Next →
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#0D9488] text-white font-semibold hover:bg-[#0F766E] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
-                >
-                  {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSave size={16} />}
-                  Submit
-                </button>
-              )}
-            </div>
+            )}
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-white border border-[#E5E7EB] text-[#111827] font-semibold hover:bg-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm"
+            >
+              <FiSave size={16} />
+              Save Draft
+            </button>
+            {step < STEPS.length - 1 ? (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={isStepChanging || loading}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#0D9488] text-white font-semibold hover:bg-[#0F766E] disabled:opacity-50 shadow-sm text-sm transition-all"
+              >
+                Next →
+              </button>
+            ) : (
+              <button
+                type="submit"
+                form="branch-form"
+                disabled={isStepChanging || loading}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#0D9488] text-white font-semibold hover:bg-[#0F766E] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-sm transition-all"
+              >
+                {loading || isStepChanging ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSave size={16} />}
+                Submit
+              </button>
+            )}
           </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

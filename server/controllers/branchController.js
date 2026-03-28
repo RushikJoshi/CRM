@@ -38,11 +38,22 @@ function sanitizeBranchBody(body) {
   return Object.fromEntries(Object.entries(allowed).filter(([, v]) => v !== undefined));
 }
 
-/** Auto-generate branch code: BR-{companyId short}-{count} */
+/** Auto-generate unique branch code: BR-{companyId short}-{count} */
 async function generateBranchCode(companyId) {
-  const count = await Branch.countDocuments({ companyId, isDeleted: false });
-  const short = String(companyId).slice(-6).toUpperCase();
-  return `BR-${short}-${String(count + 1).padStart(3, "0")}`;
+  const short = String(companyId).slice(-8).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let count = await Branch.countDocuments({ companyId });
+  let branchCode = `BR-${short}-${String(count + 1).padStart(3, "0")}`;
+  
+  // Safety loop: ensure uniqueness even if count is out of sync
+  let exists = await Branch.exists({ companyId, branchCode, isDeleted: false });
+  let attempts = 0;
+  while (exists && attempts < 100) {
+    count += 1;
+    attempts += 1;
+    branchCode = `BR-${short}-${String(count).padStart(3, "0")}`;
+    exists = await Branch.exists({ companyId, branchCode, isDeleted: false });
+  }
+  return branchCode;
 }
 
 // ── Create Branch ─────────────────────────────────────────────────────────

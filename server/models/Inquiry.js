@@ -19,7 +19,6 @@ const inquirySchema = new mongoose.Schema(
         },
         source: {
             type: String,
-            enum: ["website", "whatsapp", "manual", "ads", "landing_page", "test_portal"],
             default: "manual"
         },
         message: {
