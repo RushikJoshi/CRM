@@ -5,14 +5,37 @@ import API from "../services/api";
 const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isStandalone = false }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [branches, setBranches] = useState([]);
     const [formData, setFormData] = useState({
         name: "",
         email: "",
         phone: "",
         source: "manual",
         status: "new",
-        message: ""
+        message: "",
+        branchId: ""
     });
+
+    const user = API.getCurrentUser ? API.getCurrentUser() : JSON.parse(localStorage.getItem("user") || "{}");
+    const showBranchSelector = ["company_admin", "super_admin"].includes(user?.role);
+
+    useEffect(() => {
+        if (isOpen && showBranchSelector) {
+            fetchBranches();
+        }
+    }, [isOpen, showBranchSelector]);
+
+    const fetchBranches = async () => {
+        try {
+            const res = await API.get("/branches");
+            setBranches(res.data?.data || []);
+            if (res.data?.data?.length > 0 && !formData.branchId) {
+                setFormData(prev => ({ ...prev, branchId: res.data.data[0]._id }));
+            }
+        } catch (err) {
+            console.error("Failed to fetch branches:", err);
+        }
+    };
 
     const SOURCES = [
         { value: "website", label: "Website" },
@@ -37,7 +60,8 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
                 phone: editingData.phone || "",
                 source: editingData.source || "manual",
                 status: editingData.status || "new",
-                message: editingData.message || ""
+                message: editingData.message || "",
+                branchId: editingData.branchId?._id || editingData.branchId || ""
             });
         } else {
             setFormData({
@@ -46,7 +70,8 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
                 phone: "",
                 source: "manual",
                 status: "new",
-                message: ""
+                message: "",
+                branchId: (branches.length > 0 && showBranchSelector) ? branches[0]._id : ""
             });
         }
     }, [editingData, isOpen]);
@@ -170,6 +195,24 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
                             </select>
                         </div>
                     </div>
+
+                    {/* Branch Selection (Only for Admins) */}
+                    {showBranchSelector && (
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-black text-indigo-400 uppercase tracking-widest px-1">Branch Destination</label>
+                            <div className="relative group">
+                                <select
+                                    required
+                                    className="w-full px-4 py-3 bg-indigo-50/30 border border-indigo-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-400 focus:bg-white transition-all font-bold text-indigo-700 text-xs appearance-none shadow-inner cursor-pointer"
+                                    value={formData.branchId}
+                                    onChange={e => setFormData({ ...formData, branchId: e.target.value })}
+                                >
+                                    <option value="" disabled>Select target branch...</option>
+                                    {branches.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Message */}

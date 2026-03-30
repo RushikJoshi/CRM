@@ -22,6 +22,7 @@ exports.createActivity = async (req, res) => {
             customerId: customerId || null,
             userId: req.user.id,
             companyId: req.user.companyId,
+            branchId: req.user.branchId || null, // Capture branch context
             type,
             note,
             title: title || null,
@@ -35,6 +36,7 @@ exports.createActivity = async (req, res) => {
             await Notification.create({
                 userId: mentionedUserId,
                 companyId: req.user.companyId,
+                branchId: req.user.branchId || null,
                 type: "info",
                 title: "You were mentioned",
                 message: `${req.user.name} mentioned you in a ${type} note for lead.`,
@@ -71,10 +73,12 @@ exports.createActivity = async (req, res) => {
 // ── GET ACTIVITIES BY LEAD ────────────────────────────────────────────────────
 exports.getActivitiesByLead = async (req, res) => {
     try {
-        const activities = await Activity.find({
-            leadId: req.params.leadId,
-            companyId: req.user.companyId
-        }).populate("userId", "name").sort({ createdAt: -1 });
+        const { getRBACFilter } = require("../utils/rbac");
+        const query = getRBACFilter(req.user, { leadId: req.params.leadId });
+
+        const activities = await Activity.find(query)
+            .populate("userId", "name")
+            .sort({ createdAt: -1 });
 
         res.json({ success: true, data: activities });
     } catch (error) {
@@ -87,17 +91,17 @@ exports.getActivitiesByLead = async (req, res) => {
 exports.getActivityTimeline = async (req, res) => {
     try {
         const { leadId, customerId, dealId } = req.query;
-        let match = { companyId: req.user.companyId };
+        const { getRBACFilter } = require("../utils/rbac");
+        let baseFilter = getRBACFilter(req.user);
 
         // If specific entity requested, filter all models by that entity
-        // Otherwise, match is just companyId and we'll fetch global recent items
-        let leadMatch = { ...match };
-        let dealMatch = { ...match };
-        let activityMatch = { ...match };
+        let leadMatch = { ...baseFilter };
+        let dealMatch = { ...baseFilter };
+        let activityMatch = { ...baseFilter };
 
         if (leadId) {
             leadMatch._id = leadId;
-            activityMatch.leadId = leadId;
+            activityMatch.$or = [{ leadId: leadId }, { inquiryId: leadId }];
         }
         if (customerId) {
             dealMatch.customerId = customerId;
@@ -108,14 +112,14 @@ exports.getActivityTimeline = async (req, res) => {
             activityMatch.dealId = dealId;
         }
 
-        const [leads, deals, calls, meetings, todos, notes, messages, logActivities] = await Promise.all([
+        const [leads, deals, calls, meetings, todos, notes, chatMessages, logActivities] = await Promise.all([
             Lead.find(leadMatch).sort({ createdAt: -1 }).limit(leadId ? 1 : 20),
             Deal.find(dealMatch).sort({ updatedAt: -1 }).limit(dealId ? 1 : 20),
             Call.find(activityMatch).sort({ createdAt: -1 }).limit(20),
             Meeting.find(activityMatch).sort({ createdAt: -1 }).limit(20),
             Todo.find(activityMatch).sort({ updatedAt: -1 }).limit(20),
             Note.find(activityMatch).sort({ createdAt: -1 }).limit(20),
-            Message.find(activityMatch).sort({ createdAt: -1 }).limit(20),
+            require("../models/Message").find(activityMatch).sort({ createdAt: -1 }).limit(20),
             Activity.find(activityMatch).populate("userId", "name").populate("mentionedUserId", "name").sort({ createdAt: -1 }).limit(100)
         ]);
 
@@ -126,7 +130,7 @@ exports.getActivityTimeline = async (req, res) => {
             ...meetings.map(m => ({ type: 'meeting', title: `Meeting ${m.status}: ${m.title}`, date: m.startDate || m.createdAt, id: m._id, leadId: m.leadId })),
             ...todos.map(t => ({ type: 'task', title: `Task ${t.status}: ${t.title}`, date: t.updatedAt || t.createdAt, id: t._id, leadId: t.leadId })),
             ...notes.map(n => ({ type: 'note', title: `Note: ${n.title}`, date: n.createdAt, id: n._id, leadId: n.leadId })),
-            ...messages.map(msg => ({ type: 'message', title: `${msg.type.toUpperCase()} ${msg.status}`, date: msg.createdAt, id: msg._id, leadId: msg.leadId })),
+            ...chatMessages.map(msg => ({ type: 'message', title: `Chat Message`, date: msg.createdAt, id: msg._id, leadId: msg.leadId })),
             ...logActivities.map(a => ({
                 type: a.type,
                 title: a.title || a.note,

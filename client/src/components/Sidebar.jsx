@@ -96,7 +96,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
                 { name: "Activity", icon: <FiActivity />, path: "/activities", roles: ["company_admin", "branch_manager", "sales"] },
                 { name: "Calendar", icon: <FiCalendar />, path: "/calendar", roles: ["company_admin", "branch_manager", "sales"] },
                 { name: "Email Templates", icon: <FiMail />, path: "/email-templates", roles: ["company_admin", "branch_manager", "sales"] },
-                { name: "Tasks", icon: <FiCheckSquare />, path: "/tasks", roles: ["company_admin", "branch_manager", "sales"] },
+                {name: "Tasks", icon: <FiCheckSquare />, path: "/tasks", roles: ["company_admin", "branch_manager", "sales"] },
+                { name: "Chat", icon: <FiSend />, path: "/chat", roles: ["company_admin", "branch_manager", "sales"] },
                 { name: "Calls", icon: <FiPhone />, path: "/calls", roles: ["company_admin", "branch_manager", "sales"] },
                 { name: "Meetings", icon: <FiCalendar />, path: "/meetings", roles: ["company_admin", "branch_manager", "sales"] }
             ]

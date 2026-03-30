@@ -236,6 +236,49 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+/* ================= GET ASSIGNABLE USERS ================= */
+exports.getAssignableUsers = async (req, res) => {
+  try {
+    const { role: userRole, companyId, branchId, _id: userId } = req.user;
+
+    let filter = {
+      companyId,
+      isDeleted: { $ne: true },
+      status: "active"
+    };
+
+    if (userRole === "company_admin") {
+      // All users in company (Branch Manager + Sales)
+      filter.role = { $in: ["branch_manager", "sales"] };
+    } else if (userRole === "branch_manager") {
+      // Only sales users in same branch
+      filter.role = "sales";
+      filter.branchId = branchId;
+    } else if (userRole === "sales") {
+      // Only sales users in same branch
+      filter.role = "sales";
+      filter.branchId = branchId;
+      // Note: Task 3 says "Can transfer only: To other sales users in same branch"
+      // Task 5 says: "SALES: Only sales users in same branch"
+    } else if (userRole === "super_admin") {
+      // super admin can see everyone
+    } else {
+      // Default / restricted
+      return res.json({ success: true, data: [] });
+    }
+
+    const users = await User.find(filter)
+      .select("name email role branchId")
+      .populate("branchId", "name")
+      .sort({ name: 1 });
+
+    res.json({ success: true, data: users });
+  } catch (error) {
+    console.error("GET ASSIGNABLE USERS ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 /* ================= UPDATE USER ================= */
 exports.updateUser = async (req, res) => {
   try {

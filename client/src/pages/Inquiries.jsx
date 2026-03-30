@@ -9,6 +9,7 @@ import Pagination from "../components/Pagination";
 import { useToast } from "../context/ToastContext";
 import { getCurrentUser } from "../context/AuthContext";
 import AddInquiryModal from "../components/AddInquiryModal";
+import InquiryAssignModal from "../components/InquiryAssignModal";
 
 const InquiriesPage = () => {
     const navigate = useNavigate();
@@ -23,8 +24,9 @@ const InquiriesPage = () => {
     const [total, setTotal] = useState(0);
     const pageSize = 10;
 
-    const [activeTask, setActiveTask] = useState(null); // 'create', 'edit'
+    const [activeTask, setActiveTask] = useState(null); // 'create', 'edit', 'assign'
     const [editingInquiry, setEditingInquiry] = useState(null);
+    const [assignInquiry, setAssignInquiry] = useState(null);
 
     const currentUser = getCurrentUser();
     const role = currentUser?.role;
@@ -77,6 +79,7 @@ const InquiriesPage = () => {
     const closeTask = () => {
         setActiveTask(null);
         setEditingInquiry(null);
+        setAssignInquiry(null);
         fetchInquiries();
     };
 
@@ -89,6 +92,19 @@ const InquiriesPage = () => {
                     onSuccess={closeTask}
                     editingData={editingInquiry}
                     isStandalone={true}
+                />
+            </div>
+        );
+    }
+
+    if (activeTask === 'assign' && assignInquiry) {
+        return (
+            <div className="animate-fade-in bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
+                <InquiryAssignModal 
+                    isOpen={true} 
+                    onClose={closeTask} 
+                    inquiry={assignInquiry} 
+                    onAssigned={closeTask}
                 />
             </div>
         );
@@ -195,9 +211,17 @@ const InquiriesPage = () => {
                                                     {item.source || "manual"}
                                                 </span>
                                             </td>
-                                            <td className="saas-td-excel">
-                                                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">{item.assignedTo?.name || "Unassigned"}</span>
-                                            </td>
+                                             <td className="saas-td-excel" onClick={(e) => { 
+                                                 e.stopPropagation(); 
+                                                 setAssignInquiry(item);
+                                                 setActiveTask('assign');
+                                             }}>
+                                                 <div className="flex items-center gap-2 cursor-pointer group/user">
+                                                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight group-hover/user:text-teal-600 transition-colors">
+                                                        {item.assignedTo?.name || "Unassigned"}
+                                                    </span>
+                                                 </div>
+                                             </td>
                                             <td className="saas-td-excel">
                                                 <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${
                                                     item.status === 'converted' 

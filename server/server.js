@@ -10,7 +10,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const app = express();
-app.set("trust proxy", true); // Full proxy trust for accurate IP detection
+app.set("trust proxy", 1); // Specific proxy trust for rate limiting stability
 const server = http.createServer(app);
 
 // ── Dynamic CORS configuration ────────────────────────────────────────────────
@@ -83,7 +83,8 @@ app.use((req, res, next) => {
 
 /* ================= PUBLIC ROUTES ================= */
 app.use("/api/public", require("./routes/publicRoutes"));
-app.use("/api/track", forceJsonResponse(false), require("./routes/trackRoutes")); // For pixel and webhook (Pixel isn't JSON)
+app.use("/api/track", require("./routes/trackRoutes")); 
+// app.use("/api/events", forceJsonResponse(false), require("./routes/trackRoutes")); 
 
 function forceJsonResponse(val) {
     return (req, res, next) => {
@@ -107,6 +108,8 @@ app.use("/api/crm", require("./routes/crmRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/search", require("./routes/searchRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
+app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/audit-logs", require("./routes/auditLogRoutes"));
 app.use("/api/automation", require("./routes/automationRoutes"));
 app.use("/api/inquiries", require("./routes/inquiryRoutes"));
@@ -138,7 +141,57 @@ app.use((err, req, res, next) => {
 
 /* ================= DATABASE ================= */
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ MongoDB Atlas Connected"))
+    .then(async () => {
+        console.log("✅ MongoDB Atlas Connected");
+        
+        // ── 🛠️ UNIFIED COLLECTION MIGRATION (Seamless Evolution) ──────────────────
+        try {
+            const Inquiry = require("./models/Inquiry");
+            const db = mongoose.connection.db;
+
+            console.log("🛠️ Starting CRM Data Unification...");
+
+            // 1. Tag all existing inquiries as INQUIRY (if not already)
+            const inquirySync = await Inquiry.updateMany(
+                { type: { $exists: false } }, 
+                { $set: { type: "INQUIRY" } }
+            );
+            if (inquirySync.modifiedCount > 0) console.log(`🏷️  Updated ${inquirySync.modifiedCount} legacy records to INQUIRY.`);
+
+            // 2. Check for legacy 'leads' collection
+            const collections = await db.listCollections({ name: "leads" }).toArray();
+            if (collections.length > 0) {
+                const legacyLeads = await db.collection("leads").find({}).toArray();
+                if (legacyLeads.length > 0) {
+                    console.log(`📡 Moving ${legacyLeads.length} records from 'leads' to unified inquiries...`);
+                    
+                    for (const lead of legacyLeads) {
+                        // Check if already moved to prevent duplicates
+                        const exists = await Inquiry.findOne({ 
+                            $or: [
+                                { _id: lead._id }, 
+                                { email: lead.email, phone: lead.phone, companyId: lead.companyId, type: "LEAD" }
+                            ] 
+                        });
+
+                        if (!exists) {
+                            const { _id, ...leadData } = lead;
+                            await Inquiry.create({ 
+                                ...leadData, 
+                                _id, 
+                                type: "LEAD",
+                                status: lead.status || "ASSIGNED"
+                            });
+                        }
+                    }
+                    console.log("✅ Legacy Leads migration complete.");
+                }
+            }
+            console.log("🎉 CRM Data Unification finalized.");
+        } catch (migErr) {
+            console.error("⚠️  Migration Error:", migErr.message);
+        }
+    })
     .catch(err => console.error("❌ DB Error:", err));
 
 /* ================= SERVER ================= */

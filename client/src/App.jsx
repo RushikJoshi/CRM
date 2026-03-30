@@ -47,6 +47,7 @@ const UsageAnalytics = lazy(() => import("./pages/platform/UsageAnalytics"));
 const SystemLogs = lazy(() => import("./pages/platform/SystemLogs"));
 const ApiKeys = lazy(() => import("./pages/platform/ApiKeys"));
 const EmailTemplates = lazy(() => import("./pages/EmailTemplates"));
+const Chat = lazy(() => import("./pages/Chat"));
 
 // ── Test Management System ───────────────────────────────────────────────────
 const CourseManagement = lazy(() => import("./pages/testManagement/CourseManagement"));
@@ -201,6 +202,7 @@ function App() {
           <Route path="/company/automation" element={<Automation />} />
           <Route path="/company/calendar" element={<Calendar />} />
           <Route path="/company/email-templates" element={<EmailTemplates />} />
+          <Route path="/company/chat" element={<Chat />} />
           <Route path="/company/settings" element={<Settings />} />
         </Route>
 
@@ -248,6 +250,7 @@ function App() {
           <Route path="/branch/planner" element={<SalesPlanner />} />
           <Route path="/branch/calendar" element={<Calendar />} />
           <Route path="/branch/email-templates" element={<EmailTemplates />} />
+          <Route path="/branch/chat" element={<Chat />} />
           <Route path="/branch/settings" element={<Settings />} />
         </Route>
 
@@ -288,6 +291,7 @@ function App() {
           <Route path="/sales/analytics" element={<AnalyticsDashboard />} />
           <Route path="/sales/calendar" element={<Calendar />} />
           <Route path="/sales/email-templates" element={<EmailTemplates />} />
+          <Route path="/sales/chat" element={<Chat />} />
           <Route path="/sales/settings" element={<Settings />} />
         </Route>
 

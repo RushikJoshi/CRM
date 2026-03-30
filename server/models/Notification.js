@@ -12,6 +12,11 @@ const notificationSchema = new mongoose.Schema(
             ref: "Company",
             required: true
         },
+        branchId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Branch",
+            default: null
+        },
         type: {
             type: String,
             enum: ["info", "success", "warning", "error", "reminder"],

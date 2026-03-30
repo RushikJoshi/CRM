@@ -100,8 +100,9 @@ export default function InquiryDetailPage() {
 
     const fetchUsers = useCallback(async () => {
         try {
-            const res = await API.get("/users?limit=500");
-            setUsers(res.data?.data || []);
+            const res = await API.get("/users/assignable");
+            const data = res.data?.data ?? [];
+            setUsers(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("Failed to fetch users", err);
         }
@@ -185,7 +186,7 @@ export default function InquiryDetailPage() {
     const handleAssign = async (userId) => {
         setUpdatingAssignee(true);
         try {
-            await API.patch(`/inquiries/${id}`, { assignedTo: userId });
+            await API.patch(`/inquiries/${id}/assign`, { assignedTo: userId });
             toast.success("Assignment updated");
             fetchInquiry();
             fetchActivities();

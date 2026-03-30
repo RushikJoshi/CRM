@@ -1,6 +1,6 @@
 const EmailTemplate = require("../models/EmailTemplate");
 const EmailLog = require("../models/EmailLog");
-const Lead = require("../models/Lead");
+const Lead = require("../models/Inquiry"); // Unified model
 const Activity = require("../models/Activity");
 const nodemailer = require("nodemailer");
 const MessageTracking = require("../models/MessageTracking");
@@ -69,12 +69,14 @@ exports.deleteTemplate = async (req, res) => {
 
 exports.sendEmail = async (req, res) => {
   const { leadId, templateId, subject, body, to, from } = req.body;
+  if (!leadId) return res.status(400).json({ success: false, message: "leadId is required" });
+  if (!subject || !body) return res.status(400).json({ success: false, message: "subject and body are required" });
   try {
-    const lead = await Lead.findById(leadId);
-    if (!lead) return res.status(404).json({ status: "error", message: "Lead not found" });
+    const lead = await Lead.findOne({ _id: leadId, isDeleted: false });
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
 
     const recipientEmail = to || lead.email;
-    if (!recipientEmail) return res.status(400).json({ status: "error", message: "Recipient email is required" });
+    if (!recipientEmail) return res.status(400).json({ success: false, message: "Recipient email is required" });
 
     console.log("SENDING EMAIL TO:", recipientEmail);
     console.log("SMTP USER:", process.env.SMTP_USER);
@@ -134,20 +136,24 @@ exports.sendEmail = async (req, res) => {
       html: finalBody,
     });
 
-    // Log Activity
+    // Update lastContacted
+    await Lead.findByIdAndUpdate(lead._id, { lastContacted: new Date() });
+
+    // Log Activity with branchId
     await Activity.create({
-      leadId: lead._id,
+      inquiryId: lead._id,
       userId: req.user.id,
       companyId: req.user.companyId,
+      branchId: lead.branchId || null,
       type: "email",
-      note: `Sent Email to ${recipientEmail}: ${finalSubject}`,
+      note: `Email sent to ${recipientEmail}: "${finalSubject}"`,
       title: "Email Sent",
     });
 
-    res.status(200).json({ status: "success", message: "Email sent successfully" });
+    res.status(200).json({ success: true, message: "Email sent successfully", data: { emailLogId: emailLog._id } });
   } catch (err) {
-    console.error("🔴 EMAIL SEND ERROR:", err.message);
-    res.status(500).json({ status: "error", message: err.message });
+    console.error("EMAIL SEND ERROR:", err.message);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 

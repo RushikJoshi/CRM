@@ -21,14 +21,8 @@ const LeadAssignModal = ({ isOpen, onClose, lead, onAssigned, isStandalone = fal
     const fetchUsers = async () => {
         setFetching(true);
         try {
-            const currentUser = getCurrentUser();
-            const isSuperAdmin = currentUser?.role === "super_admin";
-            const url = isSuperAdmin
-                ? `/super-admin/users?companyId=${lead?.companyId?._id || lead?.companyId}`
-                : "/users";
-
-            const res = await API.get(url);
-            const data = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+            const res = await API.get("/users/assignable");
+            const data = res.data?.data || [];
             setUsers(data);
         } catch (err) {
             console.error("Failed to fetch users:", err);
@@ -44,7 +38,7 @@ const LeadAssignModal = ({ isOpen, onClose, lead, onAssigned, isStandalone = fal
         }
         setLoading(true);
         try {
-            await API.put(`/leads/${lead._id}`, { assignedTo: selectedUser });
+            await API.patch(`/leads/${lead._id}/assign`, { assignedTo: selectedUser });
             toast.success("Lead assigned.");
             onAssigned();
             onClose();

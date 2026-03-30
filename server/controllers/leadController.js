@@ -984,3 +984,143 @@ exports.importLeads = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+/* ================= LOG INTERACTION ================= */
+exports.logInteraction = async (req, res) => {
+  try {
+    const { type, note, selectedMentions } = req.body;
+    const leadId = req.params.id;
+
+    if (!type || !note) {
+      return res.status(400).json({ success: false, message: "Type and note are required" });
+    }
+
+    const lead = await Lead.findById(leadId);
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    // Normalize type to lowercase as per schema requirement
+    const activityType = type.toLowerCase();
+
+    const activity = await Activity.create({
+      leadId,
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      branchId: lead.branchId,
+      type: activityType,
+      note,
+      mentionedUserId: selectedMentions && selectedMentions.length > 0 ? selectedMentions[0] : null
+    });
+
+    // Update last interaction
+    lead.updatedAt = new Date();
+    await lead.save();
+
+    res.json({ success: true, data: activity });
+  } catch (error) {
+    console.error("LOG INTERACTION ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/* ================= CREATE TASK ================= */
+exports.createTask = async (req, res) => {
+    try {
+        const leadId = req.params.id;
+        const { title, description, priority, dueDate, assignedTo } = req.body;
+
+        const lead = await Lead.findById(leadId);
+        if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+        const task = await Todo.create({
+            title,
+            description,
+            priority: priority || "Medium",
+            dueDate,
+            leadId,
+            assignedTo: assignedTo || req.user.id,
+            companyId: req.user.companyId,
+            branchId: lead.branchId,
+            createdBy: req.user.id
+        });
+
+        // Log activity
+        await Activity.create({
+            leadId,
+            userId: req.user.id,
+            companyId: req.user.companyId,
+            branchId: lead.branchId,
+            type: "task",
+            note: `New task created: ${title}`
+        });
+
+        res.status(201).json({ success: true, data: task });
+    } catch (error) {
+        console.error("CREATE TASK ERROR:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/* ================= UPDATE FOLLOW UP ================= */
+exports.updateFollowUp = async (req, res) => {
+    try {
+        const { id } = req.params; // leadId
+        const { followUpId, status, note, extraInfo } = req.body;
+
+        const followUp = await FollowUp.findById(followUpId);
+        if (!followUp) return res.status(404).json({ success: false, message: "Follow-up not found" });
+
+        followUp.status = status || followUp.status;
+        followUp.note = note || followUp.note;
+        
+        // Handle extraInfo conversion (from summary fix)
+        if (extraInfo) {
+            let infoStr = "";
+            try {
+                // If it's a Mongoose map or similar, convert to entries
+                const plainInfo = (typeof extraInfo.entries === "function") 
+                    ? Object.fromEntries(extraInfo) 
+                    : extraInfo;
+                infoStr = JSON.stringify(plainInfo);
+            } catch (e) {
+                infoStr = String(extraInfo);
+            }
+            followUp.note = (followUp.note || "") + "\n\nUpdate Info: " + infoStr;
+        }
+
+        await followUp.save();
+
+        // Log activity
+        await Activity.create({
+            leadId: followUp.leadId,
+            userId: req.user.id,
+            companyId: req.user.companyId,
+            type: "follow_up",
+            note: `Follow-up ${status}: ${note || ''}`
+        });
+
+        res.json({ success: true, data: followUp });
+    } catch (error) {
+        console.error("UPDATE FOLLOW UP ERROR:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/* ================= UPDATE TAGS ================= */
+exports.updateTags = async (req, res) => {
+    try {
+        const leadId = req.params.id;
+        const { tags } = req.body;
+
+        const lead = await Lead.findById(leadId);
+        if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+        // Update tags (flexible handling since field might not be in schema)
+        lead.set('tags', tags);
+        await lead.save();
+
+        res.json({ success: true, message: "Tags updated successfully" });
+    } catch (error) {
+        console.error("UPDATE TAGS ERROR:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

@@ -7,7 +7,7 @@ const AuditLog = require("../models/AuditLog");
  * - createAuditEntry: writes to AuditLog (enterprise audit trail) for compliance and debugging
  */
 
-const logChange = async ({ leadId, dealId, userId, companyId, oldData, newData, fields }) => {
+const logChange = async ({ leadId, dealId, userId, companyId, branchId, oldData, newData, fields }) => {
     try {
         let changes = [];
 
@@ -30,6 +30,7 @@ const logChange = async ({ leadId, dealId, userId, companyId, oldData, newData, 
                 dealId: dealId || null,
                 userId,
                 companyId,
+                branchId: branchId || null,
                 type: "system",
                 note: changes.join(" | ")
             });

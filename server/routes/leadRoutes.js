@@ -18,6 +18,10 @@ const {
   updateLeadStage,
   markLeadLost,
   getLostLeads,
+  logInteraction,
+  createTask,
+  updateFollowUp,
+  updateTags
 } = require("../controllers/leadController");
 const upload = require("../middleware/uploadMiddleware");
 
@@ -34,6 +38,10 @@ router.patch("/:id/stage", auth, requireRole("branch_manager", "sales", "company
 router.post("/:id/lost", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, markLeadLost);
 router.delete("/:id", auth, requireRole("company_admin", "super_admin"), deleteLead);
 router.post("/:id/convert", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, convertLead);
-router.patch("/:id/assign", auth, requireRole("branch_manager", "company_admin"), checkCompanyAccess, assignLead);
+router.post("/:id/interactions", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, logInteraction);
+router.post("/:id/tasks", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, createTask);
+router.patch("/:id/follow-up", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, updateFollowUp);
+router.patch("/:id/tags", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, updateTags);
+router.patch("/:id/assign", auth, requireRole("branch_manager", "company_admin", "sales"), checkCompanyAccess, assignLead);
 
 module.exports = router;

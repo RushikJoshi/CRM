@@ -151,7 +151,7 @@ const leadSchema = new mongoose.Schema(
     branchId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
-      default: null
+      required: true
     },
 
     assignedTo: {
@@ -201,4 +201,5 @@ leadSchema.index({ assignedTo: 1 });
 leadSchema.index({ branchId: 1 });
 leadSchema.index({ isDeleted: 1, companyId: 1 });
 
-module.exports = mongoose.model("Lead", leadSchema);
+// This model is now unified with Inquiry and uses the 'inquiries' collection.
+module.exports = mongoose.model("Lead", leadSchema, "inquiries");

@@ -54,12 +54,18 @@ const activitySchema = new mongoose.Schema(
                 "lead_qualified",
                 "status_change",
                 "lead_stage_changed",
+                "stage_change",
                 "lead_lost",
+                "task",
+                "assignment",
+                "interaction",
+                "log",
+                "won",
+                "lost",
                 "deal",
                 "deal_stage_changed",
                 "customer",
                 "contact",
-                "task",
                 "message",
                 "follow_up",
                 "engagement",
@@ -85,12 +91,22 @@ const activitySchema = new mongoose.Schema(
             ref: "Company",
             required: true
         },
+        branchId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Branch",
+            default: null // Optional to allow for system-wide/automated activities
+        },
         attachments: [
             {
                 name: { type: String, required: true },
                 url: { type: String, required: true }
             }
-        ]
+        ],
+        metadata: {
+            type: mongoose.Schema.Types.Map,
+            of: mongoose.Schema.Types.Mixed,
+            default: {}
+        }
     },
     { timestamps: true }
 );
