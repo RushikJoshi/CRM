@@ -124,6 +124,7 @@ app.use("/api/targets", require("./routes/targetRoutes"));
 app.use("/api/branch-analytics", require("./routes/branchAnalyticsRoutes"));
 app.use("/api/planner", require("./routes/plannerRoutes"));
 app.use("/api/uploads", require("./routes/uploadRoutes"));
+app.use("/api/mass-messaging", require("./routes/campaignRoutes"));
 
 app.get("/", (req, res) => {
     res.json({
@@ -228,6 +229,9 @@ io.on("connection", (socket) => {
 
 const { initFollowUpCron } = require("./cron/followUpCron");
 initFollowUpCron(io);
+
+const { initCampaignCron } = require("./cron/campaignCron");
+initCampaignCron();
 
 app.set("io", io);
 

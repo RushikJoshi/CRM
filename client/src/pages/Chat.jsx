@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import API from "../utils/api";
-import { toast } from "react-hot-toast";
+import API from "../services/api";
+import { useToast } from "../context/ToastContext";
 
 const Chat = () => {
+    const toast = useToast();
     const [conversations, setConversations] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -20,7 +21,6 @@ const Chat = () => {
     useEffect(() => {
         if (selectedId) {
             fetchMessages(selectedId);
-            // Polling for demo if websocket not fully setup
             const timer = setInterval(() => fetchMessages(selectedId), 5000);
             return () => clearInterval(timer);
         }
@@ -59,7 +59,7 @@ const Chat = () => {
             await API.post("/chat/messages", { conversationId: selectedId, text: newMsg });
             setNewMsg("");
             fetchMessages(selectedId);
-            fetchConversations(); // Update preview
+            fetchConversations(); 
         } catch (err) {
             toast.error("Failed to send message.");
         } finally {
@@ -74,7 +74,6 @@ const Chat = () => {
 
     return (
         <div className="flex h-[calc(100vh-120px)] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden m-4">
-            {/* Sidebar: Conversations */}
             <div className="w-80 border-r border-gray-100 flex flex-col bg-gray-50/30">
                 <div className="p-5 border-b border-gray-100 bg-white">
                     <h2 className="text-xl font-black text-gray-800 tracking-tight">Communications</h2>
@@ -117,11 +116,9 @@ const Chat = () => {
                 </div>
             </div>
 
-            {/* Main: Chat View */}
             <div className="flex-1 flex flex-col bg-white">
                 {selectedId ? (
                     <>
-                        {/* Header */}
                         <div className="p-4 border-b border-gray-100 flex items-center justify-between shadow-sm">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-black">
@@ -134,7 +131,6 @@ const Chat = () => {
                             </div>
                         </div>
 
-                        {/* Messages */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/20">
                             {messages.map((m, idx) => {
                                 const isMine = m.senderId === currentUser.id;
@@ -152,7 +148,6 @@ const Chat = () => {
                             <div ref={scrollRef} />
                         </div>
 
-                        {/* Input */}
                         <form onSubmit={handleSend} className="p-4 border-t border-gray-100 bg-white">
                             <div className="flex gap-2">
                                 <input 

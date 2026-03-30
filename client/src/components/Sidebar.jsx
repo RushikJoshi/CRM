@@ -106,7 +106,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             label: "Analytics",
             items: [
                 { name: "Reports", icon: <FiPieChart />, path: "/reports", roles: ["company_admin", "branch_manager"] },
-                { name: "Targets", icon: <FiFlag />, path: "/targets", roles: ["company_admin", "branch_manager"] }
+                { name: "Targets", icon: <FiFlag />, path: "/targets", roles: ["company_admin", "branch_manager"] },
+                { name: "Mass Messaging", icon: <FiSend />, path: "/mass-messaging", roles: ["company_admin", "branch_manager", "sales"] }
             ]
         }
     ];

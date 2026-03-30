@@ -69,7 +69,8 @@ const activitySchema = new mongoose.Schema(
                 "message",
                 "follow_up",
                 "engagement",
-                "inquiry"
+                "inquiry",
+                "campaign_message"
             ],
             required: true
         },
