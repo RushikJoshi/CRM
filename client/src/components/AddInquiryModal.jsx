@@ -17,7 +17,14 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
     });
 
     const user = API.getCurrentUser ? API.getCurrentUser() : JSON.parse(localStorage.getItem("user") || "{}");
-    const showBranchSelector = ["company_admin", "super_admin"].includes(user?.role);
+    const showBranchSelector = ["company_admin", "super_admin", "branch_manager", "sales", "support"].includes(user?.role);
+    
+    // Auto-set first branch if empty after fetch
+    useEffect(() => {
+        if (branches.length > 0 && !formData.branchId) {
+            setFormData(prev => ({ ...prev, branchId: branches[0]._id }));
+        }
+    }, [branches, formData.branchId]);
 
     useEffect(() => {
         if (isOpen && showBranchSelector) {
@@ -27,11 +34,9 @@ const AddInquiryModal = ({ isOpen, onClose, onSuccess, editingData = null, isSta
 
     const fetchBranches = async () => {
         try {
-            const res = await API.get("/branches");
+            // Fetch all branches without drafting restriction for selector
+            const res = await API.get("/branches?limit=100");
             setBranches(res.data?.data || []);
-            if (res.data?.data?.length > 0 && !formData.branchId) {
-                setFormData(prev => ({ ...prev, branchId: res.data.data[0]._id }));
-            }
         } catch (err) {
             console.error("Failed to fetch branches:", err);
         }

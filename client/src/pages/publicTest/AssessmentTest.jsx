@@ -23,6 +23,8 @@ const AssessmentTest = () => {
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [proctoringStream, setProctoringStream] = useState(null);
   const [proctoringStatus, setProctoringStatus] = useState("not_requested"); 
+  const [resetting, setResetting] = useState(false);
+  const [sessionKey, setSessionKey] = useState(0);
 
   useEffect(() => {
     fetchTest();
@@ -79,7 +81,6 @@ const AssessmentTest = () => {
       } else {
         alert("Could not initialize security hardware. Please ensure your camera is connected and you are using a secure (HTTPS) connection.");
       }
-      // DO NOT setIsExamStarted(true) here. Force them to solve permission or stay on landing.
     } finally {
       setHardwareVerifying(false);
     }
@@ -135,10 +136,20 @@ const AssessmentTest = () => {
     }
   };
 
+  const handleSecurityReset = () => {
+    setResetting(true);
+    setTimeout(() => {
+      setCurrentIndex(0);
+      setAnswers({});
+      setSessionKey(prev => prev + 1);
+      setResetting(false);
+    }, 4000); // 4-second "penalty" lock
+  };
+
   if (loading) return (
-    <div className="min-h-screen bg-[#f3f4f6] flex flex-col items-center justify-center gap-6">
-       <div className="w-16 h-16 border-[6px] border-[#6b46c1] border-t-transparent rounded-full animate-spin"></div>
-       <p className="text-[#6b46c1] font-bold uppercase tracking-[0.3em] text-xs">Authenticating Portal...</p>
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+       <div className="w-16 h-16 border-[6px] border-[#9b1c1c] border-t-transparent rounded-full animate-spin"></div>
+       <p className="text-[#9b1c1c] font-bold uppercase tracking-[0.3em] text-xs">Synchronizing Portal...</p>
     </div>
   );
 
@@ -152,78 +163,104 @@ const AssessmentTest = () => {
   const progress = ((currentIndex + 1) / testData.questions.length) * 100;
 
   return (
-    <div className="min-h-screen bg-white font-sans selection:bg-[#6b46c1] selection:text-white pb-32">
+    <div className="min-h-screen bg-white font-sans selection:bg-[#9b1c1c] selection:text-white pb-32">
       <ProctoringOverlay 
+        key={sessionKey}
         token={token} 
         stream={proctoringStream} 
         isStarted={isProctoringStarted} 
         proctoringStatus={proctoringStatus}
+        onLimitReached={() => handleSecurityReset()}
       />
+
+      {/* ── SECURITY VIOLATION RESET OVERLAY ───────────────────────────────── */}
+      <AnimatePresence>
+        {resetting && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[500] bg-[#9b1c1c] text-white flex flex-col items-center justify-center p-10 text-center backdrop-blur-2xl"
+          >
+             <motion.div 
+               initial={{ scale: 0.9, rotate: -5 }} animate={{ scale: 1, rotate: 0 }}
+               className="max-w-2xl"
+             >
+                <div className="w-32 h-32 bg-white/10 rounded-[3rem] flex items-center justify-center mx-auto mb-10 border-4 border-white/20 animate-pulse">
+                   <FiAlertTriangle size={64} strokeWidth={3} />
+                </div>
+                <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter italic mb-6 leading-none">Security Violation</h1>
+                <p className="text-xl font-bold italic opacity-80 mb-10 tracking-tight">Too many protocol breaches detected. Your session is being forcibly synchronized and restarted from the beginning.</p>
+                <div className="flex items-center justify-center gap-4">
+                   <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                   <span className="font-black uppercase tracking-[0.3em] text-xs">Re-authenticating...</span>
+                </div>
+             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── READY TO BEGIN / SECURITY PROTOCOL UI ───────────────────────────── */}
       {!isExamStarted && (
-        <div className="fixed inset-0 z-[200] bg-gray-100 flex flex-col items-center justify-center p-6 min-h-screen overflow-y-auto">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-xl w-full bg-white rounded-[2.5rem] p-10 lg:p-14 shadow-2xl flex flex-col items-center text-center border border-gray-200">
-               <h1 className="text-3xl font-black text-[#1a202c] mb-2 tracking-tight">Ready to begin?</h1>
-               <p className="text-slate-500 font-bold uppercase tracking-[0.25em] text-[10px] mb-10">SECURE ASSESSMENT PROTOCOL V2.0</p>
+        <div className="fixed inset-0 z-[200] bg-slate-50 flex flex-col items-center justify-center p-6 min-h-screen overflow-y-auto">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-xl w-full bg-white rounded-[3rem] p-10 lg:p-14 shadow-3xl flex flex-col items-center text-center border border-slate-100">
+               <h1 className="text-4xl font-black text-[#1a202c] mb-3 tracking-tighter uppercase italic">Ready to begin?</h1>
+               <p className="text-[#9b1c1c]/50 font-black uppercase tracking-[0.4em] text-[10px] mb-12">SECURE ASSESSMENT PROTOCOL V2.0</p>
                
-               {/* HTTPS Protocol Check Warning */}
                {window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && (
-                  <div className="w-full bg-rose-50 border border-rose-100 p-5 rounded-3xl mb-8 text-left animate-pulse">
-                     <div className="flex items-center gap-3 text-rose-600 mb-2 font-black text-xs uppercase tracking-widest">
-                        <FiAlertTriangle /> Security Violation
+                  <div className="w-full bg-rose-50 border border-rose-100 p-6 rounded-[2rem] mb-10 text-left animate-pulse">
+                     <div className="flex items-center gap-3 text-rose-600 mb-3 font-black text-xs uppercase tracking-widest">
+                        <FiAlertTriangle size={18} strokeWidth={3} /> Security Violation
                      </div>
                      <p className="text-xs text-rose-500 font-bold leading-relaxed">
-                        Hardware proctoring (Camera/Mic) is blocked because this site is not using a secure (HTTPS) connection. Please contact the administrator.
+                        Hardware proctoring (Camera/Mic) is blocked because this site is not using a secure (HTTPS) connection.
                      </p>
                   </div>
                )}
                
-               <div className="w-full text-left space-y-4 mb-10">
+               <div className="w-full text-left space-y-5 mb-12">
                   {!isProctoringStarted ? (
                     <>
-                    <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-3xl flex items-center gap-5">
-                       <div className="w-12 h-12 bg-white text-blue-600 rounded-2xl flex items-center justify-center shadow-sm shrink-0">
-                          <FiCamera size={24} />
+                    <div className="bg-[#2c336b]/5 border border-[#2c336b]/10 p-6 rounded-[2rem] flex items-center gap-6 group hover:bg-[#2c336b]/10 transition-colors">
+                       <div className="w-14 h-14 bg-white text-[#2c336b] rounded-2xl flex items-center justify-center shadow-lg shadow-[#2c336b]/5 shrink-0 group-hover:scale-110 transition-transform">
+                          <FiCamera size={28} strokeWidth={2.5} />
                        </div>
                        <div>
-                          <h4 className="text-sm font-bold text-[#1a202c]">Face Detection Active</h4>
-                          <p className="text-xs text-slate-500 mt-1 font-medium">Real-time acoustic and visual tracking enabled.</p>
+                          <h4 className="text-sm font-black text-[#1a202c] uppercase tracking-wide">Face Detection Active</h4>
+                          <p className="text-xs text-slate-500 mt-1 font-medium italic opacity-80">Real-time acoustic and visual tracking enabled.</p>
                        </div>
                     </div>
                     
-                    <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-3xl flex items-center gap-5">
-                       <div className="w-12 h-12 bg-white text-amber-600 rounded-2xl flex items-center justify-center shadow-sm shrink-0">
-                          <FiActivity size={24} />
+                    <div className="bg-[#9b1c1c]/5 border border-[#9b1c1c]/10 p-6 rounded-[2rem] flex items-center gap-6 group hover:bg-[#9b1c1c]/10 transition-colors">
+                       <div className="w-14 h-14 bg-white text-[#9b1c1c] rounded-2xl flex items-center justify-center shadow-lg shadow-[#9b1c1c]/5 shrink-0 group-hover:scale-110 transition-transform">
+                          <FiActivity size={28} strokeWidth={2.5} />
                        </div>
                        <div>
-                          <h4 className="text-sm font-bold text-[#1a202c]">Integrity Score Monitoring</h4>
-                          <p className="text-xs text-slate-500 mt-1 font-medium">Tab switching and full-screen exits are penalized.</p>
+                          <h4 className="text-sm font-black text-[#1a202c] uppercase tracking-wide">Integrity Score Monitoring</h4>
+                          <p className="text-xs text-slate-500 mt-1 font-medium italic opacity-80">Tab switching and full-screen exits are penalized.</p>
                        </div>
                     </div>
                     </>
                   ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center w-full">
-                        <div className="w-full bg-[#1a202c] rounded-3xl overflow-hidden shadow-xl mb-6 relative group aspect-[4/3]">
+                        <div className="w-full bg-[#1a202c] rounded-[3rem] overflow-hidden shadow-2xl mb-8 relative group aspect-[4/3] border-[6px] border-white">
                             <video id="pre-exam-preview" autoPlay muted playsInline className="w-full h-full object-cover transform -scale-x-100" />
-                            <div className="absolute top-4 left-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm">
-                                <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div> Live
+                            <div className="absolute top-6 left-6 bg-emerald-500 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl">
+                                <div className="w-2 h-2 bg-white rounded-full animate-ping"></div> Live
                             </div>
                         </div>
-                        <div className="w-full bg-emerald-50 border border-emerald-100 text-emerald-800 p-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm">
-                           <FiCheckSquare /> Hardware Synchronized Properly
+                        <div className="w-full bg-emerald-50 border border-emerald-100 text-emerald-800 p-5 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest">
+                           <FiCheckSquare size={18} /> Hardware Synchronized Properly
                         </div>
                     </motion.div>
                   )}
                </div>
 
                {!isProctoringStarted ? (
-                 <button onClick={handleStartExam} disabled={hardwareVerifying} className="w-full py-5 bg-[#1a202c] text-white rounded-2xl font-black text-lg shadow-xl shadow-slate-300 hover:bg-black hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 tracking-wide">
-                  {hardwareVerifying ? 'Verifying Hardware...' : 'Verify Hardware'} <FiArrowRight />
+                 <button onClick={handleStartExam} disabled={hardwareVerifying} className="w-full py-6 bg-[#1a202c] text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-slate-300 hover:bg-black hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+                  {hardwareVerifying ? 'Verifying Hardware...' : 'Verify Hardware'} <FiArrowRight strokeWidth={3} />
                  </button>
                ) : (
-                 <button onClick={() => setIsExamStarted(true)} className="w-full py-5 bg-[#6b46c1] text-white rounded-2xl font-black text-lg shadow-xl shadow-purple-200 hover:bg-[#553c9a] hover:-translate-y-1 transition-all flex items-center justify-center gap-3 tracking-wide">
-                  Start Examination <FiChevronRight />
+                 <button onClick={() => setIsExamStarted(true)} className="w-full py-6 bg-[#9b1c1c] text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-[#9b1c1c]/20 hover:bg-[#7f1717] hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
+                  Start Examination <FiChevronRight strokeWidth={3} />
                  </button>
                )}
             </motion.div>
@@ -235,67 +272,67 @@ const AssessmentTest = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
           
          {/* TOP BAR */}
-         <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-            <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center h-20">
-               <div className="flex items-center gap-4">
-                  <div className="bg-[#6b46c1]/10 w-12 h-12 rounded-2xl flex items-center justify-center text-[#6b46c1]">
-                     <FiMonitor size={24} />
+         <header className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+            <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center h-24">
+               <div className="flex items-center gap-5">
+                  <div className="bg-[#9b1c1c]/5 w-14 h-14 rounded-[1.5rem] flex items-center justify-center text-[#9b1c1c] shadow-inner">
+                     <FiMonitor size={28} strokeWidth={2.5} />
                   </div>
                   <div>
-                     <h2 className="text-sm font-black text-[#1a202c] tracking-widest uppercase">DIGITAL EXAMINATION</h2>
-                     <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">ID: {token.slice(0, 8)}</p>
+                     <h2 className="text-[11px] font-black text-[#1a202c] tracking-[0.3em] uppercase">DIGITAL EXAMINATION</h2>
+                     <p className="text-[9px] text-slate-400 font-black tracking-widest uppercase mt-1">ID: {token.slice(0, 8)}</p>
                   </div>
                </div>
 
                {/* Timer */}
-               <div className={`flex items-center gap-3 px-6 py-2.5 rounded-full border-2 transition-all duration-300 ${timeLeft < 300 ? 'bg-red-50 border-red-200 text-red-600 animate-pulse shadow-sm shadow-red-100' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
-                  <FiClock size={20} className={timeLeft < 300 ? "text-red-500" : "text-slate-400"} />
-                  <span className="font-mono text-xl font-bold tracking-wide">{formatTime(timeLeft)}</span>
+               <div className={`flex items-center gap-4 px-8 py-3 rounded-full border-2 transition-all duration-300 ${timeLeft < 300 ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse shadow-xl shadow-rose-100' : 'bg-[#fafafa] border-slate-100 text-[#1a202c]'}`}>
+                  <FiClock size={24} className={timeLeft < 300 ? "text-rose-500" : "text-slate-300"} />
+                  <span className="font-black text-2xl tracking-tighter tabular-nums">{formatTime(timeLeft)}</span>
                </div>
             </div>
             
             {/* Progress Bar */}
-            <div className="w-full h-1 bg-slate-100">
-               <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-[#6b46c1]"></motion.div>
+            <div className="w-full h-[3px] bg-slate-50">
+               <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-[#9b1c1c] shadow-[0_0_10px_#9b1c1c]"></motion.div>
             </div>
          </header>
 
-         <main className="max-w-6xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+         <main className="max-w-7xl mx-auto px-6 py-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                
                {/* SIDEBAR (Paper Path) */}
                <aside className="lg:col-span-3">
-                  <div className="bg-white rounded-3xl p-6 lg:p-8 border border-gray-200 shadow-sm sticky top-32">
-                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Paper Path</h3>
-                     <div className="flex flex-row overflow-x-auto lg:grid lg:grid-cols-4 gap-3 pb-6 border-b border-gray-100 hide-scrollbar px-1 lg:px-0">
+                  <div className="bg-[#fafafa] rounded-[3rem] p-10 border border-slate-100 shadow-sm sticky top-36">
+                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8">Paper Path</h3>
+                     <div className="flex flex-row overflow-x-auto lg:grid lg:grid-cols-4 gap-3 pb-8 border-b border-slate-100 hide-scrollbar">
                         {testData.questions.map((q, i) => (
                            <button
                               key={i}
                               onClick={() => setCurrentIndex(i)}
-                              className={`shrink-0 w-12 h-12 lg:w-full lg:h-12 lg:aspect-square rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
+                              className={`shrink-0 w-12 h-12 lg:w-full lg:h-12 rounded-2xl flex items-center justify-center text-[11px] font-black transition-all ${
                                  i === currentIndex 
-                                 ? 'bg-[#6b46c1] text-white shadow-lg shadow-[#6b46c1]/30 ring-4 ring-purple-50' 
+                                 ? 'bg-[#9b1c1c] text-white shadow-2xl shadow-[#9b1c1c]/40 scale-110 z-10' 
                                  : answers[q._id] 
-                                    ? 'bg-[#319795] text-white shadow-sm'
-                                    : 'bg-[#E2E8F0] text-slate-500 hover:bg-slate-300'
+                                    ? 'bg-[#2c336b] text-white shadow-lg shadow-[#2c336b]/10'
+                                    : 'bg-white text-slate-300 hover:bg-slate-200 border border-slate-100'
                               }`}
                            >
                               {i + 1}
                            </button>
                         ))}
                      </div>
-                     <div className="pt-6 space-y-4">
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wide">
-                           <span className="flex items-center gap-3"><div className="w-3 h-3 rounded-full bg-[#6b46c1]"></div> Active</span>
-                           <span className="text-[#1a202c]">{currentIndex + 1}</span>
+                     <div className="pt-8 space-y-5">
+                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                           <span className="flex items-center gap-4"><div className="w-2.5 h-2.5 rounded-full bg-[#9b1c1c]"></div> Active</span>
+                           <span className="text-[#1a202c] italic">{currentIndex + 1}</span>
                         </div>
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wide">
-                           <span className="flex items-center gap-3"><div className="w-3 h-3 rounded-full bg-[#319795]"></div> Attempted</span>
-                           <span className="text-[#1a202c]">{Object.keys(answers).length}</span>
+                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                           <span className="flex items-center gap-4"><div className="w-2.5 h-2.5 rounded-full bg-[#2c336b]"></div> Attempted</span>
+                           <span className="text-[#1a202c] italic">{Object.keys(answers).length}</span>
                         </div>
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wide">
-                           <span className="flex items-center gap-3"><div className="w-3 h-3 rounded-full bg-[#E2E8F0]"></div> Pending</span>
-                           <span className="text-[#1a202c]">{testData.questions.length - Object.keys(answers).length}</span>
+                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                           <span className="flex items-center gap-4"><div className="w-2.5 h-2.5 rounded-full bg-slate-200 border border-slate-300"></div> Pending</span>
+                           <span className="text-[#1a202c] italic">{testData.questions.length - Object.keys(answers).length}</span>
                         </div>
                      </div>
                   </div>
@@ -305,48 +342,50 @@ const AssessmentTest = () => {
                <section className="lg:col-span-9">
                   <AnimatePresence mode="wait">
                      <motion.div 
-                           key={currentIndex}
-                           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}
-                           className="bg-white rounded-3xl p-8 lg:p-14 border border-gray-200 shadow-sm min-h-[500px] flex flex-col"
+                            key={currentIndex}
+                            initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.4 }}
+                            className="bg-white rounded-[4rem] p-12 lg:p-20 border border-slate-100 shadow-sm min-h-[600px] flex flex-col relative overflow-hidden"
                      >
-                           <h2 className="text-2xl lg:text-3xl font-bold text-[#1a202c] mb-12 leading-relaxed">
-                              {currentIndex + 1}. {currentQuestion.question}
+                           <div className="absolute top-0 right-0 w-64 h-64 bg-[#9b1c1c]/5 rounded-bl-[10rem] pointer-events-none"></div>
+                           
+                           <h2 className="text-3xl lg:text-5xl font-black text-[#1a202c] mb-16 leading-[1.1] tracking-tight uppercase italic relative z-10">
+                              {currentIndex + 1}. <span className="not-italic opacity-90">{currentQuestion.question}</span>
                            </h2>
 
-                           <div className="space-y-4 mb-16">
+                           <div className="space-y-5 mb-20 relative z-10">
                               {currentQuestion.options.map((opt, i) => (
                                  <button
-                                       key={i} onClick={() => handleSelect(opt)}
-                                       className={`w-full text-left p-6 rounded-2xl border-2 transition-all duration-200 flex items-center gap-6 group ${
-                                          answers[currentQuestion._id] === opt 
-                                          ? 'bg-purple-50 border-[#6b46c1] shadow-sm' 
-                                          : 'bg-white border-gray-100 hover:border-purple-200 hover:bg-slate-50'
-                                       }`}
+                                        key={i} onClick={() => handleSelect(opt)}
+                                        className={`w-full text-left p-8 rounded-[2.5rem] border-2 transition-all duration-300 flex items-center gap-8 group ${
+                                           answers[currentQuestion._id] === opt 
+                                           ? 'bg-[#9b1c1c]/5 border-[#9b1c1c] shadow-2xl shadow-[#9b1c1c]/10' 
+                                           : 'bg-[#fafafa] border-transparent hover:border-slate-200 hover:bg-white'
+                                        }`}
                                  >
-                                       <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center font-bold text-lg transition-all ${
-                                          answers[currentQuestion._id] === opt 
-                                          ? 'bg-[#6b46c1] text-white shadow-md scale-105' 
-                                          : 'bg-gray-100 text-slate-500 group-hover:bg-gray-200'
-                                       }`}>
-                                          {String.fromCharCode(65 + i)}
-                                       </div>
-                                       <span className={`text-lg font-medium tracking-wide ${answers[currentQuestion._id] === opt ? 'text-[#6b46c1]' : 'text-slate-600'}`}>{opt}</span>
+                                        <div className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center font-black text-xl transition-all ${
+                                           answers[currentQuestion._id] === opt 
+                                           ? 'bg-[#9b1c1c] text-white shadow-2xl shadow-[#9b1c1c]/20 scale-110' 
+                                           : 'bg-white text-slate-400 group-hover:bg-slate-100 shadow-sm'
+                                        }`}>
+                                           {String.fromCharCode(65 + i)}
+                                        </div>
+                                        <span className={`text-xl font-bold tracking-tight ${answers[currentQuestion._id] === opt ? 'text-[#9b1c1c]' : 'text-[#2d3748] opacity-80'}`}>{opt}</span>
                                  </button>
                               ))}
                            </div>
 
-                           <div className="mt-auto flex justify-between items-center gap-4 pt-10 border-t border-gray-100">
-                               <button onClick={() => setCurrentIndex(prev => prev - 1)} disabled={currentIndex === 0} className="flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-slate-400 hover:bg-slate-50 disabled:opacity-30 transition-all uppercase tracking-wide text-sm">
-                                  <FiChevronLeft size={20} /> Prev
+                           <div className="mt-auto flex justify-between items-center gap-6 pt-12 border-t border-slate-50 relative z-10">
+                               <button onClick={() => setCurrentIndex(prev => prev - 1)} disabled={currentIndex === 0} className="flex items-center gap-3 px-8 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-slate-300 hover:text-[#9b1c1c] hover:bg-[#9b1c1c]/5 disabled:opacity-20 transition-all">
+                                  <FiChevronLeft size={24} strokeWidth={3} /> Prev
                                </button>
 
                                {currentIndex === testData.questions.length - 1 ? (
-                                  <button onClick={handleSubmit} disabled={submitting} className="px-10 py-4 rounded-xl bg-[#1a202c] text-white font-bold text-lg shadow-xl hover:bg-black transition-all flex items-center gap-3 active:scale-95">
-                                      {submitting ? 'Submitting...' : 'Finish Exam'} <FiCheckSquare size={20} />
+                                  <button onClick={handleSubmit} disabled={submitting} className="px-12 py-5 rounded-[2rem] bg-[#2c336b] text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-[#2c336b]/20 hover:bg-[#1a202c] hover:scale-105 transition-all flex items-center gap-4">
+                                      {submitting ? 'Submitting...' : 'Finish Exam'} <FiCheckSquare size={20} strokeWidth={3} />
                                   </button>
                                ) : (
-                                  <button onClick={() => setCurrentIndex(prev => prev + 1)} className="px-10 py-4 rounded-xl bg-[#6b46c1] text-white font-bold text-lg shadow-xl shadow-purple-200 hover:bg-[#553c9a] hover:-translate-y-1 transition-all flex items-center gap-3 active:scale-95">
-                                      Next <FiChevronRight size={20} />
+                                  <button onClick={() => setCurrentIndex(prev => prev + 1)} className="px-12 py-5 rounded-[2rem] bg-[#9b1c1c] text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-[#9b1c1c]/20 hover:bg-[#7f1717] hover:scale-105 transition-all flex items-center gap-4">
+                                      Next <FiChevronRight size={24} strokeWidth={3} />
                                   </button>
                                )}
                            </div>
@@ -357,14 +396,14 @@ const AssessmentTest = () => {
          </main>
 
          {/* SECURITY ALERTS / FOOTER */}
-         <footer className="fixed bottom-0 left-0 w-full bg-[#1a202c] border-t-4 border-red-600 z-[200]">
-             <div className="max-w-7xl mx-auto py-3 px-6 flex items-center justify-between gap-6">
-                 <div className="flex items-center gap-3 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">
-                    <FiAlertTriangle className="text-red-500 animate-pulse" size={18} />
-                    <span className="hidden sm:inline">SESSION LOCKED. DO NOT REFRESH OR EXIT. IP & DEVICE FINGERPRINTING ACTIVE.</span>
+         <footer className="fixed bottom-0 left-0 w-full bg-[#1a202c] border-t-4 border-[#9b1c1c] z-[200]">
+             <div className="max-w-7xl mx-auto py-3 px-8 flex items-center justify-between gap-10">
+                 <div className="flex items-center gap-4 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.3em]">
+                    <FiAlertTriangle className="text-[#9b1c1c] animate-pulse" size={20} strokeWidth={3} />
+                    <span className="hidden sm:inline italic">SESSION LOCKED. DO NOT REFRESH OR EXIT. IP & DEVICE FINGERPRINTING ACTIVE.</span>
                     <span className="sm:hidden">SESSION LOCKED. DO NOT EXIT.</span>
                  </div>
-                 <p className="text-[#4A5568] text-[10px] font-black uppercase tracking-widest hidden md:block">Protocol V2.0 Secured</p>
+                 <p className="text-slate-600 text-[10px] font-black uppercase tracking-[0.5em] hidden md:block">Protocol V2.0 Secured</p>
              </div>
          </footer>
         </motion.div>

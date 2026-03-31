@@ -14,8 +14,8 @@ const {
 } = require("../controllers/branchController");
 
 router.post("/", auth, requireRole("super_admin", "company_admin"), checkCompanyAccess, createBranch);
-router.get("/", auth, requireRole("super_admin", "company_admin", "branch_manager"), checkCompanyAccess, getBranches);
-router.get("/:id", auth, requireRole("super_admin", "company_admin", "branch_manager"), checkCompanyAccess, getBranchById);
+router.get("/", auth, requireRole("super_admin", "company_admin", "branch_manager", "sales", "support"), checkCompanyAccess, getBranches);
+router.get("/:id", auth, requireRole("super_admin", "company_admin", "branch_manager", "sales", "support"), checkCompanyAccess, getBranchById);
 router.put("/:id", auth, requireRole("super_admin", "company_admin"), checkCompanyAccess, updateBranch);
 router.patch("/:id/toggle-status", auth, requireRole("super_admin", "company_admin"), checkCompanyAccess, toggleBranchStatus);
 router.delete("/:id", auth, requireRole("super_admin", "company_admin"), checkCompanyAccess, deleteBranch);

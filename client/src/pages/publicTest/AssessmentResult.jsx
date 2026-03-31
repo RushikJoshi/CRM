@@ -38,11 +38,11 @@ const AssessmentResult = () => {
 
   if (!scoreData) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-10 font-inter">
-         <div className="bg-white rounded-[3rem] p-16 text-center shadow-xl border border-slate-100 max-w-lg">
-            <h2 className="text-3xl font-black text-slate-900 mb-6 uppercase tracking-tight">Access Restricted</h2>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-10 font-sans">
+         <div className="bg-white rounded-[3rem] p-16 text-center shadow-2xl border border-slate-100 max-w-lg">
+            <h2 className="text-3xl font-black text-[#1a202c] mb-6 uppercase tracking-tighter italic">Access Restricted</h2>
             <p className="text-slate-500 font-medium mb-10">Score data not found. Please complete the assessment first.</p>
-            <button onClick={() => navigate('/')} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black shadow-lg">Return to Base</button>
+            <button onClick={() => navigate('/')} className="w-full bg-[#1a202c] text-white py-5 rounded-2xl font-black shadow-lg uppercase tracking-widest text-xs">Return to Home</button>
          </div>
       </div>
     );
@@ -52,7 +52,7 @@ const AssessmentResult = () => {
   const percentage = Math.round((score / totalMarks) * 100);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-inter py-20 px-6">
+    <div className="min-h-screen bg-[#fafafa] font-sans py-20 px-6 selection:bg-[#9b1c1c]/10 selection:text-[#9b1c1c]">
       <div className="max-w-4xl mx-auto">
         
         <AnimatePresence mode="wait">
@@ -63,66 +63,69 @@ const AssessmentResult = () => {
                initial={{ opacity: 0, scale: 0.95 }}
                animate={{ opacity: 1, scale: 1 }}
                exit={{ opacity: 0, scale: 0.9, y: -20 }}
-               className="bg-white rounded-[3.5rem] shadow-2xl shadow-indigo-500/5 border border-slate-100 overflow-hidden"
+               className="bg-white rounded-[4rem] shadow-3xl shadow-slate-200 border border-slate-50 overflow-hidden"
             >
-               <div className="bg-slate-900 p-16 text-center relative">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500"></div>
+               <div className="bg-[#1a202c] p-16 lg:p-24 text-center relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-[#9b1c1c]"></div>
+                  <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#9b1c1c]/10 rounded-full blur-3xl"></div>
+                  
                   <motion.div 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", damping: 15 }}
-                    className="w-40 h-40 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-10 border-4 border-white/20 backdrop-blur-3xl shadow-2xl relative"
+                    className="w-48 h-48 bg-white/5 rounded-[3rem] flex items-center justify-center mx-auto mb-12 border-2 border-white/10 backdrop-blur-xl shadow-2xl relative"
                   >
                      <div className="text-center">
-                        <span className="block text-5xl font-black text-white leading-none">{score}</span>
-                        <span className="block text-xs font-black text-indigo-400 uppercase tracking-widest mt-2">OUT OF {totalMarks}</span>
+                        <span className="block text-6xl font-black text-white leading-none tracking-tighter italic">{score}</span>
+                        <span className="block text-[10px] font-black text-[#9b1c1c] uppercase tracking-[0.3em] mt-4">OUT OF {totalMarks}</span>
                      </div>
                      <motion.div 
                         animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-                        className="absolute inset-0 border-2 border-indigo-500/30 rounded-full border-t-indigo-500"
+                        transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+                        className="absolute inset-0 border-2 border-[#9b1c1c]/20 rounded-[3rem] border-t-[#9b1c1c]"
                      ></motion.div>
                   </motion.div>
                   
-                  <h2 className="text-3xl lg:text-5xl font-black text-white mb-4 uppercase tracking-tighter leading-none">
+                  <h2 className="text-4xl lg:text-6xl font-black text-white mb-6 uppercase tracking-tighter italic leading-none">
                      {percentage >= 70 ? 'Superior Performance!' : percentage >= 40 ? 'Great Progress!' : 'Core Foundation Set!'}
                   </h2>
-                  <p className="text-indigo-200/60 font-black uppercase tracking-[0.3em] text-[10px]">Assessment Module ID: {token.slice(0,8)}</p>
+                  <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-[10px]">Verification Fingerprint: {token.slice(0,12).toUpperCase()}</p>
                </div>
 
-               <div className="p-12 lg:p-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                  <div className="space-y-8">
-                     <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Your Performance Insights</h3>
+               <div className="p-12 lg:p-20 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                  <div className="space-y-10">
+                     <h3 className="text-xs font-black text-[#1a202c] uppercase tracking-[0.4em] text-center md:text-left">Performance Insights</h3>
                      <div className="space-y-4">
                         {[
-                          { icon: <FiTarget className="text-indigo-600" />, label: "Accuracy", value: `${percentage}%` },
-                          { icon: <FiZap className="text-cyan-500" />, label: "Module Status", value: "Verified" },
-                          { icon: <FiStar className="text-orange-500" />, label: "Rating", value: percentage >= 70 ? '⭐️⭐️⭐️⭐️⭐️' : '⭐️⭐️⭐️⭐️' }
+                          { icon: <FiTarget className="text-[#9b1c1c]" />, label: "Accuracy", value: `${percentage}%` },
+                          { icon: <FiZap className="text-[#2c336b]" />, label: "Module Status", value: "Verified" },
+                          { icon: <FiStar className="text-amber-500" />, label: "Rating", value: percentage >= 70 ? '⭐️⭐️⭐️⭐️⭐️' : '⭐️⭐️⭐️⭐️' }
                         ].map((stat, i) => (
-                           <div key={i} className="flex items-center gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm shadow-slate-100/50">
-                              <div className="bg-white w-10 h-10 rounded-xl flex items-center justify-center shadow-sm">{stat.icon}</div>
+                           <div key={i} className="flex items-center gap-6 bg-[#fafafa] p-6 rounded-[2rem] border border-slate-50 group hover:bg-white hover:shadow-xl transition-all duration-300">
+                              <div className="bg-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">{stat.icon}</div>
                               <div>
-                                 <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</span>
-                                 <span className="block text-lg font-black text-slate-800 leading-none">{stat.value}</span>
+                                 <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">{stat.label}</span>
+                                 <span className="block text-xl font-black text-[#1a202c] tracking-tighter leading-none italic">{stat.value}</span>
                               </div>
                            </div>
                         ))}
                      </div>
                   </div>
 
-                  <div className="bg-indigo-50/50 p-10 rounded-[2.5rem] border border-indigo-100 text-center space-y-8">
-                     <div className="bg-white w-20 h-20 rounded-[1.5rem] flex items-center justify-center mx-auto shadow-xl">
-                        <FiFileText size={40} className="text-indigo-600" />
+                  <div className="bg-[#9b1c1c]/5 p-12 rounded-[3.5rem] border border-[#9b1c1c]/10 text-center space-y-10 relative overflow-hidden">
+                     <div className="absolute top-0 right-0 w-32 h-32 bg-[#9b1c1c]/5 rounded-bl-[5rem]"></div>
+                     <div className="bg-white w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl relative z-10 scale-110">
+                        <FiAward size={48} strokeWidth={2.5} className="text-[#9b1c1c]" />
                      </div>
-                     <div className="space-y-3">
-                        <h4 className="text-xl font-black text-slate-900 leading-tight">Unlock Report & Mentorship</h4>
-                        <p className="text-slate-500 text-sm font-medium leading-relaxed">Provide your professional details to receive your verified certificate and performance breakdown.</p>
+                     <div className="space-y-4 relative z-10">
+                        <h4 className="text-2xl font-black text-[#1a202c] leading-none uppercase tracking-tighter italic">Official Mentorship</h4>
+                        <p className="text-slate-500 text-sm font-medium leading-relaxed italic opacity-80">Provide your professional details to receive your verified certificate and performance breakdown.</p>
                      </div>
                      <button 
                         onClick={() => setStep('lead')}
-                        className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-2xl shadow-indigo-100 hover:scale-[1.03] active:scale-95 transition-all text-lg flex items-center justify-center gap-3"
+                        className="w-full bg-[#1a202c] text-white py-6 rounded-2xl font-black shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 relative z-10"
                      >
-                        Get Scaled Report <FiArrowRight size={24} />
+                        Get Scaled Report <FiArrowRight size={20} />
                      </button>
                   </div>
                </div>
@@ -133,93 +136,99 @@ const AssessmentResult = () => {
           {step === 'lead' && (
             <motion.div 
                key="lead"
-               initial={{ opacity: 0, scale: 0.95, y: 30 }}
+               initial={{ opacity: 0, scale: 0.98, y: 40 }}
                animate={{ opacity: 1, scale: 1, y: 0 }}
                exit={{ opacity: 0, scale: 0.95, y: -20 }}
-               className="bg-white rounded-[3.5rem] shadow-2xl shadow-indigo-500/5 border border-slate-100 overflow-hidden p-12 lg:p-20 relative"
+               className="bg-white rounded-[4rem] shadow-4xl border border-slate-50 overflow-hidden p-14 lg:p-24 relative"
             >
-               <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-bl-full -mr-32 -mt-32"></div>
+               <div className="absolute top-0 right-0 w-80 h-80 bg-[#9b1c1c]/5 rounded-bl-[10rem] -mr-10 -mt-10 pointer-events-none"></div>
                
-               <div className="max-w-lg mx-auto space-y-12">
-                  <div className="text-center space-y-4">
-                     <div className="bg-indigo-100 w-14 h-14 rounded-2xl flex items-center justify-center text-indigo-600 mx-auto shadow-inner">
-                        <FiUser size={28} />
+               <div className="max-w-xl mx-auto space-y-16">
+                  <div className="text-center space-y-6">
+                     <div className="bg-[#9b1c1c]/10 w-20 h-20 rounded-[2rem] flex items-center justify-center text-[#9b1c1c] mx-auto shadow-inner relative">
+                        <FiUser size={36} strokeWidth={2.5} />
+                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+                           <FiCheckCircle className="text-emerald-500" size={16} />
+                        </div>
                      </div>
-                     <h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Register Result</h2>
-                     <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em]">Unlock certification and mentorship</p>
+                     <div>
+                        <h2 className="text-4xl lg:text-5xl font-black text-[#1a202c] tracking-tighter uppercase leading-none italic mb-4">Register Result</h2>
+                        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">Unlock certification and mentorship</p>
+                     </div>
                   </div>
 
-                  <form onSubmit={handleInquirySubmit} className="space-y-6">
+                  <form onSubmit={handleInquirySubmit} className="space-y-8">
                      <div className="group">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Identity</label>
+                        <label className="block text-[9px] font-black text-[#9b1c1c] uppercase tracking-[0.4em] mb-3 ml-2">Full Identity</label>
                         <div className="relative">
-                            <FiUser className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                            <FiUser className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#9b1c1c] transition-colors" size={24} strokeWidth={2.5} />
                             <input 
                                 type="text" required
                                 placeholder="Enter full name"
-                                className="w-full bg-slate-50 border-0 rounded-2xl p-5 pl-14 focus:ring-4 focus:ring-indigo-100 font-bold transition-all text-gray-800"
+                                className="w-full bg-[#fafafa] border-2 border-transparent rounded-[2rem] p-6 pl-16 focus:bg-white focus:border-[#9b1c1c] focus:ring-4 focus:ring-[#9b1c1c]/5 font-black transition-all text-gray-800 tracking-tight"
                                 value={formData.name}
                                 onChange={e => setFormData({...formData, name: e.target.value})}
                             />
                         </div>
                      </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="group">
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Work Email</label>
+                            <label className="block text-[9px] font-black text-[#9b1c1c] uppercase tracking-[0.4em] mb-3 ml-2">Work Email</label>
                             <div className="relative">
-                                <FiMail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                                <FiMail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#9b1c1c] transition-colors" size={24} strokeWidth={2.5} />
                                 <input 
                                     type="email" required
                                     placeholder="john@example.com"
-                                    className="w-full bg-slate-50 border-0 rounded-2xl p-5 pl-14 focus:ring-4 focus:ring-indigo-100 font-bold transition-all text-gray-800"
+                                    className="w-full bg-[#fafafa] border-2 border-transparent rounded-[2rem] p-6 pl-16 focus:bg-white focus:border-[#9b1c1c] focus:ring-4 focus:ring-[#9b1c1c]/5 font-black transition-all text-gray-800 tracking-tight"
                                     value={formData.email}
                                     onChange={e => setFormData({...formData, email: e.target.value})}
                                 />
                             </div>
                         </div>
                         <div className="group">
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Current City</label>
+                            <label className="block text-[9px] font-black text-[#9b1c1c] uppercase tracking-[0.4em] mb-3 ml-2">Phone Number</label>
                             <div className="relative">
-                                <FiMapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
-                                <input 
-                                    type="text" required
-                                    placeholder="Enter City"
-                                    className="w-full bg-slate-50 border-0 rounded-2xl p-5 pl-14 focus:ring-4 focus:ring-indigo-100 font-bold transition-all text-gray-800"
-                                    value={formData.location}
-                                    onChange={e => setFormData({...formData, location: e.target.value})}
-                                />
-                            </div>
-                        </div>
-                        <div className="group">
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Phone Number</label>
-                            <div className="relative">
-                                <FiPhone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                                <FiPhone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#9b1c1c] transition-colors" size={24} strokeWidth={2.5} />
                                 <input 
                                     type="tel" required
-                                    placeholder="Mobile no."
-                                    className="w-full bg-slate-50 border-0 rounded-2xl p-5 pl-14 focus:ring-4 focus:ring-indigo-100 font-bold transition-all text-gray-800"
+                                    placeholder="+91 XXXXX XXXXX"
+                                    className="w-full bg-[#fafafa] border-2 border-transparent rounded-[2rem] p-6 pl-16 focus:bg-white focus:border-[#9b1c1c] focus:ring-4 focus:ring-[#9b1c1c]/5 font-black transition-all text-gray-800 tracking-tight"
                                     value={formData.phone}
                                     onChange={e => setFormData({...formData, phone: e.target.value})}
                                 />
                             </div>
                         </div>
                      </div>
+                     
+                     <div className="group">
+                        <label className="block text-[9px] font-black text-[#9b1c1c] uppercase tracking-[0.4em] mb-3 ml-2">Current Location</label>
+                        <div className="relative">
+                            <FiMapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#9b1c1c] transition-colors" size={24} strokeWidth={2.5} />
+                            <input 
+                                type="text" required
+                                placeholder="City, State"
+                                className="w-full bg-[#fafafa] border-2 border-transparent rounded-[2rem] p-6 pl-16 focus:bg-white focus:border-[#9b1c1c] focus:ring-4 focus:ring-[#9b1c1c]/5 font-black transition-all text-gray-800 tracking-tight"
+                                value={formData.location}
+                                onChange={e => setFormData({...formData, location: e.target.value})}
+                            />
+                        </div>
+                     </div>
 
                      {error && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 text-xs font-bold flex items-center gap-3">
-                           <FiShield /> {error}
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 bg-rose-50 text-rose-600 rounded-3xl border border-rose-100 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-4">
+                           <FiShield size={20} strokeWidth={3} /> {error}
                         </motion.div>
                      )}
 
                      <button 
                          type="submit"
                          disabled={submitting}
-                         className="w-full bg-slate-900 text-white p-6 rounded-2xl font-black text-xl shadow-2xl shadow-indigo-500/10 hover:bg-indigo-600 hover:scale-[1.02] active:scale-95 transition-all disabled:bg-slate-200 flex items-center justify-center gap-3"
+                         className="w-full bg-[#9b1c1c] text-white p-7 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.4em] shadow-3xl shadow-[#9b1c1c]/20 hover:bg-[#7f1717] hover:scale-[1.02] active:scale-95 transition-all disabled:bg-slate-200 flex items-center justify-center gap-4"
                      >
                         {submitting ? 'Authenticating Identity...' : 'Generate Full Report ⚡️'}
                      </button>
-                     <button type="button" onClick={() => setStep('score')} className="w-full text-slate-400 font-bold text-xs uppercase tracking-widest mt-4 hover:text-slate-600 transition-colors">Back to Score</button>
+                     <button type="button" onClick={() => setStep('score')} className="w-full text-slate-300 font-black text-[10px] uppercase tracking-[0.3em] mt-6 hover:text-[#9b1c1c] transition-colors duration-300 italic">Back to Score Registry</button>
                   </form>
                </div>
             </motion.div>
@@ -231,30 +240,37 @@ const AssessmentResult = () => {
                key="final"
                initial={{ opacity: 0, scale: 0.95 }}
                animate={{ opacity: 1, scale: 1 }}
-               className="bg-white rounded-[3.5rem] shadow-2xl shadow-indigo-500/5 border border-slate-100 p-12 lg:p-24 text-center overflow-hidden relative"
+               className="bg-white rounded-[4rem] shadow-4xl border border-slate-50 p-16 lg:p-32 text-center overflow-hidden relative"
             >
-               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 animate-pulse"></div>
+               <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-emerald-500 via-[#9b1c1c] to-emerald-500 animate-pulse"></div>
                
-               <div className="space-y-10 max-w-xl mx-auto">
-                    <div className="bg-green-50 w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner">
-                        <FiCheckCircle size={48} className="text-green-500 animate-bounce" />
+               <div className="space-y-12 max-w-2xl mx-auto">
+                    <div className="bg-emerald-50 w-32 h-32 rounded-[3.5rem] flex items-center justify-center mx-auto shadow-2xl relative">
+                        <FiCheckCircle size={56} strokeWidth={3} className="text-emerald-500 animate-bounce" />
+                        <div className="absolute -top-4 -right-4 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-xl text-[#9b1c1c] font-black animate-pulse">!</div>
                     </div>
                     
-                    <div className="space-y-4">
-                        <h2 className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tighter uppercase leading-none">Registration Finalized!</h2>
-                        <p className="text-slate-500 text-xl font-medium leading-relaxed">Your performance report has been securely transmitted. A counselor will reach out via WhatsApp/Email within 2 hours.</p>
+                    <div className="space-y-6">
+                        <h2 className="text-5xl lg:text-7xl font-black text-[#1a202c] tracking-tighter uppercase leading-none italic">Registration Finalized!</h2>
+                        <p className="text-slate-400 text-lg lg:text-2xl font-medium leading-tight italic opacity-80">Your performance report has been securely transmitted. A counselor will reach out via WhatsApp/Email within 2 hours.</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <button className="bg-slate-100 text-slate-900 p-5 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-slate-200 transition-all border border-slate-200">
-                           <FiDownload size={14} /> Download PDF
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <button className="bg-slate-50 text-[#1a202c] p-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-3 hover:bg-[#1a202c] hover:text-white transition-all border border-slate-100 shadow-sm">
+                           <FiDownload size={18} strokeWidth={3} /> Download Report
                         </button>
-                        <button className="bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100">
-                           <FiBarChart2 size={14} /> Deep Analysis
+                        <button className="bg-[#9b1c1c] text-white p-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-3 hover:bg-[#7f1717] transition-all shadow-3xl shadow-[#9b1c1c]/20">
+                           <FiBarChart2 size={18} strokeWidth={3} /> View Analytics
                         </button>
                     </div>
 
-                    <p className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.3em]">EduPath Security Engine Verification Code: {token.slice(0, 12).toUpperCase()}</p>
+                    <div className="pt-10">
+                        <p className="text-[9px] text-[#9b1c1c]/30 font-black uppercase tracking-[1em] mb-4">PROTOCOL V2.0 ENCRYPTED</p>
+                        <div className="inline-flex items-center gap-3 bg-slate-50 px-6 py-3 rounded-full border border-slate-100">
+                           <FiShield className="text-[#9b1c1c]" size={14} />
+                           <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{token.toUpperCase()}</span>
+                        </div>
+                    </div>
                </div>
             </motion.div>
           )}
