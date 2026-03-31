@@ -7,6 +7,7 @@ const Call = require("../models/Call");
 const Meeting = require("../models/Meeting");
 const Todo = require("../models/Todo");
 const User = require("../models/User");
+const Activity = require("../models/Activity");
 
 exports.getDashboardStats = async (req, res) => {
   try {
@@ -191,26 +192,53 @@ exports.getDashboardStats = async (req, res) => {
 
     let activityFilter = { companyId };
     if (role === "branch_manager") activityFilter.branchId = branchId;
-    if (role === "sales") activityFilter.assignedTo = userId;
+    if (role === "sales") {
+      // For sales users: show their own activities OR activities where they are assigned (lead/deal/inquiry context)
+      activityFilter.$or = [
+        { userId: userId },
+        { assignedTo: userId } // Some activities might have this field if they represent assignments
+      ];
+      // Note: Not all activities have assignedTo, so for now we prioritize activities by the user themselves.
+      // But actually, sales users usually want to see updates on THEIR leads even if done by others (e.g. system)
+      // Since the Activity model links to leadId/dealId, a better filter would be:
+      // activityFilter.$or = [{ userId }, { leadId: { $in: myLeads } }]; 
+      // For simplicity and performance, let's just stick to the company/branch scope for now if they are admins, 
+      // or filter by userId if they are sales.
+      activityFilter = { companyId, userId };
+    }
 
     let recentActivities = [];
     let upcomingAgenda = [];
     try {
-      const [calls, meetings, tasks] = await Promise.all([
-        Call.find({ ...activityFilter, status: 'Scheduled', startDate: { $gte: now } }).sort({ startDate: 1 }).limit(10).populate("assignedTo", "name"),
-        Meeting.find({ ...activityFilter, startDate: { $gte: now } }).sort({ startDate: 1 }).limit(10).populate("assignedTo", "name"),
-        Todo.find({ ...activityFilter, status: { $ne: 'Completed' }, dueDate: { $get: now } }).sort({ dueDate: 1 }).limit(5)
-      ]);
+      // 1. Fetch Actual Recent Activities (Past)
+      const actualActivities = await Activity.find({ 
+        companyId, 
+        ...(role === "branch_manager" ? { branchId } : {}),
+        ...(role === "sales" ? { userId } : {}) 
+      })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate("userId", "name");
 
-      recentActivities = [
-        ...calls.map(c => ({ type: 'call', text: `Call: ${c.title}`, time: c.startDate, id: c._id })),
-        ...meetings.map(m => ({ type: 'meeting', text: `Meeting: ${m.title}`, time: m.startDate, id: m._id })),
-        ...tasks.map(t => ({ type: 'task', text: `Task: ${t.title}`, time: t.dueDate, id: t._id }))
-      ].sort((a, b) => new Date(a.time) - new Date(b.time)).slice(0, 10);
+      recentActivities = actualActivities.map(act => ({
+        type: act.type,
+        text: act.note || act.title || `Action: ${act.type}`,
+        time: act.createdAt,
+        user: act.userId?.name || "System",
+        id: act._id
+      }));
+
+      // 2. Fetch Upcoming Agenda (Future - Scheduled Items)
+      const [calls, meetings, tasks] = await Promise.all([
+        Call.find({ ...activityFilter, status: 'Scheduled', startDate: { $gte: now } }).sort({ startDate: 1 }).limit(5).populate("assignedTo", "name"),
+        Meeting.find({ ...activityFilter, startDate: { $gte: now } }).sort({ startDate: 1 }).limit(5).populate("assignedTo", "name"),
+        Todo.find({ ...activityFilter, status: { $ne: 'Completed' }, dueDate: { $gte: now } }).sort({ dueDate: 1 }).limit(5)
+      ]);
 
       upcomingAgenda = [
         ...calls.filter(c => c.startDate <= futureLimit).map(c => ({ title: c.title, date: c.startDate, type: 'call', assignedTo: c.assignedTo?.name })),
-        ...meetings.filter(m => m.startDate <= futureLimit).map(m => ({ title: m.title, date: m.startDate, type: 'meeting', assignedTo: m.assignedTo?.name }))
+        ...meetings.filter(m => m.startDate <= futureLimit).map(m => ({ title: m.title, date: m.startDate, type: 'meeting', assignedTo: m.assignedTo?.name })),
+        ...tasks.filter(t => t.dueDate <= futureLimit).map(t => ({ title: t.title, date: t.dueDate, type: 'task', assignedTo: "Me" }))
       ].sort((a, b) => new Date(a.date) - new Date(b.date));
 
     } catch (actErr) {

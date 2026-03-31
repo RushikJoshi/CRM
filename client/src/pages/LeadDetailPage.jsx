@@ -4,7 +4,7 @@ import {
   FiArrowLeft, FiPhone, FiMail, FiCheckSquare, FiFileText, 
   FiMoreVertical, FiUser, FiCalendar, FiTarget, FiActivity,
   FiPaperclip, FiSend, FiClock, FiPlus, FiChevronRight,
-  FiEdit3, FiEdit, FiFlag, FiTrash2, FiCheckCircle, FiInfo, FiLayers
+  FiEdit3, FiEdit, FiFlag, FiTrash2, FiCheckCircle, FiInfo, FiLayers, FiStar, FiChevronLeft
 } from "react-icons/fi";
 import API from "../services/api";
 import { useToast } from "../context/ToastContext";
@@ -126,8 +126,10 @@ export default function LeadDetailPage() {
   const [loading, setLoading] = useState(true);
   const [pipeline, setPipeline] = useState({ stages: [] });
   const [activities, setActivities] = useState([]);
-  const [activeTab, setActiveTab] = useState("timeline");
-  const [actionType, setActionType] = useState(null); // 'note', 'call', 'task', 'email'
+  const [activeTab, setActiveTab] = useState("description"); // description, extra, docs
+  const [actionType, setActionType] = useState(null); 
+  const [showHistory, setShowHistory] = useState(false);
+  const [description, setDescription] = useState("");
   
   // Action Form States
   const [contactSource, setContactSource] = useState("");
@@ -157,8 +159,39 @@ export default function LeadDetailPage() {
   const chatEndRef = useRef(null);
 
   const [emailData, setEmailData] = useState({ subject: "", body: "" });
+  const [prevLeadId, setPrevLeadId] = useState(null);
+  const [nextLeadId, setNextLeadId] = useState(null);
+  
   // Tags
   const [newTag, setNewTag] = useState("");
+
+  // Extra Info Edit States
+  const [isEditingCompany, setIsEditingCompany] = useState(false);
+  const [isEditingMarketing, setIsEditingMarketing] = useState(false);
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [isEditingAcademic, setIsEditingAcademic] = useState(false);
+  
+  // Extra Info Form States
+  const [companyFields, setCompanyFields] = useState({ companyName: "", website: "", industry: "", companySize: "" });
+  const [marketingFields, setMarketingFields] = useState({ source: "", campaign: "", medium: "" });
+  const [locationFields, setLocationFields] = useState({ city: "", address: "", location: "" });
+  const [academicFields, setAcademicFields] = useState({ course: "", courseSelected: "", testScore: 0 });
+
+  const fetchNeighbors = useCallback(async (currentLead) => {
+    try {
+      // Small optimization: fetch surrounding lead IDs for navigation
+      const res = await API.get(`/leads?limit=1000`); // Fetch recent IDs
+      const allLeads = res.data.data || [];
+      const currentIndex = allLeads.findIndex(l => l._id === currentLead._id);
+      
+      if (currentIndex !== -1) {
+        setPrevLeadId(currentIndex > 0 ? allLeads[currentIndex - 1]._id : null);
+        setNextLeadId(currentIndex < allLeads.length - 1 ? allLeads[currentIndex + 1]._id : null);
+      }
+    } catch (e) {
+      console.warn("Navigation fetch failed", e);
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -170,24 +203,78 @@ export default function LeadDetailPage() {
         API.get(`/tasks?leadId=${id}`),
         API.get("/users/assignable")
       ]);
-      setLead(leadRes.data.data);
+      const leadData = leadRes.data.data;
+      setLead(leadData);
+      setDescription(leadData.notes || "");
+      
+      // Initialize Edit States
+      setCompanyFields({
+        companyName: leadData.companyName || "",
+        website: leadData.website || "",
+        industry: leadData.industry || "",
+        companySize: leadData.companySize || ""
+      });
+      setMarketingFields({
+        source: leadData.source || "",
+        campaign: leadData.campaign || "",
+        medium: leadData.medium || ""
+      });
+      setLocationFields({
+        city: leadData.city || "",
+        address: leadData.address || "",
+        location: leadData.location || ""
+      });
+      setAcademicFields({
+        course: leadData.course || "",
+        courseSelected: leadData.courseSelected || "",
+        testScore: leadData.testScore || 0
+      });
+
       setPipeline(pipeRes.data.pipeline || { stages: [] });
       setActivities(actRes.data.data);
       setTasks(taskRes.data.data || []);
       setCompanyUsers(userRes.data.data || []);
       setTaskData(prev => ({ ...prev, dueDate: new Date().toISOString().split('T')[0] }));
+      
+      // Load neighbors
+      fetchNeighbors(leadData);
     } catch (err) {
       toast.error("Failed to load lead workspace.");
     } finally {
       setLoading(false);
     }
-  }, [id, toast]);
+  }, [id, toast, fetchNeighbors]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Chat tab: fetch/create lead conversation + subscribe to socket room
+  const handleUpdateDescription = async () => {
+    try {
+      setUpdating(true);
+      const res = await API.patch(`/leads/${id}`, { notes: description });
+      setLead(res.data.data);
+      toast.success("Description updated!");
+    } catch (err) {
+      toast.error("Failed to update description.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleSaveExtra = async (fields, setEditing) => {
+    try {
+      setUpdating(true);
+      const res = await API.patch(`/leads/${id}`, fields);
+      setLead(res.data.data);
+      setEditing(false);
+      toast.success("Lead details updated!");
+    } catch {
+      toast.error("Update failed.");
+    } finally {
+      setUpdating(false);
+    }
+  };
   useEffect(() => {
     if (activeTab !== 'chat' || !id) return;
     let mounted = true;
@@ -292,6 +379,12 @@ export default function LeadDetailPage() {
           body: emailData.body 
         });
         setEmailData({ subject: "", body: "" });
+      } else if (actionType === 'meeting') {
+        res = await API.post(`/leads/${id}/interactions`, { 
+          type: "meeting", 
+          message: `Meeting Scheduled`,
+          metadata: {} 
+        });
       } else if (actionType === 'followup') {
         res = await API.patch(`/leads/${id}/follow-up`, { 
           nextFollowUpDate: followUpDate,
@@ -362,542 +455,542 @@ export default function LeadDetailPage() {
   };
 
   if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-slate-50">
-      <div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin" />
+    <div className="flex h-screen items-center justify-center bg-white">
+      <div className="w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin shadow-lg shadow-indigo-600/10" />
     </div>
   );
 
   if (!lead) return (
-    <div className="flex flex-col h-screen items-center justify-center bg-slate-50 p-6 text-center">
+    <div className="flex flex-col h-screen items-center justify-center p-6 text-center">
       <FiInfo size={48} className="text-slate-300 mb-4" />
       <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Lead not found</h2>
-      <p className="text-sm font-medium text-slate-500 mt-2 mb-6">We couldn't retrieve the workspace data. The record might have be deleted or restricted.</p>
-      <button onClick={() => navigate(-1)} className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold uppercase tracking-wider shadow-lg">Go Back</button>
+      <button onClick={() => navigate(-1)} className="mt-6 px-6 py-2 bg-slate-900 text-white rounded-xl font-bold uppercase tracking-wider">Go Back</button>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-inter">
-      {/* SECTION 1: STICKY HEADER */}
-      <header className="sticky top-0 z-[100] bg-white border-b border-slate-200 px-6 py-4 shadow-sm backdrop-blur-md bg-white/90">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-             <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-all border border-transparent hover:border-slate-100">
-                <FiArrowLeft size={20} />
-             </button>
-             <div>
-                <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">{lead?.name || 'Loading...'}</h1>
-                <div className="flex items-center gap-3">
-                   <span className="text-[10px] font-black uppercase text-indigo-600 tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full">{lead.customId}</span>
-                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lead.email}</span>
-                </div>
-             </div>
-          </div>
-
-          <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
-             <div className="hidden lg:block flex-1 max-w-lg">
-                <StageSwitcher 
-                   stages={pipeline.stages} 
-                   currentStage={lead.stage} 
-                   onUpdate={handleUpdateStage}
-                   loading={updating}
-                />
-             </div>
-             
-             <div className="h-10 w-px bg-slate-100 hidden sm:block" />
-
-             <div className="flex items-center gap-2">
-                <div className="text-right hidden sm:block">
-                   <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Probability</div>
-                   <div className="text-lg font-black text-indigo-600 leading-none">{lead.probability}%</div>
-                </div>
-                <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-900 text-white font-black text-xs shadow-lg shadow-slate-200">
-                   {lead.assignedTo?.name?.[0] || 'U'}
-                </div>
-             </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* LEFT COLUMN: Lead Profile & Details */}
-          <div className="lg:col-span-4 space-y-6">
-             <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm relative group">
-                <button 
-                   onClick={() => setShowProfileDrawer(true)} 
-                   className="absolute top-6 right-6 p-2 bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-sm"
-                 >
-                    <FiEdit size={14} />
-                 </button>
-                <div className="flex items-center gap-4 mb-8">
-                   <div className="w-16 h-16 rounded-[24px] bg-indigo-600 text-white flex items-center justify-center text-2xl font-black shadow-xl shadow-indigo-100">
-                      {(lead.name || 'L')[0].toUpperCase()}
-                   </div>
-                   <div>
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Company Detail</div>
-                      <div className="text-lg font-bold text-slate-900">{lead.companyName || 'Private Lead'}</div>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Value</div>
-                      <div className="text-sm font-black text-slate-900">₹{lead.expectedRevenue?.toLocaleString() || '0'}</div>
-                   </div>
-                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Source</div>
-                      <div className="text-sm font-black text-indigo-600">{lead.source || 'Manual'}</div>
-                   </div>
-                </div>
-
-                <div className="space-y-4">
-                   <div className="group">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Phone Number</label>
-                      <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 hover:border-indigo-100 transition-colors">
-                         <span className="text-sm font-bold text-slate-700">{lead.phone || 'N/A'}</span>
-                         <a href={`tel:${lead.phone}`} className="p-2 bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"><FiPhone size={14} /></a>
-                      </div>
-                   </div>
-                   <div className="group">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Email Address</label>
-                      <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 hover:border-indigo-100 transition-colors">
-                         <span className="text-sm font-bold text-slate-700 truncate mr-4">{lead.email}</span>
-                         <a href={`mailto:${lead.email}`} className="p-2 bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"><FiMail size={14} /></a>
-                      </div>
-                   </div>
-                </div>
-             </div>
-
-             {/* Tags */}
-             <div className="bg-white rounded-[32px] p-6 border border-slate-200 shadow-sm">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Tags</div>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {(lead.tags || []).map(tag => (
-                    <span key={tag} className="flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[11px] font-bold">
-                      {tag}
-                      <button onClick={() => removeTag(tag)} className="ml-1 text-indigo-400 hover:text-red-500 font-black">×</button>
+    <div className="min-h-screen bg-white font-inter pb-20 animate-fade-in">
+        {/* --- TOP HEADER NAVIGATION --- */}
+        <div className="bg-white px-8 py-4 border-b border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+                <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 focus:outline-none">
+                    <FiArrowLeft size={18} />
+                </button>
+                <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 bg-slate-100/80 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-200/50">
+                        {lead.customId}
                     </span>
-                  ))}
-                  {(lead.tags || []).length === 0 && <span className="text-xs text-slate-300 italic">No tags yet</span>}
+                    <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-100/50">
+                        AGENT: {lead.assignedTo?.name?.split(' ')[0]?.toUpperCase() || 'SYSTEM'}
+                    </span>
                 </div>
-                <form onSubmit={addTag} className="flex gap-2">
-                  <input value={newTag} onChange={e => setNewTag(e.target.value)} placeholder="Add tag..." className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-indigo-100" />
-                  <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black">Add</button>
-                </form>
-             </div>
+            </div>
 
-             {/* Follow-up badge */}
-             {lead.nextFollowUpDate && (
-               <div className={`rounded-[24px] p-5 border flex items-center justify-between ${lead.followUpStatus === 'OVERDUE' ? 'bg-red-50 border-red-100' : 'bg-amber-50 border-amber-100'}`}>
-                 <div>
-                   <div className="text-[10px] font-black uppercase tracking-widest mb-1 ${lead.followUpStatus === 'OVERDUE' ? 'text-red-500' : 'text-amber-600'}">Follow-up {lead.followUpStatus}</div>
-                   <div className="text-sm font-bold text-slate-900">{new Date(lead.nextFollowUpDate).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})}</div>
-                 </div>
-                 <FiClock size={20} className={lead.followUpStatus === 'OVERDUE' ? 'text-red-400' : 'text-amber-400'} />
-               </div>
-             )}
-          </div>
+            <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl mr-4 border border-slate-100">
+                    {(pipeline.stages || []).map(stage => {
+                        const isCurrent = (lead.stage || "").toLowerCase() === (stage.name || "").toLowerCase();
+                        const st = (stage.name || "").toUpperCase();
+                        
+                        // Dynamic color mapping for aesthetics matching the image
+                        const btnColors = {
+                            'WON': isCurrent ? 'bg-emerald-500 text-white' : 'text-emerald-600 hover:bg-emerald-50',
+                            'LOST': isCurrent ? 'bg-rose-500 text-white' : 'text-rose-600 hover:bg-rose-50',
+                            'KNOCK': isCurrent ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-200',
+                            'DEFAULT': isCurrent ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600 hover:bg-white'
+                        };
 
-          {/* RIGHT COLUMN: ACTION BAR & WORKSPACE */}
-          <div className="lg:col-span-8 space-y-6">
-             
-             {/* SECTION 2: ACTION BAR */}
-             <div className="bg-white rounded-[32px] p-4 border border-slate-200 shadow-sm flex flex-wrap items-center gap-3">
-                <button onClick={() => setActionType('note')} className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${actionType === 'note' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-500 hover:bg-slate-50'}`}>
-                   <FiEdit3 /> Note
-                </button>
-                <button onClick={() => setActionType('call')} className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${actionType === 'call' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'text-slate-500 hover:bg-slate-50'}`}>
-                   <FiPhone /> Call
-                </button>
-                <button onClick={() => setActionType('task')} className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${actionType === 'task' ? 'bg-rose-600 text-white shadow-lg shadow-rose-200' : 'text-slate-500 hover:bg-slate-50'}`}>
-                   <FiCheckSquare /> Task
-                </button>
-                <button onClick={() => setActionType('email')} className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${actionType === 'email' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}>
-                   <FiSend /> Email
-                </button>
-                <button onClick={() => setActionType('followup')} className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${actionType === 'followup' ? 'bg-amber-500 text-white shadow-lg shadow-amber-200' : 'text-slate-500 hover:bg-slate-50'}`}>
-                   <FiClock /> Follow-up
-                </button>
-             </div>
+                        const colorClass = btnColors[st] || btnColors.DEFAULT;
 
-             {/* Action Editor */}
-             {actionType && (
-               <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm animate-in slide-in-from-top-4 duration-300">
-                  <div className="flex items-center justify-between mb-6">
-                     <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">New {actionType}</h3>
-                     <button onClick={() => setActionType(null)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400"><FiPlus className="rotate-45" size={24} /></button>
-                  </div>
-                  
-                  <form onSubmit={submitAction}>
-                    {actionType === 'note' && (
-                      <div className="relative">
-                         <textarea 
-                            value={noteContent}
-                            onChange={handleNoteChange}
-                            placeholder="Type @ to tag a teammate..."
-                            className="w-full h-32 bg-slate-50 rounded-2xl p-4 text-sm font-medium border-transparent focus:bg-white transition-all shadow-sm"
-                            required
-                         />
-                         {showMentionDropdown && (
-                           <div className="absolute z-50 bottom-full left-0 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden mb-2 animate-in fade-in slide-in-from-bottom-2">
-                             <div className="p-3 bg-slate-50 border-b border-slate-100">
-                               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tag Teammates</div>
-                             </div>
-                             <div className="max-h-48 overflow-y-auto">
-                               {companyUsers.filter(u => u.name.toLowerCase().includes(mentionFilter)).map(user => (
-                                 <button
-                                   key={user._id}
-                                   onClick={() => handleMentionSelect(user)}
-                                   className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
-                                 >
-                                   <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
-                                     {user.name[0]}
-                                   </div>
-                                   <div>
-                                     <div className="text-xs font-bold text-slate-700">{user.name}</div>
-                                     <div className="text-[10px] text-slate-400">{user.role}</div>
-                                   </div>
-                                 </button>
-                               ))}
-                             </div>
-                           </div>
-                         )}
-                      </div>
-                    )}
-
-                    {actionType === 'call' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <div className="space-y-4">
-                            <select 
-                               value={callData.result}
-                               onChange={(e) => setCallData({...callData, result: e.target.value})}
-                               className="w-full bg-slate-50 rounded-2xl p-4 text-sm font-bold border-transparent focus:bg-white transition-all shadow-sm">
-                               <option>Connected</option>
-                               <option>Busy</option>
-                               <option>No Answer</option>
-                               <option>Wrong Number</option>
-                            </select>
-                            <input 
-                              type="text" 
-                              placeholder="Duration (e.g. 5m)" 
-                              value={callData.duration}
-                              onChange={(e) => setCallData({...callData, duration: e.target.value})}
-                              className="w-full bg-slate-50 rounded-2xl p-4 text-sm font-bold border-transparent focus:bg-white transition-all shadow-sm"
-                            />
-                         </div>
-                         <textarea 
-                            value={callData.summary}
-                            onChange={(e) => setCallData({...callData, summary: e.target.value})}
-                            placeholder="Brief summary of the conversation..."
-                            className="w-full h-full min-h-[120px] bg-slate-50 rounded-2xl p-4 text-sm font-medium border-transparent focus:bg-white transition-all"
-                         />
-                      </div>
-                    )}
-
-                    {actionType === 'task' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <input 
-                            type="text" 
-                            placeholder="What needs to be done?" 
-                            value={taskData.title}
-                            onChange={(e) => setTaskData({...taskData, title: e.target.value})}
-                            className="w-full bg-slate-50 rounded-2xl p-4 text-sm font-bold border-transparent focus:bg-white transition-all shadow-sm"
-                            required
-                         />
-                         <input 
-                            type="date" 
-                            value={taskData.dueDate}
-                            onChange={(e) => setTaskData({...taskData, dueDate: e.target.value})}
-                            className="w-full bg-slate-50 rounded-2xl p-4 text-sm font-bold border-transparent focus:bg-white transition-all shadow-sm"
-                            required
-                         />
-                      </div>
-                    )}
-
-                    {actionType === 'email' && (
-                      <div className="space-y-4">
-                         <input 
-                            type="text" 
-                            placeholder="Subject" 
-                            value={emailData.subject}
-                            onChange={(e) => setEmailData({...emailData, subject: e.target.value})}
-                            className="w-full bg-slate-50 rounded-2xl p-4 text-sm font-bold border-transparent focus:bg-white transition-all shadow-sm"
-                            required
-                         />
-                         <textarea 
-                            value={emailData.body}
-                            onChange={(e) => setEmailData({...emailData, body: e.target.value})}
-                            placeholder="Write your email here..."
-                            className="w-full h-48 bg-slate-50 rounded-2xl p-4 text-sm font-medium border-transparent focus:bg-white transition-all shadow-sm"
-                            required
-                         />
-                      </div>
-                    )}
-
-                    {actionType === 'followup' && (
-                      <div className="space-y-4">
-                         <div className="grid grid-cols-2 gap-4">
-                            <div>
-                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Schedule Date</label>
-                               <input 
-                                  type="date" 
-                                  value={followUpDate}
-                                  onChange={(e) => setFollowUpDate(e.target.value)}
-                                  className="w-full bg-slate-50 rounded-2xl p-4 text-sm font-bold border-transparent focus:bg-white transition-all shadow-sm"
-                                  required
-                               />
-                            </div>
-                            <div>
-                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Interaction Type</label>
-                               <select 
-                                  value={followUpType}
-                                  onChange={(e) => setFollowUpType(e.target.value)}
-                                  className="w-full bg-slate-50 rounded-2xl p-4 text-sm font-bold border-transparent focus:bg-white transition-all shadow-sm appearance-none"
-                               >
-                                  <option>Call</option>
-                                  <option>WhatsApp</option>
-                                  <option>Email</option>
-                                  <option>Meeting</option>
-                                  <option>Demo</option>
-                               </select>
-                            </div>
-                         </div>
-                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Quick Note (Optional)</label>
-                            <textarea 
-                               value={followUpNote}
-                               onChange={(e) => setFollowUpNote(e.target.value)}
-                               placeholder="e.g. Discussed pricing, send proposal next."
-                               className="w-full h-24 bg-slate-50 rounded-2xl p-4 text-sm font-medium border-transparent focus:bg-white transition-all shadow-sm"
-                            />
-                         </div>
-                      </div>
-                    )}
-
-                    <div className="mt-6 flex justify-end gap-3">
-                       <button type="button" onClick={() => setActionType(null)} className="px-6 py-3 rounded-2xl text-slate-400 font-bold uppercase tracking-wider transition-all hover:bg-slate-50">Cancel</button>
-                       <button 
-                         type="submit" 
-                         disabled={updating}
-                         className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-slate-200 hover:scale-105 transition-all disabled:opacity-50">
-                          {updating ? 'Saving...' : 'Save & Log'}
-                        </button>
-                    </div>
-                  </form>
-               </div>
-             )}
-
-             {/* SECTION 3: WORKSPACE CONTENT (TABS) */}
-             <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
-                <div className="flex items-center border-b border-slate-100 px-8">
-                   <button 
-                     onClick={() => setActiveTab('timeline')}
-                     className={`px-6 py-5 text-[11px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'timeline' ? 'border-indigo-600 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-                      Timeline
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('notes')}
-                     className={`px-6 py-5 text-[11px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'notes' ? 'border-indigo-600 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-                      Notes
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('tasks')}
-                     className={`px-6 py-5 text-[11px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'tasks' ? 'border-indigo-600 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-                      Pending Tasks
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('chat')}
-                     className={`px-6 py-5 text-[11px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'chat' ? 'border-indigo-600 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-                      Chat
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('docs')}
-                     className={`px-6 py-5 text-[11px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'docs' ? 'border-indigo-600 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-                      Attachments
-                   </button>
+                        return (
+                            <button 
+                                key={stage._id || stage.name} 
+                                onClick={() => handleUpdateStage(stage.name)}
+                                disabled={updating || isCurrent}
+                                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${colorClass}`}>
+                                {st}
+                            </button>
+                        );
+                    })}
                 </div>
-
-                <div className="p-8 min-h-[400px]">
-                   {activeTab === 'timeline' && (
-                     <div className="max-w-2xl">
-                        {activities.length > 0 ? (
-                           [...activities].sort((a,b) => new Date(b.date||b.createdAt) - new Date(a.date||a.createdAt)).map((act) => (
-                             <ActivityTimelineItem key={act.id || act._id} activity={act} />
-                           ))
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-64 text-slate-300">
-                             <FiActivity size={48} className="mb-4 opacity-20" />
-                             <p className="text-xs font-black uppercase tracking-widest">No activities recorded yet</p>
-                          </div>
-                        )}
-                     </div>
-                   )}
-
-                   {activeTab === 'notes' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         {activities.filter(a => a.type === 'note').map(note => (
-                           <div key={note.id || note._id} className="p-6 rounded-3xl bg-amber-50 border border-amber-100 hover:shadow-md transition-all">
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-6 h-6 rounded-full bg-amber-200 flex items-center justify-center text-[9px] font-black text-amber-700">
-                                  {note.user ? note.user[0] : 'S'}
-                                </div>
-                                <span className="text-[10px] font-black text-amber-700 uppercase tracking-tight">{note.user || 'System'}</span>
-                              </div>
-                              <p className="text-sm font-medium text-slate-700 mb-3 leading-relaxed">{note.title || note.note}</p>
-                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                 {new Date(note.date || note.createdAt).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})}
-                              </div>
-                           </div>
-                         ))}
-                         {activities.filter(a => a.type === 'note').length === 0 && (
-                           <div className="col-span-full flex flex-col items-center justify-center py-12 text-slate-300">
-                             <FiFileText size={40} className="mb-3 opacity-20" />
-                             <p className="text-xs font-black uppercase tracking-widest">No notes yet — add one above</p>
-                           </div>
-                         )}
-                      </div>
-                   )}
-
-                   {activeTab === 'tasks' && (
-                      <div className="space-y-4">
-                         {tasks.map(task => {
-                            const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'Completed';
-                            return (
-                               <div key={task._id} className={`p-5 rounded-3xl border transition-all flex items-center justify-between ${isOverdue ? 'bg-rose-50 border-rose-100 shadow-sm' : 'bg-white border-slate-100 hover:shadow-md'}`}>
-                                  <div className="flex items-center gap-4">
-                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${task.status === 'Completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                                        <FiCheckSquare />
-                                     </div>
-                                     <div>
-                                        <h4 className={`text-sm font-black uppercase tracking-tight ${task.status === 'Completed' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{task.title}</h4>
-                                        <div className="flex items-center gap-3 mt-1">
-                                           <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${task.priority === 'High' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>{task.priority}</span>
-                                           <span className={`text-[9px] font-bold uppercase tracking-widest ${isOverdue ? 'text-rose-600 underline' : 'text-slate-400'}`}>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
-                                        </div>
-                                     </div>
-                                  </div>
-                                   <button 
-                                     onClick={() => task.status !== 'Completed' && markTaskDone(task._id)}
-                                     disabled={task.status === 'Completed'}
-                                     className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${task.status === 'Completed' ? 'bg-emerald-50 text-emerald-500 cursor-default' : 'bg-slate-900 text-white hover:scale-105 hover:bg-indigo-600'}`}>
-                                      {task.status === 'Completed' ? '✓ Done' : 'Mark Done'}
-                                   </button>
-                               </div>
-                            );
-                         })}
-                         {tasks.length === 0 && (
-                           <div className="flex flex-col items-center justify-center py-12 text-slate-300">
-                             <FiCheckSquare size={48} className="mb-4 opacity-20" />
-                             <p className="text-xs font-black uppercase tracking-widest text-center">No pending tasks for this lead<br/><span className="text-[10px] font-medium opacity-50 lowercase tracking-normal italic mt-1 font-inter">Click "Schedule Task" above to add one</span></p>
-                           </div>
-                         )}
-                      </div>
-                   )}
-
-                   {activeTab === 'chat' && (
-                      <div className="flex flex-col" style={{height: '520px'}}>
-                        {/* Participants Bar */}
-                        {chatConversation && (
-                          <div className="flex items-center gap-2 px-2 pb-4 mb-4 border-b border-slate-100 flex-wrap">
-                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mr-1">Participants:</span>
-                            {chatConversation.participants?.map(p => (
-                              <span key={p._id} className="flex items-center gap-1 px-2 py-1 bg-indigo-50 rounded-full text-[10px] font-bold text-indigo-700">
-                                <span className="w-4 h-4 rounded-full bg-indigo-200 flex items-center justify-center text-[8px] font-black">{p.name?.[0]}</span>
-                                {p.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto space-y-3 pr-1" style={{minHeight:0}}>
-                          {chatLoading && (
-                            <div className="flex items-center justify-center h-full text-slate-300">
-                              <div className="w-6 h-6 border-2 border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
-                            </div>
-                          )}
-                          {!chatLoading && chatMessages.length === 0 && (
-                            <div className="flex flex-col items-center justify-center h-full text-slate-300">
-                              <FiSend size={32} className="mb-3 opacity-20" />
-                              <p className="text-[10px] font-black uppercase tracking-widest">No messages yet</p>
-                              <p className="text-[9px] text-slate-400 mt-1">Start the internal discussion about this lead</p>
-                            </div>
-                          )}
-                          {chatMessages.map(msg => {
-                            const currentUserId = getCurrentUser()?.id;
-                            const isMine = String(msg.senderId?._id || msg.senderId) === String(currentUserId);
-                            return (
-                              <div key={msg._id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                                {!isMine && (
-                                  <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600 mr-2 flex-shrink-0">
-                                    {(msg.senderId?.name || 'U')[0]}
-                                  </div>
-                                )}
-                                <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl ${isMine ? 'bg-indigo-600 text-white rounded-br-md' : 'bg-slate-100 text-slate-800 rounded-bl-md'}`}>
-                                  {!isMine && <p className="text-[9px] font-black mb-1 opacity-60 uppercase tracking-wide">{msg.senderId?.name}</p>}
-                                  <p className="text-sm leading-relaxed">{msg.message}</p>
-                                  <p className={`text-[9px] mt-1 ${isMine ? 'text-indigo-200' : 'text-slate-400'}`}>
-                                    {new Date(msg.createdAt).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'})}
-                                  </p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                          <div ref={chatEndRef} />
-                        </div>
-
-                        {/* Input */}
-                        <form
-                          onSubmit={async (e) => {
-                            e.preventDefault();
-                            if (!newChatMsg.trim() || !chatConversation) return;
-                            setSendingMsg(true);
-                            try {
-                              const res = await API.post('/chat/messages', {
-                                conversationId: chatConversation._id,
-                                text: newChatMsg.trim()
-                              });
-                              setChatMessages(prev => [...prev, res.data.data]);
-                              setNewChatMsg("");
-                              setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-                            } catch { toast.error("Failed to send message."); }
-                            finally { setSendingMsg(false); }
-                          }}
-                          className="flex items-center gap-3 mt-4 pt-4 border-t border-slate-100"
-                        >
-                          <input
-                            type="text"
-                            value={newChatMsg}
-                            onChange={e => setNewChatMsg(e.target.value)}
-                            placeholder="Message your team about this lead..."
-                            className="flex-1 bg-slate-50 rounded-2xl px-5 py-3 text-sm font-medium border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
-                          />
-                          <button
-                            type="submit"
-                            disabled={sendingMsg || !newChatMsg.trim()}
-                            className="w-11 h-11 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 transition-all disabled:opacity-40 flex-shrink-0"
-                          >
-                            <FiSend size={16} />
-                          </button>
-                        </form>
-                      </div>
-                   )}
-
-                   {activeTab === 'docs' && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                         <div className="border-2 border-dashed border-slate-100 rounded-3xl p-8 flex flex-col items-center justify-center text-slate-300 hover:border-indigo-100 hover:text-indigo-600 cursor-pointer transition-all">
-                            <FiPlus size={24} className="mb-2" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Upload File</span>
-                         </div>
-                      </div>
-                   )}
+                {/* Navigation Arrows */}
+                <div className="flex items-center gap-1 border-l border-slate-100 pl-4 pointer-events-auto">
+                    <button 
+                        onClick={() => prevLeadId && navigate(`/company/leads/${prevLeadId}`)}
+                        disabled={!prevLeadId}
+                        className={`p-2 transition-colors ${prevLeadId ? 'text-slate-800 hover:bg-slate-50 rounded-lg cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}>
+                        <FiChevronLeft size={16} strokeWidth={3} />
+                    </button>
+                    <button 
+                        onClick={() => nextLeadId && navigate(`/company/leads/${nextLeadId}`)}
+                        disabled={!nextLeadId}
+                        className={`p-2 transition-colors ${nextLeadId ? 'text-slate-800 hover:bg-slate-50 rounded-lg cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}>
+                        <FiChevronRight size={16} strokeWidth={3} />
+                    </button>
                 </div>
-             </div>
-          </div>
+            </div>
         </div>
-      </main>
+
+        <div className="max-w-[1500px] mx-auto px-8 pt-10">
+            {/* --- MAIN IDENTIFIER SECTION --- */}
+            <div className="mb-12">
+                <div className="flex items-center gap-4 mb-3">
+                    <h1 className="text-[32px] font-bold text-slate-900 tracking-tight poppins">{lead.name}'s opportunity</h1>
+                    <div className="flex items-center gap-0.5 text-amber-400">
+                        {[1,2,3,4,5].map(s => (
+                            <FiStar size={16} key={s} className={s <= (lead.priorityStars || 0) ? 'fill-amber-400' : 'text-slate-200'} />
+                        ))}
+                    </div>
+                    <span className="ml-2 px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-black tracking-widest uppercase border border-slate-200">ENGAGEMENT</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-500 font-medium text-sm">
+                    <FiUser size={14} className="text-slate-400" />
+                    <span>Working on this: <span className="text-indigo-600 font-bold">{lead.assignedTo?.name || 'Unassigned'}</span></span>
+                </div>
+            </div>
+
+            {/* --- INFO GRID --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 mb-16">
+                <div className="space-y-8">
+                    <div className="grid grid-cols-2 gap-8">
+                        <div>
+                            <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest mb-2">Expected Revenue</p>
+                            <p className="text-lg font-bold text-slate-800 poppins">{lead.expectedRevenue ? `INR ${lead.expectedRevenue.toLocaleString()}` : (lead.value ? `INR ${lead.value.toLocaleString()}` : "0.00")}</p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest mb-2">Probability</p>
+                            <p className="text-lg font-bold text-slate-800">{lead.probability?.toFixed(2) || '10.00'} %</p>
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-10">
+                            <span className="w-24 text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Contact</span>
+                            <span className="text-sm font-bold text-teal-600 hover:underline cursor-pointer">{lead.name}</span>
+                        </div>
+                        <div className="flex items-start gap-10">
+                            <span className="w-24 text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Email</span>
+                            <span className="text-sm font-bold text-teal-600 hover:underline cursor-pointer">{lead.email}</span>
+                        </div>
+                        <div className="flex items-start gap-10">
+                            <span className="w-24 text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Phone</span>
+                            <span className="text-sm font-bold text-slate-700">{lead.phone || '—'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-8">
+                    <div className="flex items-start gap-10">
+                        <span className="w-32 text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Assigned To</span>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-black">
+                                {lead.assignedTo?.name?.[0] || 'U'}
+                            </div>
+                            <span className="text-sm font-bold text-slate-800 uppercase tracking-tight leading-none">{lead.assignedTo?.name || 'Pending Distribution'}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-10">
+                        <span className="w-32 text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Expected Closing</span>
+                        <span className="text-sm font-bold text-slate-800">{lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span>
+                    </div>
+                    <div className="flex items-start gap-10">
+                        <span className="w-32 text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Tags</span>
+                        <div className="flex flex-wrap gap-2">
+                            {(lead.tags || []).map(t => (
+                                <span key={t} className="px-3 py-1 bg-slate-50 border border-slate-100 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest">{t}</span>
+                            ))}
+                            {(lead.tags || []).length === 0 && <span className="text-[10px] text-slate-300 italic uppercase font-bold">No Tags Defined</span>}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* --- QUICK ACTION BAR --- */}
+            <div className="bg-white rounded-[24px] border border-slate-100 shadow-xl shadow-slate-200/20 p-3 flex items-center gap-2 mb-10 overflow-x-auto no-scrollbar">
+                {[
+                    { id: 'task', label: 'New Task', icon: <FiCheckSquare />, color: 'text-amber-500', bg: 'bg-amber-50' },
+                    { id: 'meeting', label: 'Meeting', icon: <FiCalendar />, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+                    { id: 'note', label: 'Add Note', icon: <FiEdit3 />, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                    { id: 'email', label: 'Send Email', icon: <FiMail />, color: 'text-purple-500', bg: 'bg-purple-50' },
+                    { id: 'followup', label: 'Schedule Follow-up', icon: <FiClock />, color: 'text-amber-500', bg: 'bg-amber-50' },
+                    { id: 'docs', label: 'Attach Doc', icon: <FiPaperclip />, color: 'text-blue-500', bg: 'bg-blue-50' },
+                ].map(act => (
+                    <button 
+                        key={act.id} 
+                        onClick={() => {
+                            setActionType(act.id === 'docs' ? null : act.id);
+                            if(act.id === 'docs') setActiveTab('docs');
+                        }}
+                        className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all ${actionType === act.id ? 'bg-slate-900 text-white shadow-lg' : 'hover:bg-slate-50 group'}`}>
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-lg transition-all ${actionType === act.id ? 'bg-white/20 text-white' : `${act.bg} ${act.color} group-hover:scale-110`}`}>
+                            {act.icon}
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-widest ${actionType === act.id ? 'text-white' : 'text-slate-500'}`}>{act.label}</span>
+                    </button>
+                ))}
+            </div>
+
+            {/* --- ACTION EDITOR (INLINE) --- */}
+            {actionType && (
+                <div className="mb-10 bg-slate-50/50 rounded-[32px] p-8 border border-slate-100 animate-in slide-in-from-top-4 duration-300">
+                     <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest font-inter">Setup {actionType}</h3>
+                        <button onClick={() => setActionType(null)} className="text-slate-400 hover:text-rose-500 transition-colors"><FiPlus className="rotate-45" size={24} /></button>
+                     </div>
+                     <form onSubmit={submitAction}>
+                        {actionType === 'note' && (
+                            <div className="relative">
+                                <textarea 
+                                  value={noteContent} 
+                                  onChange={handleNoteChange} 
+                                  placeholder="Type internal note here, use @ to tag a teammate..." 
+                                  className="w-full h-24 bg-white rounded-2xl p-6 text-sm font-medium border border-slate-100 focus:border-indigo-200 outline-none shadow-sm" 
+                                  required 
+                                />
+                                {showMentionDropdown && (
+                                    <div className="absolute z-50 bottom-full left-0 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="p-3 bg-slate-50 border-b border-slate-100">
+                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tag Teammates</div>
+                                        </div>
+                                        <div className="max-h-48 overflow-y-auto">
+                                            {companyUsers.filter(u => u.name.toLowerCase().includes(mentionFilter)).map(u => (
+                                                <button
+                                                    key={u._id}
+                                                    type="button"
+                                                    onClick={() => handleMentionSelect(u)}
+                                                    className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
+                                                >
+                                                    <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                                                        {u.name[0]}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-700">{u.name}</p>
+                                                        <p className="text-[10px] text-slate-400">{u.role}</p>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                            {companyUsers.filter(u => u.name.toLowerCase().includes(mentionFilter)).length === 0 && (
+                                                <div className="p-4 text-center text-[10px] font-bold text-slate-300 italic uppercase">No users found</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {actionType === 'task' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <input type="text" placeholder="Task Title" value={taskData.title} onChange={(e) => setTaskData({...taskData, title: e.target.value})} className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-slate-100 outline-none" required />
+                                <input type="date" value={taskData.dueDate} onChange={(e) => setTaskData({...taskData, dueDate: e.target.value})} className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-slate-100 outline-none" required />
+                            </div>
+                        )}
+                        {actionType === 'email' && (
+                            <div className="space-y-4">
+                                <input type="text" placeholder="Subject" value={emailData.subject} onChange={(e) => setEmailData({...emailData, subject: e.target.value})} className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-slate-100 outline-none" required />
+                                <textarea value={emailData.body} onChange={(e) => setEmailData({...emailData, body: e.target.value})} placeholder="Email content..." className="w-full h-48 bg-white rounded-2xl p-6 text-sm font-medium border border-slate-100 focus:border-indigo-200 outline-none shadow-sm" required />
+                            </div>
+                        )}
+                        {actionType === 'followup' && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Follow-up Date</label>
+                                        <input type="date" value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-slate-100 outline-none" required />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Method</label>
+                                        <select value={followUpType} onChange={(e) => setFollowUpType(e.target.value)} className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-slate-100 outline-none">
+                                            <option>Call</option>
+                                            <option>WhatsApp</option>
+                                            <option>Email</option>
+                                            <option>Meeting</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <textarea value={followUpNote} onChange={(e) => setFollowUpNote(e.target.value)} placeholder="What's the goal for this next contact?" className="w-full h-24 bg-white rounded-2xl p-6 text-sm font-medium border border-slate-100 focus:border-indigo-200 outline-none shadow-sm" />
+                            </div>
+                        )}
+                        {actionType === 'meeting' && (
+                           <div className="p-8 text-center bg-white rounded-3xl border border-slate-100">
+                             <p className="text-sm font-bold text-slate-500 italic">Meeting scheduling is available via the Calendar module.</p>
+                           </div>
+                        )}
+                        <div className="mt-6 flex justify-end">
+                            <button type="submit" disabled={updating} className="px-10 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.15em] shadow-lg shadow-indigo-200 hover:scale-[1.02] transition-all disabled:opacity-50">
+                                {updating ? 'Syncing...' : 'Confirm Action'}
+                            </button>
+                        </div>
+                     </form>
+                </div>
+            )}
+
+            {/* --- TABBED WORKSPACE --- */}
+            <div>
+                <div className="flex items-center gap-10 border-b border-slate-50 px-4 mb-8">
+                    {[
+                        { id: 'description', label: 'Description' },
+                        { id: 'extra', label: 'Extra Info' },
+                        { id: 'docs', label: 'Attachments' }
+                    ].map(t => (
+                        <button 
+                            key={t.id} 
+                            onClick={() => setActiveTab(t.id)}
+                            className={`pb-4 text-[11px] font-black uppercase tracking-[0.25em] transition-all relative ${activeTab === t.id ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}`}>
+                            {t.label}
+                            {activeTab === t.id && <div className="absolute bottom-0 left-0 right-0 h-1 bg-teal-500 rounded-t-full" />}
+                        </button>
+                    ))}
+                </div>
+
+                <div>
+                    {activeTab === 'description' && (
+                        <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                            <textarea 
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Enter Internal lead description, situational context, or important context here..."
+                                className="w-full h-[180px] p-6 bg-white border border-slate-50 rounded-2xl text-slate-600 font-medium text-sm leading-relaxed outline-none focus:ring-2 focus:ring-indigo-50 transition-all resize-none shadow-sm"
+                            />
+                            <div className="flex justify-end items-center gap-4">
+                                <button 
+                                    onClick={() => setShowHistory(!showHistory)}
+                                    className={`h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border ${showHistory ? 'bg-slate-900 border-slate-900 text-white shadow-xl shadow-slate-200' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-600'}`}>
+                                    {showHistory ? 'HIDE TIMELINE' : `SHOW TIMELINE (${activities.length})`}
+                                </button>
+                                <button 
+                                    onClick={handleUpdateDescription}
+                                    disabled={updating}
+                                    className="h-10 px-8 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50">
+                                    Update Description
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'extra' && (
+                        <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-300">
+                            {/* 4-Column Editable Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                                {/* COLUMN 1: COMPANY */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                                        <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Company</h4>
+                                        <button 
+                                            onClick={() => isEditingCompany ? handleSaveExtra(companyFields, setIsEditingCompany) : setIsEditingCompany(true)}
+                                            className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
+                                            {isEditingCompany ? 'SAVE' : 'EDIT'}
+                                        </button>
+                                    </div>
+                                    <div className="space-y-5">
+                                        {[
+                                            { label: 'Name', key: 'companyName', state: companyFields, setState: setCompanyFields },
+                                            { label: 'Website', key: 'website', state: companyFields, setState: setCompanyFields },
+                                            { label: 'Industry', key: 'industry', state: companyFields, setState: setCompanyFields },
+                                            { label: 'Size', key: 'companySize', state: companyFields, setState: setCompanyFields }
+                                        ].map(f => (
+                                            <div key={f.key}>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight mb-2">{f.label}</p>
+                                                {isEditingCompany ? (
+                                                    <input 
+                                                        type="text" 
+                                                        value={f.state[f.key]} 
+                                                        onChange={(e) => f.setState({...f.state, [f.key]: e.target.value})}
+                                                        className="w-full bg-slate-50 p-2 rounded-lg text-xs font-bold border border-slate-100 focus:bg-white outline-none"
+                                                    />
+                                                ) : (
+                                                    <p className={`text-xs font-bold ${f.key === 'website' ? 'text-teal-600' : 'text-slate-700'}`}>{lead[f.key] || '—'}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* COLUMN 2: MARKETING */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                                        <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Marketing</h4>
+                                        <button 
+                                            onClick={() => isEditingMarketing ? handleSaveExtra(marketingFields, setIsEditingMarketing) : setIsEditingMarketing(true)}
+                                            className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
+                                            {isEditingMarketing ? 'SAVE' : 'EDIT'}
+                                        </button>
+                                    </div>
+                                    <div className="space-y-5">
+                                        {[
+                                            { label: 'Source', key: 'source', state: marketingFields, setState: setMarketingFields },
+                                            { label: 'Campaign', key: 'campaign', state: marketingFields, setState: setMarketingFields },
+                                            { label: 'Medium', key: 'medium', state: marketingFields, setState: setMarketingFields }
+                                        ].map(f => (
+                                            <div key={f.key}>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight mb-2">{f.label}</p>
+                                                {isEditingMarketing ? (
+                                                    <input 
+                                                        type="text" 
+                                                        value={f.state[f.key]} 
+                                                        onChange={(e) => f.setState({...f.state, [f.key]: e.target.value})}
+                                                        className="w-full bg-slate-50 p-2 rounded-lg text-xs font-bold border border-slate-100 focus:bg-white outline-none"
+                                                    />
+                                                ) : (
+                                                    <p className="text-xs font-bold text-slate-700">{lead[f.key] || '—'}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* COLUMN 3: LOCATION */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                                        <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Location</h4>
+                                        <button 
+                                            onClick={() => isEditingLocation ? handleSaveExtra(locationFields, setIsEditingLocation) : setIsEditingLocation(true)}
+                                            className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
+                                            {isEditingLocation ? 'SAVE' : 'EDIT'}
+                                        </button>
+                                    </div>
+                                    <div className="space-y-5">
+                                        {[
+                                            { label: 'City', key: 'city', state: locationFields, setState: setLocationFields },
+                                            { label: 'Address', key: 'address', state: locationFields, setState: setLocationFields },
+                                            { label: 'Region/Location', key: 'location', state: locationFields, setState: setLocationFields }
+                                        ].map(f => (
+                                            <div key={f.key}>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight mb-2">{f.label}</p>
+                                                {isEditingLocation ? (
+                                                    <input 
+                                                        type="text" 
+                                                        value={f.state[f.key]} 
+                                                        onChange={(e) => f.setState({...f.state, [f.key]: e.target.value})}
+                                                        className="w-full bg-slate-50 p-2 rounded-lg text-xs font-bold border border-slate-100 focus:bg-white outline-none"
+                                                    />
+                                                ) : (
+                                                    <p className="text-xs font-bold text-slate-700">{lead[f.key] || '—'}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* COLUMN 4: ACADEMIC */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                                        <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Academic</h4>
+                                        <button 
+                                            onClick={() => isEditingAcademic ? handleSaveExtra(academicFields, setIsEditingAcademic) : setIsEditingAcademic(true)}
+                                            className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
+                                            {isEditingAcademic ? 'SAVE' : 'EDIT'}
+                                        </button>
+                                    </div>
+                                    <div className="space-y-5">
+                                        {[
+                                            { label: 'Course Preference', key: 'course', state: academicFields, setState: setAcademicFields },
+                                            { label: 'Degree Type', key: 'courseSelected', state: academicFields, setState: setAcademicFields },
+                                            { label: 'Test Score/GPA', key: 'testScore', state: academicFields, setState: setAcademicFields }
+                                        ].map(f => (
+                                            <div key={f.key}>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight mb-2">{f.label}</p>
+                                                {isEditingAcademic ? (
+                                                    <input 
+                                                        type="text" 
+                                                        value={f.state[f.key]} 
+                                                        onChange={(e) => f.setState({...f.state, [f.key]: e.target.value})}
+                                                        className="w-full bg-slate-50 p-2 rounded-lg text-xs font-bold border border-slate-100 focus:bg-white outline-none"
+                                                    />
+                                                ) : (
+                                                    <p className="text-xs font-bold text-slate-700">{lead[f.key] || '—'}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Tag Management */}
+                            <div className="bg-white border border-slate-100 p-10 rounded-[40px] shadow-sm mt-12">
+                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Pipeline Tags & Labels</h4>
+                                <div className="flex flex-wrap gap-2 mb-8">
+                                    {(lead.tags || []).map(t => (
+                                        <span key={t} className="flex items-center gap-2 pl-4 pr-2 py-2 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-bold border border-indigo-100">
+                                            {t}
+                                            <button onClick={() => removeTag(t)} className="w-5 h-5 rounded-lg hover:bg-rose-500 hover:text-white flex items-center justify-center transition-all">
+                                                <FiPlus className="rotate-45" size={14} />
+                                            </button>
+                                        </span>
+                                    ))}
+                                    {(lead.tags || []).length === 0 && <span className="text-xs text-slate-300 italic">No labels assigned yet. Use the field below to add one.</span>}
+                                </div>
+                                <form onSubmit={addTag} className="flex gap-4">
+                                    <input value={newTag} onChange={e => setNewTag(e.target.value)} placeholder="Type a tag name (e.g. WEBSITE, GOOGLE-ADS)..." className="flex-1 px-6 py-4 bg-slate-50 rounded-2xl text-sm font-bold border border-transparent focus:bg-white focus:border-indigo-100 outline-none transition-all" />
+                                    <button type="submit" className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Add Label</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'docs' && (
+                        <div className="flex flex-col items-center justify-center py-32 text-slate-300 bg-slate-50/30 rounded-[40px] border border-dashed border-slate-200">
+                            <FiPaperclip size={48} className="mb-4 opacity-20" />
+                            <p className="text-xs font-black uppercase tracking-widest">No documentation attached</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* --- ACTIVITY FEED --- */}
+            {showHistory && (
+                <div className="w-full mx-auto pb-8 animate-in fade-in slide-in-from-top-2 duration-300 border-t border-slate-50 pt-2">
+                    <div className="space-y-3 pl-8 border-l border-slate-100/50 ml-6 relative w-full">
+                        {activities.length > 0 ? (
+                            activities.map((act, i) => (
+                                <div key={act._id || i} className="relative pb-3 last:pb-0 group w-full">
+                                    {/* Timeline Dot */}
+                                    <div className="absolute -left-[37px] top-0 w-3 h-3 bg-white border border-indigo-500 rounded-full z-10 group-hover:scale-125 transition-transform" />
+                                    
+                                    <div className="flex justify-between items-start mb-0.5">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[9px] font-black uppercase shadow-sm">
+                                                {(act.user || 'S')[0]}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-[11px] font-extrabold text-slate-800">{act.user || 'System'}</p>
+                                                    <span className={`text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${
+                                                        act.type === 'note' ? 'bg-emerald-50 text-emerald-600' :
+                                                        act.type === 'call' ? 'bg-indigo-50 text-indigo-600' :
+                                                        act.type === 'stage_changed' ? 'bg-amber-50 text-amber-600' :
+                                                        'bg-slate-50 text-slate-400'
+                                                    }`}>
+                                                        {act.type}
+                                                    </span>
+                                                </div>
+                                                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-tight">
+                                                    {new Date(act.date || act.createdAt).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="ml-1 p-2.5 bg-white border border-slate-50 rounded-xl shadow-sm hover:border-slate-100 transition-colors w-full">
+                                        <p className="text-[12px] font-medium text-slate-600 leading-normal italic">"{act.note || act.title || act.message}"</p>
+                                        {act.metadata && Object.keys(act.metadata).length > 0 && (
+                                            <div className="mt-2 pt-2 border-t border-slate-50 flex gap-3">
+                                                {Object.entries(act.metadata).map(([k, v]) => (
+                                                    <div key={k} className="flex flex-col">
+                                                        <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">{k}</span>
+                                                        <span className="text-[9px] font-bold text-slate-500">{v}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-10 bg-slate-50/50 rounded-xl border border-dashed border-slate-100">
+                                <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.3em]">Ready for action</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
     </div>
   );
 }
