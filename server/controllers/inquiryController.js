@@ -4,6 +4,7 @@ const User = require("../models/User");
 const MasterData = require("../models/MasterData");
 const { assignLeadAutomatically, calculateLeadScore } = require("../utils/leadManagement");
 const { getNextCustomId } = require("../utils/idGenerator");
+const leadRoutingService = require("../services/leadRouting.service");
 const Activity = require("../models/Activity");
 const mongoose = require("mongoose");
 const { getRBACFilter, validateAssignment } = require("../utils/rbac");
@@ -98,12 +99,27 @@ exports.createInquiry = async (req, res) => {
                  courseSelected,
                  testScore: testScore || 0,
                  status: "new",
-                 type: "INQUIRY", // Default to Inquiry
-                 assignedTo: assignedTo || null,
+                 type: "INQUIRY", 
+                 assignedTo: req.user?.role === "sales" ? req.user.id : (assignedTo || null),
                  companyId,
                  branchId: finalBranchId,
+                 cityId: req.body.cityId || null, // Capture cityId
                  createdBy: req.user?.id || null
              });
+
+             // Routing Logic
+             if (!inquiry.assignedTo) {
+                 const routingResult = await leadRoutingService.routeLead(inquiry.cityId, companyId);
+                 if (routingResult.status === "assigned") {
+                     inquiry.assignedTo = routingResult.assignedTo;
+                     inquiry.assignedBranchId = routingResult.assignedBranchId;
+                     inquiry.assignedManagerId = routingResult.assignedManagerId;
+                     inquiry.assignedSalesIds = routingResult.assignedSalesIds;
+                     inquiry.branchId = routingResult.assignedBranchId || inquiry.branchId;
+                     inquiry.status = "assigned";
+                     await inquiry.save();
+                 }
+             }
 
             // Create Activity log
             await Activity.create({
@@ -178,8 +194,22 @@ exports.getInquiries = async (req, res) => {
 
          if (search && String(search).trim()) {
              const regex = { $regex: String(search).trim(), $options: "i" };
-             query.$or = [{ name: regex }, { email: regex }, { phone: regex }];
+             const searchClause = { $or: [{ name: regex }, { email: regex }, { phone: regex }] };
+             
+             // Wrap existing filter in $and to combine with search
+             if (query.$or) {
+                 // RBAC already has an $or (e.g. for sales)
+                 const rbacOr = query.$or;
+                 delete query.$or;
+                 query.$and = [
+                     { $or: rbacOr },
+                     searchClause
+                 ];
+             } else {
+                 query.$and = [searchClause];
+             }
          }
+
          if (status && status !== "all") query.status = status;
          if (source && source !== "all") query.source = source;
 

@@ -12,6 +12,7 @@ import {
 import API from "../../services/api";
 import useFormValidation, { rules } from "../../hooks/useFormValidation";
 import FieldError from "../../components/FieldError";
+import CitySelect from "../../components/CitySelect";
 import { useToast } from "../../context/ToastContext";
 import { getCurrentUser } from "../../context/AuthContext";
 
@@ -78,6 +79,7 @@ export default function BranchFormPage() {
     addressLine1: "",
     addressLine2: "",
     city: "",
+    cityId: "",
     state: "",
     country: "India",
     postalCode: "",
@@ -102,6 +104,7 @@ export default function BranchFormPage() {
     email: [],
     managerEmail: [],
     ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
+    cityId: [rules.required("City")],
   }), [isSuperAdmin]);
 
   const stepSchema = React.useMemo(() => {
@@ -109,7 +112,8 @@ export default function BranchFormPage() {
     if (step === 0) return { name: fullSchema.name, ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}) };
     if (step === 1) return { managerEmail: fullSchema.managerEmail || [] };
     if (step === 2) return { email: fullSchema.email || [] };
-    if (step === 3) return { city: [], state: [], postalCode: [] }; // Explicit but optional
+    if (step === 3) return { cityId: fullSchema.cityId, state: [], postalCode: [] }; // CityId is required now
+
     if (step === 4) return { openingDate: [], workingHours: [] }; 
     return {};
   }, [step, isSuperAdmin, fullSchema]);
@@ -187,6 +191,7 @@ export default function BranchFormPage() {
           addressLine1: b.addressLine1 || "",
           addressLine2: b.addressLine2 || "",
           city: b.city || "",
+          cityId: b.cityId?._id || b.cityId || "",
           state: b.state || "",
           country: b.country || "India",
           postalCode: b.postalCode || "",
@@ -408,12 +413,6 @@ export default function BranchFormPage() {
     }
   };
 
-  const handleCityBlur = () => {
-    if (formData.city?.trim().length >= 2) {
-      fetchPincodeByCity(formData.city.trim());
-    }
-  };
-
   if (fetching) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -603,8 +602,16 @@ export default function BranchFormPage() {
                     <input name="addressLine2" type="text" value={formData.addressLine2} onChange={handleChange} className={inputCls(errors, "addressLine2")} />
                   </div>
                   <div>
-                    <label className={labelCls}>City (auto-fills postal code on blur)</label>
-                    <input name="city" type="text" value={formData.city} onChange={handleChange} onBlur={handleCityBlur} className={inputCls(errors, "city")} placeholder="Enter city name" />
+                    <label className={labelCls}>City <span className="text-red-500">*</span></label>
+                    <CitySelect 
+                      value={formData.cityId} 
+                      onChange={(id, name) => {
+                        setFormData(prev => ({ ...prev, cityId: id, city: name }));
+                        clearError("cityId");
+                      }} 
+                      error={errors.cityId}
+                    />
+                    <FieldError error={errors.cityId} />
                   </div>
                   <div>
                     <label className={labelCls}>State</label>

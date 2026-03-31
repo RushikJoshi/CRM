@@ -4,6 +4,7 @@ import { FiTarget, FiUser, FiMail, FiPhone, FiBriefcase, FiArrowLeft, FiSave } f
 import API from "../../services/api";
 import useFormValidation, { rules } from "../../hooks/useFormValidation";
 import FieldError from "../../components/FieldError";
+import CitySelect from "../../components/CitySelect";
 import { useToast } from "../../context/ToastContext";
 import { getCurrentUser } from "../../context/AuthContext";
 
@@ -25,7 +26,8 @@ export default function LeadFormPage() {
     const [leadSources, setLeadSources] = useState([]);
     const [formData, setFormData] = useState({
         name: "", email: "", phone: "", company: "", source: "Website",
-        sourceId: "", status: "New", assignedTo: "", notes: "", value: 0
+        sourceId: "", status: "New", assignedTo: "", notes: "", value: 0,
+        cityId: "", city: ""
     });
 
     const schema = {
@@ -54,7 +56,8 @@ export default function LeadFormPage() {
         if (!isEdit) {
             setFormData({
                 name: "", email: "", phone: "", company: "", source: "Website",
-                sourceId: "", status: "New", assignedTo: "", notes: "", value: 0
+                sourceId: "", status: "New", assignedTo: "", notes: "", value: 0,
+                cityId: "", city: ""
             });
             return;
         }
@@ -75,7 +78,9 @@ export default function LeadFormPage() {
                         status: lead.status || "New",
                         assignedTo: lead.assignedTo?._id || lead.assignedTo || "",
                         notes: lead.notes || "",
-                        value: lead.value || 0
+                        value: lead.value || 0,
+                        cityId: lead.cityId?._id || lead.cityId || "",
+                        city: lead.city || ""
                     });
                 }
             } catch { toast.error("Failed to load lead data"); }
@@ -100,7 +105,8 @@ export default function LeadFormPage() {
             const dataToSubmit = {
                 ...formData,
                 sourceId: formData.sourceId === "" ? null : formData.sourceId,
-                assignedTo: formData.assignedTo === "" ? null : formData.assignedTo
+                assignedTo: formData.assignedTo === "" ? null : formData.assignedTo,
+                cityId: formData.cityId === "" ? null : formData.cityId
             };
 
             if (isEdit) {
@@ -197,6 +203,15 @@ export default function LeadFormPage() {
                                     className={inputCls("phone")} value={formData.phone} onChange={handleChange} />
                             </div>
                             <FieldError error={errors.phone} />
+                        </div>
+
+                        {/* City */}
+                        <div className="space-y-3">
+                            <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-2">City</label>
+                            <CitySelect 
+                                value={formData.cityId} 
+                                onChange={(id, name) => setFormData(prev => ({ ...prev, cityId: id, city: name }))}
+                            />
                         </div>
 
                         {/* Company */}

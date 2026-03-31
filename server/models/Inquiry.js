@@ -12,6 +12,10 @@ const inquirySchema = new mongoose.Schema(
         companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
         branchId: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", required: true },
         assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+        cityId: { type: mongoose.Schema.Types.ObjectId, ref: "City", default: null },
+        assignedBranchId: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", default: null },
+        assignedManagerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+        assignedSalesIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 
         // ── UNIFIED STATE ──────────────────────────────────────────────────────
@@ -102,6 +106,12 @@ inquirySchema.index({ phone: 1 });
 inquirySchema.index({ status: 1 });
 inquirySchema.index({ stage: 1 });
 inquirySchema.index({ assignedTo: 1 });
+inquirySchema.index({ cityId: 1 });
+inquirySchema.index({ assignedBranchId: 1 });
+inquirySchema.index({ assignedManagerId: 1 });
+inquirySchema.index({ assignedSalesIds: 1 });
+inquirySchema.index({ companyId: 1, assignedManagerId: 1 });
+inquirySchema.index({ companyId: 1, assignedSalesIds: 1 });
 
 module.exports = mongoose.model("Inquiry", inquirySchema);
 

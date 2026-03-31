@@ -15,6 +15,7 @@ import {
 import API from "../../services/api";
 import useFormValidation, { rules } from "../../hooks/useFormValidation";
 import FieldError from "../../components/FieldError";
+import CitySelect from "../../components/CitySelect";
 import { useToast } from "../../context/ToastContext";
 import { getCurrentUser } from "../../context/AuthContext";
 
@@ -66,7 +67,6 @@ const defaultForm = (currentUser) => ({
   firstName: "",
   lastName: "",
   displayName: "",
-  profilePhotoUrl: "",
   gender: "",
   dateOfBirth: "",
   workEmail: "",
@@ -75,6 +75,7 @@ const defaultForm = (currentUser) => ({
   alternatePhone: "",
   whatsappNumber: "",
   address: "",
+  cityId: "",
   username: "",
   email: "",
   password: "",
@@ -86,8 +87,6 @@ const defaultForm = (currentUser) => ({
   permissionLevel: "",
   primaryBranchId: "",
   additionalBranchIds: [],
-  team: "",
-  territory: "",
   employeeId: "",
   jobTitle: "",
   joiningDate: "",
@@ -263,7 +262,6 @@ export default function UserFormPage() {
           firstName: u.firstName || (u.name ? u.name.split(" ")[0] : ""),
           lastName: u.lastName || (u.name ? u.name.split(" ").slice(1).join(" ") : ""),
           displayName: u.displayName || "",
-          profilePhotoUrl: u.profilePhotoUrl || "",
           gender: u.gender || "",
           dateOfBirth: u.dateOfBirth ? u.dateOfBirth.slice(0, 10) : "",
           workEmail: u.workEmail || u.email || "",
@@ -272,6 +270,7 @@ export default function UserFormPage() {
           alternatePhone: u.alternatePhone || "",
           whatsappNumber: u.whatsappNumber || "",
           address: u.address || "",
+          cityId: u.cityId?._id || u.cityId || "",
           username: u.username || "",
           email: u.email || "",
           twoFactorEnabled: u.twoFactorEnabled || false,
@@ -281,8 +280,6 @@ export default function UserFormPage() {
           permissionLevel: u.permissionLevel || "",
           primaryBranchId: u.primaryBranchId?._id || u.branchId?._id || u.branchId || u.primaryBranchId || "",
           additionalBranchIds: Array.isArray(u.additionalBranchIds) ? u.additionalBranchIds.map((b) => b?._id || b) : [],
-          team: u.team || "",
-          territory: u.territory || "",
           employeeId: u.employeeId || "",
           jobTitle: u.jobTitle || "",
           joiningDate: u.joiningDate ? u.joiningDate.slice(0, 10) : "",
@@ -509,10 +506,6 @@ export default function UserFormPage() {
                       <label className={labelCls}>Display Name</label>
                       <input name="displayName" value={formData.displayName} onChange={handleChange} disabled={isView} className={inputCls(errors, "displayName")} placeholder="Display name" />
                     </div>
-                    <div className="md:col-span-2">
-                      <label className={labelCls}>Profile Photo URL</label>
-                      <input name="profilePhotoUrl" type="url" value={formData.profilePhotoUrl} onChange={handleChange} disabled={isView} className={inputCls(errors, "profilePhotoUrl")} placeholder="https://..." />
-                    </div>
                     <div>
                       <label className={labelCls}>Gender</label>
                       <select name="gender" value={formData.gender} onChange={handleChange} disabled={isView} className={inputCls(errors, "gender")}>
@@ -557,6 +550,15 @@ export default function UserFormPage() {
                       <label className={labelCls}>Address</label>
                       <input name="address" value={formData.address} onChange={handleChange} disabled={isView} className={inputCls(errors, "address")} placeholder="Full address" />
                     </div>
+                    <div className="md:col-span-2">
+                      <label className={labelCls}>City</label>
+                      <CitySelect 
+                        value={formData.cityId} 
+                        onChange={(id) => setField("cityId", id)} 
+                        disabled={isView}
+                        error={errors.cityId}
+                      />
+                    </div>
                   </div>
                 </div>
               </>
@@ -599,14 +601,6 @@ export default function UserFormPage() {
                       >
                         {branches.filter((b) => b._id !== formData.primaryBranchId).map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
                       </select>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Team</label>
-                      <input name="team" value={formData.team} onChange={handleChange} disabled={isView} className={inputCls(errors, "team")} placeholder="Team name" />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Territory</label>
-                      <input name="territory" value={formData.territory} onChange={handleChange} disabled={isView} className={inputCls(errors, "territory")} placeholder="Territory" />
                     </div>
                   </div>
                 </div>
@@ -730,32 +724,6 @@ export default function UserFormPage() {
                     <div className="md:col-span-2">
                       <label className={labelCls}>Permission Level</label>
                       <input name="permissionLevel" value={formData.permissionLevel} onChange={handleChange} disabled={isView} className={inputCls(errors, "permissionLevel")} placeholder="e.g. Standard" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className={cardCls}>
-                  <div className={sectionTitleCls}>
-                    <FiSettings className="text-[#2563EB]" size={14} /> Account Settings
-                  </div>
-                  <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className={labelCls}>Account Status</label>
-                      <select name="status" value={formData.status} onChange={handleChange} disabled={isView} className={inputCls(errors, "status")}>
-                        {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Language</label>
-                      <select name="language" value={formData.language} onChange={handleChange} disabled={isView} className={inputCls(errors, "language")}>
-                        {LANGUAGES.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className={labelCls}>Timezone</label>
-                      <select name="timezone" value={formData.timezone} onChange={handleChange} disabled={isView} className={inputCls(errors, "timezone")}>
-                        {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
-                      </select>
                     </div>
                   </div>
                 </div>

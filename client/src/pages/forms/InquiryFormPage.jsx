@@ -8,6 +8,7 @@ import {
 import API from "../../services/api";
 import useFormValidation, { rules } from "../../hooks/useFormValidation";
 import FieldError from "../../components/FieldError";
+import CitySelect from "../../components/CitySelect";
 import { useToast } from "../../context/ToastContext";
 import { getCurrentUser } from "../../context/AuthContext";
 
@@ -26,7 +27,7 @@ export default function InquiryFormPage() {
         name: "", email: "", phone: "", companyName: "",
         source: "manual", sourceId: "", website: "", message: "",
         branchId: "", inquiryStatus: "", courseSelected: "", location: "",
-        city: "", address: "", value: 0
+        city: "", cityId: "", address: "", value: 0
     });
 
     useEffect(() => {
@@ -49,7 +50,7 @@ export default function InquiryFormPage() {
         name: [rules.required("Full name"), rules.minLength(3, "Full name")],
         email: [rules.required("Email"), rules.email()],
         phone: [rules.required("Mobile number"), rules.phone()],
-        city: [rules.required("City")],
+        cityId: [rules.required("City")],
         address: [rules.required("Address")],
     };
     const { errors, validate, clearError } = useFormValidation(schema);
@@ -269,12 +270,15 @@ export default function InquiryFormPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-black text-[#1A202C] uppercase tracking-[0.15em] ml-1">City *</label>
-                                    <div className="relative group">
-                                        <FiMapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#CBD5E0] group-focus-within:text-teal-700 transition-colors" />
-                                        <input name="city" className={inputCls("city")} placeholder="City"
-                                            value={formData.city} onChange={handleChange} />
-                                    </div>
-                                    <FieldError error={errors.city} />
+                                    <CitySelect 
+                                        value={formData.cityId} 
+                                        onChange={(id, name) => {
+                                            setFormData(prev => ({ ...prev, cityId: id, city: name }));
+                                            clearError("cityId");
+                                        }} 
+                                        error={errors.cityId}
+                                    />
+                                    <FieldError error={errors.cityId} />
                                 </div>
                                 {isCompanyAdmin && (
                                     <div className="space-y-2">

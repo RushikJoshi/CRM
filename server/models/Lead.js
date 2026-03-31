@@ -159,6 +159,10 @@ const leadSchema = new mongoose.Schema(
       ref: "User",
       default: null
     },
+    cityId: { type: mongoose.Schema.Types.ObjectId, ref: "City", default: null },
+    assignedBranchId: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", default: null },
+    assignedManagerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    assignedSalesIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -182,6 +186,12 @@ const leadSchema = new mongoose.Schema(
 
     testToken: { type: String, default: null },
     proctoringStatus: { type: String, enum: ["active", "denied", "not_supported", "unknown"], default: "unknown" },
+    type: { 
+      type: String, 
+      enum: ["INQUIRY", "LEAD"], 
+      default: "LEAD",
+      required: true 
+    },
     customId: { type: String, unique: true },
   },
   { timestamps: true }
@@ -198,6 +208,12 @@ leadSchema.index({ companyId: 1, lostAt: -1 });
 leadSchema.index({ email: 1, companyId: 1 });
 leadSchema.index({ phone: 1, companyId: 1 });
 leadSchema.index({ assignedTo: 1 });
+leadSchema.index({ cityId: 1 });
+leadSchema.index({ assignedBranchId: 1 });
+leadSchema.index({ assignedManagerId: 1 });
+leadSchema.index({ assignedSalesIds: 1 });
+leadSchema.index({ companyId: 1, assignedManagerId: 1 });
+leadSchema.index({ companyId: 1, assignedSalesIds: 1 });
 leadSchema.index({ branchId: 1 });
 leadSchema.index({ isDeleted: 1, companyId: 1 });
 

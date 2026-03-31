@@ -96,6 +96,7 @@ function forceJsonResponse(val) {
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/leads", require("./routes/leadRoutes"));
 app.use("/api/lead-sources", require("./routes/leadSourceRoutes"));
+app.use("/api/cities", require("./routes/cityRoutes"));
 app.use("/api/branches", require("./routes/branchRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/deals", require("./routes/dealRoutes"));

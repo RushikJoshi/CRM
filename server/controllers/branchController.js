@@ -34,6 +34,7 @@ function sanitizeBranchBody(body) {
     description: body.description != null ? String(body.description).trim() : undefined,
     documentUrls: Array.isArray(body.documentUrls) ? body.documentUrls.filter(Boolean) : undefined,
     address: body.address != null ? String(body.address).trim() : undefined,
+    cityId: body.cityId || null,
   };
   return Object.fromEntries(Object.entries(allowed).filter(([, v]) => v !== undefined));
 }
@@ -74,6 +75,12 @@ exports.createBranch = async (req, res) => {
       branchCode = String(branchCode).trim().toUpperCase();
       const exists = await Branch.findOne({ companyId, branchCode, isDeleted: false });
       if (exists) return res.status(400).json({ success: false, message: "Branch code already exists for this company" });
+    }
+
+    // UNIQUE CITY CHECK: One branch per city per company
+    if (body.cityId) {
+      const cityExists = await Branch.findOne({ companyId, cityId: body.cityId, isDeleted: false });
+      if (cityExists) return res.status(400).json({ success: false, message: "This city is already served by another branch." });
     }
 
     const branch = await Branch.create({
@@ -140,6 +147,7 @@ exports.getBranches = async (req, res) => {
       Branch.countDocuments(query),
       Branch.find(query)
         .populate("companyId", "name")
+        .populate("cityId", "name state")
         .populate("branchManagerId", "name email")
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -178,6 +186,7 @@ exports.getBranchById = async (req, res) => {
     }
     const branch = await Branch.findOne(query)
       .populate("companyId", "name")
+      .populate("cityId", "name state")
       .populate("branchManagerId", "name email phone")
       .populate("assignedUserIds", "name email")
       .populate("createdBy", "name")
@@ -221,12 +230,23 @@ exports.updateBranch = async (req, res) => {
       if (duplicate) return res.status(400).json({ success: false, message: "Branch code already exists for this company" });
     }
 
+    if (body.cityId && body.cityId !== existing.cityId?.toString()) {
+      const cityDuplicate = await Branch.findOne({
+        companyId: existing.companyId,
+        cityId: body.cityId,
+        isDeleted: false,
+        _id: { $ne: id },
+      });
+      if (cityDuplicate) return res.status(400).json({ success: false, message: "This city is already served by another branch." });
+    }
+
     Object.assign(existing, body);
     existing.updatedBy = req.user.id || req.user._id;
     await existing.save();
 
     const populated = await Branch.findById(existing._id)
       .populate("companyId", "name")
+      .populate("cityId", "name state")
       .populate("branchManagerId", "name email")
       .populate("assignedUserIds", "name email");
     res.json({ success: true, message: "Branch updated successfully", data: populated });

@@ -30,18 +30,24 @@ exports.getRBACFilter = (user, existingQuery = {}) => {
             break;
 
         case "branch_manager":
-            // Can see only data of their branch
+            // Can see data of their branch OR where they are explicitly assigned as manager
             if (!user.branchId) {
-                // If manager has no branch fixed, we should still fail or return nothing cross-branch
-                filter.branchId = "NONE"; 
+                filter.assignedManagerId = user._id || user.id;
             } else {
-                filter.branchId = user.branchId;
+                filter.$or = [
+                    { branchId: user.branchId },
+                    { assignedBranchId: user.branchId },
+                    { assignedManagerId: user._id || user.id }
+                ];
             }
             break;
 
         case "sales":
-            // Can see only assigned data
-            filter.assignedTo = user._id || user.id;
+            // Can see assigned data (primary or in team array) 
+            filter.$or = [
+                { assignedTo: user._id || user.id },
+                { assignedSalesIds: user._id || user.id }
+            ];
             break;
 
         default:

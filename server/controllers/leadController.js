@@ -10,6 +10,7 @@ const { calculateLeadScore, assignLeadAutomatically } = require("../utils/leadMa
 const { logChange, createAuditEntry } = require("../utils/auditLogger");
 const Activity = require("../models/Activity");
 const { getNextCustomId } = require("../utils/idGenerator");
+const leadRoutingService = require("../services/leadRouting.service");
 
 
 // LEGACY FALLBACK (only used when company has no pipeline configured)
@@ -101,9 +102,17 @@ exports.createLead = async (req, res) => {
       }
     }
 
-    // Module 2: Automatic Lead Assignment if unassigned
+    // Module 2: Automatic Lead Routing (Location Intel)
     if (!lead.assignedTo) {
-      await assignLeadAutomatically(lead._id, req.user.companyId, lead.branchId);
+      const routingResult = await leadRoutingService.routeLead(lead.cityId, req.user.companyId);
+      if (routingResult.status === "assigned") {
+        lead.assignedTo = routingResult.assignedTo;
+        lead.assignedBranchId = routingResult.assignedBranchId;
+        lead.assignedManagerId = routingResult.assignedManagerId;
+        lead.assignedSalesIds = routingResult.assignedSalesIds;
+        lead.branchId = routingResult.assignedBranchId || lead.branchId;
+        await lead.save();
+      }
     }
 
     // Module 1: AI Lead Scoring
@@ -195,7 +204,7 @@ exports.getLeads = async (req, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
     const skip = (pageNum - 1) * limitNum;
 
-    const filter = { $and: [{ isDeleted: false }] };
+    const filter = { $and: [{ isDeleted: false, type: { $ne: "INQUIRY" } }] };
     
     if (search) {
         filter.$and.push({ name: { $regex: search, $options: "i" } });
@@ -217,13 +226,19 @@ exports.getLeads = async (req, res) => {
     if (req.user.role !== "super_admin") {
       filter.$and.push({ companyId: req.user.companyId });
       if (req.user.role === "branch_manager") {
-        filter.$and.push({ branchId: req.user.branchId });
+         filter.$and.push({ 
+           $or: [
+             { branchId: req.user.branchId },
+             { assignedBranchId: req.user.branchId },
+             { assignedManagerId: req.user.id }
+           ]
+         });
       }
       if (req.user.role === "sales") {
         filter.$and.push({
             $or: [
                 { assignedTo: req.user.id },
-                { assignedTo: null }
+                { assignedSalesIds: req.user.id }
             ]
         });
       }
@@ -278,11 +293,22 @@ exports.getLeads = async (req, res) => {
 exports.getLeadById = async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
-    const query = { _id: req.params.id, isDeleted: false };
+    const query = { _id: req.params.id, isDeleted: false, type: { $ne: "INQUIRY" } };
     if (req.user.role !== "super_admin") {
       query.companyId = req.user.companyId;
-      if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
-      if (req.user.role === "sales") query.assignedTo = req.user.id;
+      if (req.user.role === "branch_manager") {
+         query.$or = [
+           { branchId: req.user.branchId },
+           { assignedBranchId: req.user.branchId },
+           { assignedManagerId: req.user.id }
+         ];
+      }
+      if (req.user.role === "sales") {
+          query.$or = [
+              { assignedTo: req.user.id },
+              { assignedSalesIds: req.user.id }
+          ];
+      }
     }
     const lead = await Lead.findOne(query)
       .populate("assignedTo", "name email role")
@@ -303,8 +329,19 @@ exports.updateLead = async (req, res) => {
     if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
 
     const query = { _id: req.params.id, companyId: req.user.companyId };
-    if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
-    if (req.user.role === "sales") query.assignedTo = req.user.id;
+    if (req.user.role === "branch_manager") {
+       query.$or = [
+         { branchId: req.user.branchId },
+         { assignedBranchId: req.user.branchId },
+         { assignedManagerId: req.user.id }
+       ];
+    }
+    if (req.user.role === "sales") {
+       query.$or = [
+         { assignedTo: req.user.id },
+         { assignedSalesIds: req.user.id }
+       ];
+    }
 
     const { companyId, branchId, createdBy, isDeleted, isConverted, ...safeBody } = req.body;
 

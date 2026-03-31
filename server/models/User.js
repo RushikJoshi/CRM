@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema(
     },
     companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", default: null },
     branchId: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", default: null },
+    cityId: { type: mongoose.Schema.Types.ObjectId, ref: "City", default: null },
     status: {
       type: String,
       enum: ["active", "inactive", "suspended", "pending", "draft"],
@@ -84,6 +85,7 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ companyId: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ branchId: 1 });
+userSchema.index({ cityId: 1 });
 userSchema.index({ isDeleted: 1 });
 userSchema.index({ email: 1 }, { unique: true });
 

@@ -32,7 +32,8 @@ const branchSchema = new mongoose.Schema(
     // ── Address Details ────────────────────────────────────────────────────
     addressLine1: { type: String, trim: true },
     addressLine2: { type: String, trim: true },
-    city: { type: String, trim: true },
+    city: { type: String, trim: true }, // Legacy text field
+    cityId: { type: mongoose.Schema.Types.ObjectId, ref: "City" },
     state: { type: String, trim: true },
     country: { type: String, trim: true },
     postalCode: { type: String, trim: true },
