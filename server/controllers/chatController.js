@@ -46,8 +46,8 @@ exports.getOrCreateConversation = async (req, res) => {
 // 2. Send Message
 exports.sendMessage = async (req, res) => {
     try {
-        const { conversationId, text, type = "text", fileUrl } = req.body;
-        if (!conversationId || !text) return res.status(400).json({ success: false, message: "Missing conversationId or text." });
+        const { conversationId, text, type = "text", fileUrl, encryptedAESKey, senderEncryptedKey, iv } = req.body;
+        if (!conversationId || (!text && !fileUrl)) return res.status(400).json({ success: false, message: "Missing conversationId or content." });
 
         // SECURE CONTEXT VALIDATION: User must be a participant
         const conversation = await Conversation.findOne({
@@ -65,13 +65,17 @@ exports.sendMessage = async (req, res) => {
             senderId: req.user.id,
             receiverId,
             message: text,
+            encryptedAESKey,
+            senderEncryptedKey,
+            iv,
+            isEncrypted: !!encryptedAESKey,
             type,
             fileUrl
         });
 
-        // Update Conversation Summary
+        // Update Conversation Summary (store only non-sensitive preview or placeholder if encrypted)
         conversation.lastMessage = {
-            text: type === "file" ? "Sent a file" : text,
+            text: !!encryptedAESKey ? "🔒 Encrypted Message" : (type === "file" ? "Sent a file" : text),
             senderId: req.user.id,
             createdAt: new Date()
         };
@@ -83,17 +87,29 @@ exports.sendMessage = async (req, res) => {
             companyId: conversation.companyId,
             branchId: conversation.branchId,
             title: "New Message",
-            message: `${req.user.name}: ${text.substring(0, 50)}...`,
-            type: "info",
+            message: !!encryptedAESKey ? "You received a new encrypted message." : `${req.user.name}: ${text.substring(0, 50)}...`,
+            type: "chat",
             req
         });
 
         // Real-time broadcast
         const io = req.app.get("io");
         if (io) {
-            io.to(`conversation:${conversationId}`).emit("message:new", message);
-            if (conversation.leadId) io.to(`lead:${conversation.leadId}`).emit("message:new", message);
-            if (receiverId) io.to(`user:${receiverId}`).emit("chat:update", { conversationId, message });
+            const socketPayload = { ...message.toObject() };
+            
+            // 1. Emit to the conversation room (for everyone currently viewing)
+            io.to(`conversation:${conversationId}`).emit("message:new", socketPayload);
+            
+            // 2. Emit specifically to the receiver's user room (backup for notifications/updates)
+            if (receiverId) {
+                io.to(`user:${receiverId}`).emit("message:new", socketPayload);
+                io.to(`user:${receiverId}`).emit("chat:update", { conversationId, message: socketPayload });
+            }
+            
+            // 3. Emit for lead-specific updates if applicable
+            if (conversation.leadId) {
+                io.to(`lead:${conversation.leadId}`).emit("message:new", socketPayload);
+            }
         }
 
         res.status(201).json({ success: true, data: message });
@@ -110,7 +126,7 @@ exports.getLeadConversation = async (req, res) => {
         const companyId = req.user.companyId;
 
         let conversation = await Conversation.findOne({ companyId, leadId })
-            .populate("participants", "name email role");
+            .populate("participants", "name email role publicKey");
 
         if (!conversation) {
             const Inquiry = require("../models/Inquiry");
@@ -128,13 +144,13 @@ exports.getLeadConversation = async (req, res) => {
                 branchId: lead.branchId,
                 leadId: lead._id
             });
-            conversation = await conversation.populate("participants", "name email role");
+            conversation = await conversation.populate("participants", "name email role publicKey");
         } else {
             // Auto-join if not a participant
             const isParticipant = conversation.participants.some(p => String(p._id) === String(userId));
             if (!isParticipant) {
                 await Conversation.updateOne({ _id: conversation._id }, { $addToSet: { participants: userId } });
-                conversation = await Conversation.findById(conversation._id).populate("participants", "name email role");
+                conversation = await Conversation.findById(conversation._id).populate("participants", "name email role publicKey");
             }
         }
 
@@ -151,7 +167,7 @@ exports.getConversations = async (req, res) => {
             companyId: req.user.companyId,
             participants: req.user.id
         })
-        .populate("participants", "name email role branchId")
+        .populate("participants", "name email role branchId publicKey")
         .sort({ updatedAt: -1 });
 
         res.json({ success: true, data: conversations });

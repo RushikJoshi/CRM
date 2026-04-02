@@ -93,4 +93,28 @@ API.interceptors.response.use(
   }
 );
 
+API.getCurrentUser = () => {
+  const path = window.location.pathname;
+  let role = null;
+  if (path.startsWith("/superadmin")) role = "super_admin";
+  else if (path.startsWith("/company")) role = "company_admin";
+  else if (path.startsWith("/branch")) role = "branch_manager";
+  else if (path.startsWith("/sales")) role = "sales";
+
+  if (!role) return JSON.parse(localStorage.getItem("user") || "{}");
+
+  const keys = {
+    super_admin: "superAdminUser",
+    company_admin: "companyUser",
+    branch_manager: "branchUser",
+    sales: "salesUser"
+  };
+
+  try {
+    return JSON.parse(sessionStorage.getItem(keys[role]) || "{}");
+  } catch {
+    return {};
+  }
+};
+
 export default API;

@@ -20,6 +20,22 @@ const messageSchema = new mongoose.Schema(
             type: String,
             required: true
         },
+        encryptedAESKey: {
+            type: String, // Encrypted with receiver's publicKey
+            default: null
+        },
+        senderEncryptedKey: {
+            type: String, // Sender's encrypted version (for history decoding)
+            default: null
+        },
+        iv: {
+            type: String, // Initialization vector for AES
+            default: null
+        },
+        isEncrypted: {
+            type: Boolean,
+            default: false
+        },
         type: {
             type: String,
             enum: ["text", "file"],

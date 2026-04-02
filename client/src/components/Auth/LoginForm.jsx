@@ -38,7 +38,7 @@ const LoginForm = () => {
                 return;
             }
 
-            login(token, user);
+            login(token, user, password);
             window.location.replace(ROLE_HOME[user.role] || "/login");
         } catch (err) {
             setError(err.response?.data?.message || "Invalid credentials. Please check your email and password.");

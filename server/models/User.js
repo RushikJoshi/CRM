@@ -77,7 +77,10 @@ const userSchema = new mongoose.Schema(
     lastAssignedAt: { type: Date, default: Date.now },
     isDeleted: { type: Boolean, default: false },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    publicKey: { type: String, default: null }, // Base64 encoded RSA public key
+    encryptedPrivateKey: { type: String, default: null }, // RSA Private key encrypted with user password
+    privateKeyIv: { type: String, default: null } // Initialization vector for the encrypted private key
   },
   { timestamps: true }
 );

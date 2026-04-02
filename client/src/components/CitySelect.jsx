@@ -61,13 +61,15 @@ const CitySelect = ({ value, onChange, placeholder = "Search and select city..."
   };
 
   const fetchCityDetails = async (cityId) => {
+    if (!cityId) return;
     try {
-      // Small optimization: we can use the same getCities but with a different filter if needed.
-      // For now, search usually covers it, but if specifically needed:
-      const res = await API.get(`/cities`); // Get first few or search specifically
-      const found = res.data.data.find(c => c._id === cityId);
-      if (found) setSelectedCityName(found.name);
-    } catch (err) {}
+      const res = await API.get(`/cities?id=${cityId}`);
+      if (res.data.success && res.data.data && res.data.data.length > 0) {
+        setSelectedCityName(res.data.data[0].name);
+      }
+    } catch (err) {
+      console.error("Fetch city details failed", err);
+    }
   };
 
   const handleSelect = (city) => {

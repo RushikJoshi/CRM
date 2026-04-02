@@ -106,6 +106,7 @@ app.use("/api/super_admin", require("./routes/superAdminRoutes"));
 app.use("/api/reports", require("./routes/reportRoutes"));
 app.use("/api/master", require("./routes/masterRoutes"));
 app.use("/api/crm", require("./routes/crmRoutes"));
+app.use("/api/meetings", require("./routes/meetingRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/search", require("./routes/searchRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
@@ -144,14 +145,36 @@ app.use((err, req, res, next) => {
 /* ================= DATABASE ================= */
 mongoose.connect(process.env.MONGO_URI)
     .then(async () => {
-        console.log("✅ MongoDB Atlas Connected");
+        const dbName = mongoose.connection.db.databaseName;
+        console.log(`✅ MongoDB Connected to DB: ${dbName}`);
         
         // ── 🛠️ UNIFIED COLLECTION MIGRATION (Seamless Evolution) ──────────────────
         try {
             const Inquiry = require("./models/Inquiry");
+            const City = require("./models/City");
+            const defaultCities = require("./utils/defaultCities");
             const db = mongoose.connection.db;
 
             console.log("🛠️ Starting CRM Data Unification...");
+
+            // ── 🏙️ City Auto-Seed (Ensuring 500+ cities) ──────────────────────────
+            const cityCount = await City.countDocuments();
+            if (cityCount < defaultCities.length) {
+                console.log(`🏙️  City count (${cityCount}) is less than master list (${defaultCities.length}). Seeding missing cities...`);
+                
+                const bulkOps = defaultCities.map(city => ({
+                    updateOne: {
+                        filter: { name: city.name },
+                        update: { $setOnInsert: { ...city, isActive: true } },
+                        upsert: true
+                    }
+                }));
+
+                const result = await City.bulkWrite(bulkOps, { ordered: false });
+                console.log(`✅ City seeding complete: ${result.upsertedCount} inserted, ${result.modifiedCount} updated.`);
+            } else {
+                console.log(`🏙️  City collection is healthy with ${cityCount} records.`);
+            }
 
             // 1. Tag all existing inquiries as INQUIRY (if not already)
             const inquirySync = await Inquiry.updateMany(
@@ -223,9 +246,43 @@ io.use((socket, next) => {
     }
 });
 
+const onlineUsers = new Set();
+
 io.on("connection", (socket) => {
+    const userId = socket.data.user?.id;
     const companyId = socket.data.user?.companyId;
-    if (companyId) socket.join(`company:${companyId}`);
+
+    if (userId) {
+        socket.join(`user:${userId}`);
+        onlineUsers.add(userId);
+        console.log(`🔌 User joined room: user:${userId} | Online: ${onlineUsers.size}`);
+        
+        // Broadcast presence update (bonus)
+        if (companyId) {
+            io.to(`company:${companyId}`).emit("presence:update", Array.from(onlineUsers));
+        }
+    }
+
+    if (companyId) {
+        socket.join(`company:${companyId}`);
+        console.log(`🏢 User joined room: company:${companyId}`);
+    }
+
+    socket.on("chat:join", (conversationId) => {
+        socket.join(`conversation:${conversationId}`);
+        console.log(`💬 User joined chat: ${conversationId}`);
+    });
+
+    socket.on("disconnect", () => {
+        if (userId) {
+            onlineUsers.delete(userId);
+            console.log(`❌ User disconnected: ${userId} | Online: ${onlineUsers.size}`);
+            
+            if (companyId) {
+                io.to(`company:${companyId}`).emit("presence:update", Array.from(onlineUsers));
+            }
+        }
+    });
 });
 
 const { initFollowUpCron } = require("./cron/followUpCron");
