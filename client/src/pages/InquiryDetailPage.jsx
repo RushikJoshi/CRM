@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
     FiArrowLeft, FiUser, FiMail, FiPhone, FiInbox,
     FiMessageSquare, FiActivity, FiGlobe, FiCheckCircle,
-    FiClock, FiSend, FiTag, FiMoreHorizontal, FiDownload, FiFile, FiTrash2, FiUserCheck, FiZap, FiExternalLink
+    FiClock, FiSend, FiTag, FiMoreHorizontal, FiDownload, FiFile, FiTrash2, FiUserCheck, FiZap, FiExternalLink, FiAlertTriangle
 } from "react-icons/fi";
 import API from "../services/api";
 import { useToast } from "../context/ToastContext";
@@ -465,7 +465,7 @@ export default function InquiryDetailPage() {
                                         </div>
                                     ) : activities.length > 0 ? (
                                         activities.map((act, i) => (
-                                            <ActivityItem key={act._id} item={act} isLast={i === activities.length - 1} />
+                                            <ActivityItem key={act._id || act.id || `${act.type || "activity"}-${act.createdAt || act.date || i}`} item={act} isLast={i === activities.length - 1} />
                                         ))
                                     ) : (
                                         <div className="py-20 text-center">

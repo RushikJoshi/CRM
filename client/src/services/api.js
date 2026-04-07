@@ -67,7 +67,7 @@ API.interceptors.response.use(
     }
 
     if (err.response?.status === 401) {
-      const isLoginRequest = err.config?.url?.includes("/auth/login");
+      const isLoginRequest = err.config?.url?.includes("/auth/login") || err.config?.url?.includes("/auth/sso");
       const path = window.location.pathname;
       const isPublicPath = path === "/" || path === "/login" || path.startsWith("/assessment/");
 
@@ -80,6 +80,9 @@ API.interceptors.response.use(
         sessionStorage.removeItem("companyUser");
         sessionStorage.removeItem("branchUser");
         sessionStorage.removeItem("salesUser");
+        
+        // 🔥 CLEAR SSO FALLBACK (Prevents redirection loop on 401)
+        localStorage.removeItem("crm_user");
         
         window.location.replace("/login?session=expired");
       }

@@ -50,6 +50,8 @@ const inputCls = (errors, field) =>
 const labelCls = "block text-sm font-medium text-[#6B7280] mb-1.5";
 const cardCls = "bg-white rounded-xl border border-[#E5E7EB] shadow-sm overflow-hidden";
 const sectionTitleCls = "text-sm font-semibold text-[#111827] px-5 py-4 border-b border-[#E5E7EB] bg-[#F8FAFC]";
+const postalCodeRule = (value) =>
+  value && !/^\d{6}$/.test(String(value).trim()) ? "Enter a valid 6-digit postal code" : null;
 
 export default function BranchFormPage() {
   const { id } = useParams();
@@ -67,6 +69,8 @@ export default function BranchFormPage() {
   const [companies, setCompanies] = useState([]);
   const [users, setUsers] = useState([]);
   const [isStepChanging, setIsStepChanging] = useState(false);
+  const [postalLookupLoading, setPostalLookupLoading] = useState(false);
+  const [pendingValidationStep, setPendingValidationStep] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     branchCode: "",
@@ -75,7 +79,6 @@ export default function BranchFormPage() {
     email: "",
     phone: "",
     alternatePhone: "",
-    website: "",
     addressLine1: "",
     addressLine2: "",
     city: "",
@@ -101,18 +104,31 @@ export default function BranchFormPage() {
 
   const fullSchema = React.useMemo(() => ({
     name: [rules.required("Branch name")],
-    email: [],
-    managerEmail: [],
+    branchManagerId: [rules.required("Branch manager")],
+    email: [rules.email()],
+    phone: [rules.phone()],
+    alternatePhone: [rules.phone()],
+    managerEmail: [rules.email()],
+    managerPhone: [rules.phone()],
     ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
     cityId: [rules.required("City")],
+    postalCode: [postalCodeRule],
   }), [isSuperAdmin]);
 
   const stepSchema = React.useMemo(() => {
     // Validate only current step fields.
     if (step === 0) return { name: fullSchema.name, ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}) };
-    if (step === 1) return { managerEmail: fullSchema.managerEmail || [] };
-    if (step === 2) return { email: fullSchema.email || [] };
-    if (step === 3) return { cityId: fullSchema.cityId, state: [], postalCode: [] }; // CityId is required now
+    if (step === 1) return {
+      branchManagerId: fullSchema.branchManagerId,
+      managerEmail: fullSchema.managerEmail,
+      managerPhone: fullSchema.managerPhone,
+    };
+    if (step === 2) return {
+      email: fullSchema.email,
+      phone: fullSchema.phone,
+      alternatePhone: fullSchema.alternatePhone,
+    };
+    if (step === 3) return { cityId: fullSchema.cityId, postalCode: fullSchema.postalCode };
 
     if (step === 4) return { openingDate: [], workingHours: [] }; 
     return {};
@@ -187,7 +203,6 @@ export default function BranchFormPage() {
           email: b.email || "",
           phone: b.phone || "",
           alternatePhone: b.alternatePhone || "",
-          website: b.website || "",
           addressLine1: b.addressLine1 || "",
           addressLine2: b.addressLine2 || "",
           city: b.city || "",
@@ -219,35 +234,142 @@ export default function BranchFormPage() {
     clearAllErrors?.();
   }, [step, clearAllErrors]);
 
+  useEffect(() => {
+    if (pendingValidationStep == null || pendingValidationStep !== step) return;
+    validate(formData);
+    setPendingValidationStep(null);
+  }, [pendingValidationStep, step, validate, formData]);
+
+  const managerOptions = React.useMemo(
+    () => users.filter((user) => ["branch_manager", "company_admin"].includes(user.role)),
+    [users]
+  );
+
+  const assignedUserOptions = React.useMemo(
+    () => users.filter((user) => user._id !== formData.branchManagerId),
+    [users, formData.branchManagerId]
+  );
+
+  const validateAgainstSchema = useCallback((schema, data) => {
+    for (const field of Object.keys(schema)) {
+      const fieldRules = schema[field] || [];
+      for (const rule of fieldRules) {
+        if (rule(data[field])) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }, []);
+
+  const getStepSchema = useCallback((stepIndex) => {
+    if (stepIndex === 0) {
+      return { name: fullSchema.name, ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}) };
+    }
+    if (stepIndex === 1) {
+      return {
+        branchManagerId: fullSchema.branchManagerId,
+        managerEmail: fullSchema.managerEmail,
+        managerPhone: fullSchema.managerPhone,
+      };
+    }
+    if (stepIndex === 2) {
+      return {
+        email: fullSchema.email,
+        phone: fullSchema.phone,
+        alternatePhone: fullSchema.alternatePhone,
+      };
+    }
+    if (stepIndex === 3) {
+      return { cityId: fullSchema.cityId, postalCode: fullSchema.postalCode };
+    }
+    return {};
+  }, [fullSchema, isSuperAdmin]);
+
+  const firstInvalidStep = useCallback(() => {
+    for (let index = 0; index < 4; index += 1) {
+      if (!validateAgainstSchema(getStepSchema(index), formData)) {
+        return index;
+      }
+    }
+    return -1;
+  }, [formData, getStepSchema, validateAgainstSchema]);
+
+  const handleManagerChange = useCallback((e) => {
+    const managerId = e.target.value;
+    const selectedManager = users.find((user) => user._id === managerId);
+
+    setFormData((prev) => ({
+      ...prev,
+      branchManagerId: managerId,
+      managerEmail: selectedManager ? (selectedManager.workEmail || selectedManager.email || "") : "",
+      managerPhone: selectedManager?.phone || "",
+      assignedUserIds: prev.assignedUserIds.filter((userId) => userId !== managerId),
+    }));
+
+    clearError("branchManagerId");
+    clearError("managerEmail");
+    clearError("managerPhone");
+  }, [users, clearError]);
+
+  useEffect(() => {
+    if (!formData.branchManagerId) return;
+
+    const selectedManager = users.find((user) => user._id === formData.branchManagerId);
+    if (!selectedManager) return;
+
+    const nextEmail = selectedManager.workEmail || selectedManager.email || "";
+    const nextPhone = selectedManager.phone || "";
+
+    setFormData((prev) => {
+      const nextAssignedUsers = prev.assignedUserIds.filter((userId) => userId !== formData.branchManagerId);
+      if (
+        prev.managerEmail === nextEmail &&
+        prev.managerPhone === nextPhone &&
+        nextAssignedUsers.length === prev.assignedUserIds.length
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        managerEmail: nextEmail,
+        managerPhone: nextPhone,
+        assignedUserIds: nextAssignedUsers,
+      };
+    });
+  }, [users, formData.branchManagerId]);
+
+  const buildPayload = useCallback(() => ({
+    ...formData,
+    website: "",
+    name: String(formData.name || "").trim(),
+    branchCode: formData.branchCode?.trim() || undefined,
+    latitude: formData.latitude ? Number(formData.latitude) : undefined,
+    longitude: formData.longitude ? Number(formData.longitude) : undefined,
+    branchCapacity: formData.branchCapacity ? Number(formData.branchCapacity) : undefined,
+    openingDate: formData.openingDate || undefined,
+    assignedUserIds: formData.assignedUserIds.filter(Boolean),
+    documentUrls: formData.documentUrls.filter(Boolean),
+  }), [formData]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.info("handleSubmit triggered at Step:", step + 1);
-
-    // CRITICAL: Block any API submission unless the user is on the VERY LAST step (Index 4)
     if (step < STEPS.length - 1) {
-      console.warn("Blocked premature submission attempt from Step:", step + 1);
-      goNext(); // Just advance the step instead of saving
+      goNext();
       return;
     }
 
-    console.log("Final submission initiated at Step 5 (Operational).");
-
-    if (!validate(formData)) {
+    const invalidStep = firstInvalidStep();
+    if (invalidStep !== -1) {
+      setStep(invalidStep);
+      setPendingValidationStep(invalidStep);
       toast.error("Please fix the errors before saving.");
       return;
     }
     setLoading(true);
     try {
-      const payload = {
-        ...formData,
-        branchCode: formData.branchCode?.trim() || undefined,
-        latitude: formData.latitude ? Number(formData.latitude) : undefined,
-        longitude: formData.longitude ? Number(formData.longitude) : undefined,
-        branchCapacity: formData.branchCapacity ? Number(formData.branchCapacity) : undefined,
-        openingDate: formData.openingDate || undefined,
-        assignedUserIds: formData.assignedUserIds.filter(Boolean),
-        documentUrls: formData.documentUrls.filter(Boolean),
-      };
+      const payload = buildPayload();
       if (isEdit) {
         await API.put(`${apiBase}/${id}`, payload);
         toast.success("Branch updated successfully.");
@@ -274,16 +396,8 @@ export default function BranchFormPage() {
     setLoading(true);
     try {
       const payload = {
-        ...formData,
+        ...buildPayload(),
         status: "draft",
-        name: String(formData.name || "").trim(),
-        branchCode: formData.branchCode?.trim() || undefined,
-        latitude: formData.latitude ? Number(formData.latitude) : undefined,
-        longitude: formData.longitude ? Number(formData.longitude) : undefined,
-        branchCapacity: formData.branchCapacity ? Number(formData.branchCapacity) : undefined,
-        openingDate: formData.openingDate || undefined,
-        assignedUserIds: formData.assignedUserIds.filter(Boolean),
-        documentUrls: formData.documentUrls.filter(Boolean),
       };
       if (isEdit) {
         await API.put(`${apiBase}/${id}`, payload);
@@ -310,7 +424,6 @@ export default function BranchFormPage() {
   const canGoNext = () => validate(formData);
 
   const goNext = () => {
-    console.info(`Navigating: Step ${step + 1} -> Step ${step + 2}`);
     if (!canGoNext()) {
       toast.error("Please fix the errors before continuing.");
       return;
@@ -336,39 +449,32 @@ export default function BranchFormPage() {
   const fetchAddressByPincode = useCallback(async (pincode) => {
     const pin = String(pincode).trim();
     if (pin.length !== 6 || !/^\d{6}$/.test(pin)) return;
+    setPostalLookupLoading(true);
     try {
-      const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data && data[0]?.Status === "Success" && data[0].PostOffice?.length) {
-        const po = data[0].PostOffice[0];
+      const res = await API.get(`/branches/postal-code/${pin}`);
+      const address = res.data?.data;
+      if (address) {
         setFormData((prev) => ({
           ...prev,
-          city: po.District || prev.city,
-          state: po.State || prev.state,
-          country: po.Country || prev.country || "India",
+          postalCode: address.postalCode || pin,
+          city: address.city || prev.city,
+          cityId: address.cityId || prev.cityId,
+          state: address.state || prev.state,
+          country: address.country || prev.country || "India",
         }));
+        clearError("postalCode");
+        if (address.cityId) {
+          clearError("cityId");
+        } else {
+          toast.error("Pincode found, but please confirm the city from the list.");
+        }
       }
-    } catch (_) {
-      // If external API fails (ERR_CONNECTION_RESET), we log it but don't clear fields
-      console.warn("Pincode API unavailable or blocked.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to auto-fill address from pincode.");
+    } finally {
+      setPostalLookupLoading(false);
     }
-  }, []);
-
-  // Levenshtein distance for typo-tolerant city match
-  const editDistance = (a, b) => {
-    const m = a.length, n = b.length;
-    const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
-    for (let i = 0; i <= m; i++) dp[i][0] = i;
-    for (let j = 0; j <= n; j++) dp[0][j] = j;
-    for (let i = 1; i <= m; i++) {
-      for (let j = 1; j <= n; j++) {
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
-      }
-    }
-    return dp[m][n];
-  };
+  }, [clearError, toast]);
 
   // Indian Postal API: city/postoffice name -> pincode (pick result that best matches city name)
   const fetchPincodeByCity = useCallback(async (cityName) => {
@@ -534,20 +640,22 @@ export default function BranchFormPage() {
               <div className={sectionTitleCls}>Branch Management</div>
               <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Branch Manager</label>
-              <select name="branchManagerId" value={formData.branchManagerId} onChange={handleChange} className={inputCls(errors, "branchManagerId")}>
+              <label className={labelCls}>Branch Manager <span className="text-red-500">*</span></label>
+              <select name="branchManagerId" value={formData.branchManagerId} onChange={handleManagerChange} className={inputCls(errors, "branchManagerId")}>
                 <option value="">Select manager...</option>
-                {users.map((u) => <option key={u._id} value={u._id}>{u.name} {u.email ? `(${u.email})` : ""}</option>)}
+                {managerOptions.map((u) => <option key={u._id} value={u._id}>{u.name} {u.email ? `(${u.email})` : ""}</option>)}
               </select>
+              <FieldError error={errors.branchManagerId} />
             </div>
             <div>
               <label className={labelCls}>Manager Email</label>
-              <input name="managerEmail" type="email" value={formData.managerEmail} onChange={handleChange} className={inputCls(errors, "managerEmail")} />
+              <input name="managerEmail" type="email" value={formData.managerEmail} onChange={handleChange} className={inputCls(errors, "managerEmail")} readOnly={Boolean(formData.branchManagerId)} />
               <FieldError error={errors.managerEmail} />
             </div>
             <div>
               <label className={labelCls}>Manager Phone</label>
-              <input name="managerPhone" type="tel" value={formData.managerPhone} onChange={handleChange} className={inputCls(errors, "managerPhone")} />
+              <input name="managerPhone" type="tel" value={formData.managerPhone} onChange={handleChange} className={inputCls(errors, "managerPhone")} readOnly={Boolean(formData.branchManagerId)} />
+              <FieldError error={errors.managerPhone} />
             </div>
             <div className="sm:col-span-2">
               <label className={labelCls}>Assigned Users (Ctrl+click multi)</label>
@@ -557,8 +665,9 @@ export default function BranchFormPage() {
                 onChange={(e) => setField("assignedUserIds", Array.from(e.target.selectedOptions, (o) => o.value))}
                 className={inputCls(errors, "assignedUserIds") + " min-h-[88px]"}
               >
-                {users.map((u) => <option key={u._id} value={u._id}>{u.name} ({u.email})</option>)}
+                {assignedUserOptions.map((u) => <option key={u._id} value={u._id}>{u.name} ({u.email})</option>)}
               </select>
+              <p className="mt-1 text-xs text-[#6B7280]">Manager contact details auto-fill from the selected manager.</p>
             </div>
               </div>
             </div>
@@ -580,10 +689,7 @@ export default function BranchFormPage() {
                   <div>
                     <label className={labelCls}>Alternate Phone</label>
                     <input name="alternatePhone" type="tel" value={formData.alternatePhone} onChange={handleChange} className={inputCls(errors, "alternatePhone")} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Website</label>
-                    <input name="website" type="url" placeholder="https://..." value={formData.website} onChange={handleChange} className={inputCls(errors, "website")} />
+                    <FieldError error={errors.alternatePhone} />
                   </div>
                 </div>
               </div>
@@ -605,8 +711,15 @@ export default function BranchFormPage() {
                     <label className={labelCls}>City <span className="text-red-500">*</span></label>
                     <CitySelect 
                       value={formData.cityId} 
-                      onChange={(id, name) => {
-                        setFormData(prev => ({ ...prev, cityId: id, city: name }));
+                      displayText={formData.city}
+                      onChange={(id, name, city) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          cityId: id,
+                          city: name,
+                          state: city?.state || prev.state,
+                          country: city?.country || prev.country,
+                        }));
                         clearError("cityId");
                       }} 
                       error={errors.cityId}
@@ -623,7 +736,21 @@ export default function BranchFormPage() {
                   </div>
                   <div>
                     <label className={labelCls}>Postal Code (6-digit; auto-fills city/state/country on blur)</label>
-                    <input name="postalCode" type="text" value={formData.postalCode} onChange={handleChange} onBlur={handlePostalCodeBlur} className={inputCls(errors, "postalCode")} placeholder="e.g. 400001" maxLength={6} />
+                    <input
+                      name="postalCode"
+                      type="text"
+                      value={formData.postalCode}
+                      onChange={(e) => setField("postalCode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      onBlur={handlePostalCodeBlur}
+                      className={inputCls(errors, "postalCode")}
+                      placeholder="e.g. 400001"
+                      maxLength={6}
+                      disabled={postalLookupLoading}
+                    />
+                    <FieldError error={errors.postalCode} />
+                    <p className="mt-1 text-xs text-[#6B7280]">
+                      {postalLookupLoading ? "Checking postal code..." : "Enter 6 digits to auto-fill city, state, and country."}
+                    </p>
                   </div>
                   <div>
                     <label className={labelCls}>Latitude</label>

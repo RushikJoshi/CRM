@@ -1,7 +1,13 @@
+const axios = require("axios");
 const Branch = require("../models/Branch");
+const City = require("../models/City");
 
 const BRANCH_TYPES = ["head_office", "regional_office", "sales_branch", "support_center", "warehouse"];
 const BRANCH_STATUSES = ["active", "inactive", "closed", "draft"];
+
+function escapeRegex(value = "") {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 /** Sanitize body: only allow known fields and enums */
 function sanitizeBranchBody(body) {
@@ -56,6 +62,68 @@ async function generateBranchCode(companyId) {
   }
   return branchCode;
 }
+
+exports.lookupPostalCode = async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const postalCode = String(req.params.postalCode || "").trim();
+    if (!/^\d{6}$/.test(postalCode)) {
+      return res.status(400).json({ success: false, message: "Enter a valid 6-digit postal code" });
+    }
+
+    const response = await axios.get(`https://api.postalpincode.in/pincode/${postalCode}`, {
+      timeout: 8000,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "EduPath-Pro-CRM/1.0",
+      },
+    });
+
+    const office = response.data?.[0]?.PostOffice?.[0];
+    if (response.data?.[0]?.Status !== "Success" || !office) {
+      return res.status(404).json({ success: false, message: "No address found for this postal code" });
+    }
+
+    const possibleCityNames = [office.District, office.Name, office.Block]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    let cityDoc = null;
+    for (const cityName of possibleCityNames) {
+      cityDoc = await City.findOne({
+        isActive: true,
+        name: { $regex: `^${escapeRegex(cityName)}$`, $options: "i" },
+      }).lean();
+
+      if (cityDoc) break;
+    }
+
+    if (!cityDoc && possibleCityNames.length) {
+      cityDoc = await City.findOne({
+        isActive: true,
+        name: { $regex: escapeRegex(possibleCityNames[0]), $options: "i" },
+      }).lean();
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        postalCode,
+        city: cityDoc?.name || office.District || office.Name || "",
+        cityId: cityDoc?._id || null,
+        state: office.State || "",
+        country: office.Country || "India",
+      },
+    });
+  } catch (err) {
+    console.error("POSTAL LOOKUP ERROR:", err.message);
+    return res.status(502).json({
+      success: false,
+      message: "Unable to fetch address details right now. Please enter them manually.",
+    });
+  }
+};
 
 // ── Create Branch ─────────────────────────────────────────────────────────
 exports.createBranch = async (req, res) => {

@@ -46,11 +46,14 @@ exports.initCampaignCron = () => {
  * Processes a single batch for a running campaign
  */
 const processCampaignBatch = async (campaign) => {
-    const { recipients, processedCount, batchSize, delayBetweenBatches } = campaign;
+    const effectiveRecipients = campaign.recipientMode === "MANUAL"
+        ? (campaign.manualRecipients || [])
+        : (campaign.recipients || []);
+    const { processedCount, batchSize, delayBetweenBatches } = campaign;
     const startIndex = processedCount || 0;
-    const endIndex = Math.min(startIndex + batchSize, recipients.length);
+    const endIndex = Math.min(startIndex + batchSize, effectiveRecipients.length);
 
-    const batch = recipients.slice(startIndex, endIndex);
+    const batch = effectiveRecipients.slice(startIndex, endIndex);
     
     // Process messages in the batch one by one with a small 2-5 sec delay to avoid rate limits
     for (let i = 0; i < batch.length; i++) {
@@ -66,7 +69,7 @@ const processCampaignBatch = async (campaign) => {
     // Update campaign progress
     const newProcessedCount = endIndex;
     
-    if (newProcessedCount >= recipients.length) {
+    if (newProcessedCount >= effectiveRecipients.length) {
         campaign.status = "COMPLETED";
         campaign.processedCount = newProcessedCount;
         campaign.nextBatchAt = null;

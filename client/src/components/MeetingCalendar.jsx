@@ -6,7 +6,7 @@ import {
     endOfMonth, eachHourOfInterval, isToday, isPast, addMonths, subMonths
 } from "date-fns";
 import { 
-    FiChevronLeft, FiChevronRight, FiPlus, FiClock, 
+    FiChevronLeft, FiChevronRight, FiClock, 
     FiVideo, FiMapPin, FiX, FiCheck, FiAlertCircle 
 } from "react-icons/fi";
 import API from "../services/api";
@@ -41,6 +41,13 @@ const MeetingCalendar = () => {
     const [dragOffset, setDragOffset] = useState(0);
 
     const currentUser = getCurrentUser();
+    const roleBase = currentUser?.role === "super_admin"
+        ? "/superadmin"
+        : currentUser?.role === "branch_manager"
+            ? "/branch"
+            : currentUser?.role === "sales"
+                ? "/sales"
+                : "/company";
 
     const fetchMeetings = async () => {
         setLoading(true);
@@ -61,13 +68,7 @@ const MeetingCalendar = () => {
     }, [currentDate]);
 
     const handleSlotClick = (date, hour) => {
-        const start = new Date(date);
-        start.setHours(hour, 0, 0, 0);
-        const end = addMinutes(start, 30);
-        setSelectedSlot({ start, end });
-        setEditingMeeting(null);
-        setFormData({ title: "", description: "", channel: "online" });
-        setShowModal(true);
+        toast.info("Create new meetings from the Meetings module.");
     };
 
     const handleMeetingClick = (e, meeting) => {
@@ -293,18 +294,17 @@ const MeetingCalendar = () => {
         <div className="flex bg-[#F8FAFC] min-h-screen animate-in fade-in duration-500">
             {/* Left Panel */}
             <div className="w-80 bg-white border-r border-slate-200 p-6 space-y-8 shrink-0 hidden lg:block">
-                <div>
-                    <button 
-                        onClick={() => {
-                            const now = new Date();
-                            now.setMinutes(Math.ceil(now.getMinutes() / 30) * 30);
-                            setSelectedSlot({ start: now, end: addMinutes(now, 30) });
-                            setEditingMeeting(null);
-                            setShowModal(true);
-                        }}
-                        className="w-full py-4 bg-cyan-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-cyan-600/20 hover:bg-cyan-700 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                <div className="rounded-[28px] border border-slate-100 bg-slate-50 p-5 space-y-3">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Meetings Module</p>
+                    <h3 className="text-lg font-black text-slate-900">Use the dedicated meeting composer</h3>
+                    <p className="text-sm font-medium text-slate-500">
+                        Calendar is view-only for new meeting creation now. Open the meetings module to create online or offline meetings with reminders and sharing.
+                    </p>
+                    <button
+                        onClick={() => window.location.assign(`${roleBase}/meetings`)}
+                        className="w-full py-3 bg-cyan-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-cyan-600/20 hover:bg-cyan-700 transition-all"
                     >
-                        <FiPlus size={18} strokeWidth={3} /> Create Meeting
+                        Open Meetings
                     </button>
                 </div>
 

@@ -121,6 +121,13 @@ export default function LeadDetailPage() {
   const toast = useToast();
   const socket = useSocket();
   const user = getCurrentUser();
+  const roleBase = user?.role === "super_admin"
+    ? "/superadmin"
+    : user?.role === "branch_manager"
+      ? "/branch"
+      : user?.role === "sales"
+        ? "/sales"
+        : "/company";
 
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -158,7 +165,6 @@ export default function LeadDetailPage() {
   const [sendingMsg, setSendingMsg] = useState(false);
   const chatEndRef = useRef(null);
 
-  const [emailData, setEmailData] = useState({ subject: "", body: "" });
   const [prevLeadId, setPrevLeadId] = useState(null);
   const [nextLeadId, setNextLeadId] = useState(null);
   
@@ -196,14 +202,22 @@ export default function LeadDetailPage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [leadRes, pipeRes, actRes, taskRes, userRes] = await Promise.all([
-        API.get(`/leads/${id}`),
+      const leadRes = await API.get(`/leads/${id}`);
+      const leadData = leadRes.data?.data;
+      const entityType = leadRes.data?.entityType || leadData?.type;
+
+      if (entityType === "INQUIRY") {
+        toast.info("This record is an inquiry. Opening the inquiry workspace instead.");
+        navigate(`${roleBase}/inquiries/${id}`, { replace: true });
+        return;
+      }
+
+      const [pipeRes, actRes, taskRes, userRes] = await Promise.all([
         API.get("/leads/pipeline"),
         API.get(`/activities/timeline?leadId=${id}`),
         API.get(`/tasks?leadId=${id}`),
         API.get("/users/assignable")
       ]);
-      const leadData = leadRes.data.data;
       setLead(leadData);
       setDescription(leadData.notes || "");
       
@@ -239,11 +253,23 @@ export default function LeadDetailPage() {
       // Load neighbors
       fetchNeighbors(leadData);
     } catch (err) {
+      if (err.response?.status === 404) {
+        try {
+          await API.get(`/inquiries/${id}`);
+          toast.info("This record is an inquiry. Opening the inquiry workspace instead.");
+          navigate(`${roleBase}/inquiries/${id}`, { replace: true });
+          return;
+        } catch (inquiryErr) {
+          if (inquiryErr.response?.status !== 404) {
+            console.error("Inquiry fallback failed:", inquiryErr);
+          }
+        }
+      }
       toast.error("Failed to load lead workspace.");
     } finally {
       setLoading(false);
     }
-  }, [id, toast, fetchNeighbors]);
+  }, [id, toast, fetchNeighbors, navigate, roleBase]);
 
   useEffect(() => {
     fetchData();
@@ -372,19 +398,6 @@ export default function LeadDetailPage() {
       } else if (actionType === 'task') {
         res = await API.post(`/leads/${id}/tasks`, taskData);
         setTaskData({ title: "", dueDate: new Date().toISOString().split('T')[0], priority: "Medium" });
-      } else if (actionType === 'email') {
-        res = await API.post(`/email/send`, { 
-          leadId: id, 
-          subject: emailData.subject, 
-          body: emailData.body 
-        });
-        setEmailData({ subject: "", body: "" });
-      } else if (actionType === 'meeting') {
-        res = await API.post(`/leads/${id}/interactions`, { 
-          type: "meeting", 
-          message: `Meeting Scheduled`,
-          metadata: {} 
-        });
       } else if (actionType === 'followup') {
         res = await API.patch(`/leads/${id}/follow-up`, { 
           nextFollowUpDate: followUpDate,
@@ -516,13 +529,13 @@ export default function LeadDetailPage() {
                 {/* Navigation Arrows */}
                 <div className="flex items-center gap-1 border-l border-slate-100 pl-4 pointer-events-auto">
                     <button 
-                        onClick={() => prevLeadId && navigate(`/company/leads/${prevLeadId}`)}
+                        onClick={() => prevLeadId && navigate(`${roleBase}/leads/${prevLeadId}`)}
                         disabled={!prevLeadId}
                         className={`p-2 transition-colors ${prevLeadId ? 'text-slate-800 hover:bg-slate-50 rounded-lg cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}>
                         <FiChevronLeft size={16} strokeWidth={3} />
                     </button>
                     <button 
-                        onClick={() => nextLeadId && navigate(`/company/leads/${nextLeadId}`)}
+                        onClick={() => nextLeadId && navigate(`${roleBase}/leads/${nextLeadId}`)}
                         disabled={!nextLeadId}
                         className={`p-2 transition-colors ${nextLeadId ? 'text-slate-800 hover:bg-slate-50 rounded-lg cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}>
                         <FiChevronRight size={16} strokeWidth={3} />
@@ -617,6 +630,38 @@ export default function LeadDetailPage() {
                     <button 
                         key={act.id} 
                         onClick={() => {
+                            if (act.id === 'meeting') {
+                                navigate(`${roleBase}/meetings`, {
+                                    state: {
+                                        prefillMeeting: {
+                                            leadId: lead._id,
+                                            contactName: lead.name || "",
+                                            contactEmail: lead.email || "",
+                                            contactPhone: lead.phone || "",
+                                            title: `${lead.name || "Lead"} Meeting`,
+                                            notes: `Follow-up meeting for ${lead.name || "selected lead"}.`,
+                                            assignedTo: lead.assignedTo?._id || lead.assignedTo || user?.id || "",
+                                        },
+                                    },
+                                });
+                                return;
+                            }
+                            if (act.id === 'email') {
+                                navigate(`${roleBase}/mass-messaging/create`, {
+                                    state: {
+                                        prefillCampaign: {
+                                            channel: "EMAIL",
+                                            audienceType: "LEADS",
+                                            recipientMode: "SELECTED",
+                                            recipients: [lead._id],
+                                            name: `${lead.name || "Lead"} Email`,
+                                            senderName: user?.name || "",
+                                            senderEmail: user?.email || "",
+                                        },
+                                    },
+                                });
+                                return;
+                            }
                             setActionType(act.id === 'docs' ? null : act.id);
                             if(act.id === 'docs') setActiveTab('docs');
                         }}
@@ -682,12 +727,6 @@ export default function LeadDetailPage() {
                                 <input type="date" value={taskData.dueDate} onChange={(e) => setTaskData({...taskData, dueDate: e.target.value})} className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-slate-100 outline-none" required />
                             </div>
                         )}
-                        {actionType === 'email' && (
-                            <div className="space-y-4">
-                                <input type="text" placeholder="Subject" value={emailData.subject} onChange={(e) => setEmailData({...emailData, subject: e.target.value})} className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-slate-100 outline-none" required />
-                                <textarea value={emailData.body} onChange={(e) => setEmailData({...emailData, body: e.target.value})} placeholder="Email content..." className="w-full h-48 bg-white rounded-2xl p-6 text-sm font-medium border border-slate-100 focus:border-indigo-200 outline-none shadow-sm" required />
-                            </div>
-                        )}
                         {actionType === 'followup' && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-2 gap-6">
@@ -707,11 +746,6 @@ export default function LeadDetailPage() {
                                 </div>
                                 <textarea value={followUpNote} onChange={(e) => setFollowUpNote(e.target.value)} placeholder="What's the goal for this next contact?" className="w-full h-24 bg-white rounded-2xl p-6 text-sm font-medium border border-slate-100 focus:border-indigo-200 outline-none shadow-sm" />
                             </div>
-                        )}
-                        {actionType === 'meeting' && (
-                           <div className="p-8 text-center bg-white rounded-3xl border border-slate-100">
-                             <p className="text-sm font-bold text-slate-500 italic">Meeting scheduling is available via the Calendar module.</p>
-                           </div>
                         )}
                         <div className="mt-6 flex justify-end">
                             <button type="submit" disabled={updating} className="px-10 py-3 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.15em] shadow-lg shadow-indigo-200 hover:scale-[1.02] transition-all disabled:opacity-50">

@@ -2,9 +2,17 @@ const mongoose = require("mongoose");
 
 const campaignSchema = new mongoose.Schema({
     name: { type: String, required: true },
+    subject: { type: String, default: "" },
     message: { type: String, required: true },
     channel: { type: String, enum: ["WHATSAPP", "EMAIL"], required: true },
     audienceType: { type: String, enum: ["LEADS", "INQUIRIES"], required: true },
+    templateId: { type: mongoose.Schema.Types.ObjectId, ref: "EmailTemplate", default: null },
+    senderProfileId: { type: mongoose.Schema.Types.ObjectId, ref: "EmailSenderProfile", default: null },
+    senderName: { type: String, default: "" },
+    senderEmail: { type: String, default: "" },
+    previewText: { type: String, default: "" },
+    recipientMode: { type: String, enum: ["ALL", "SELECTED", "MANUAL"], default: "ALL" },
+    manualRecipients: [{ type: String }],
     recipients: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         refPath: 'audienceType' 

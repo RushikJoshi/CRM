@@ -31,6 +31,19 @@ const LiveTest = () => {
   }, [token]);
 
   useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     if (isExamStarted && timeLeft > 0) {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
@@ -161,7 +174,7 @@ const LiveTest = () => {
   const progress = ((currentIndex + 1) / testData.questions.length) * 100;
 
   return (
-    <div className="min-h-screen bg-white font-sans selection:bg-[#9b1c1c] selection:text-white pb-32">
+    <div className="h-screen overflow-hidden bg-white font-sans selection:bg-[#9b1c1c] selection:text-white">
       <ProctoringOverlay 
         key={sessionKey}
         token={token} 
@@ -256,10 +269,10 @@ const LiveTest = () => {
 
       {/* ── DIGITAL EXAMINATION ENGINE ───────────────────────────────────────── */}
       {isExamStarted && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="h-full flex flex-col overflow-hidden">
           
          {/* TOP BAR */}
-         <header className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+         <header className="bg-white border-b border-gray-100 z-50 shadow-sm shrink-0">
             <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center h-24">
                <div className="flex items-center gap-5">
                   <div className="bg-[#9b1c1c]/5 w-14 h-14 rounded-[1.5rem] flex items-center justify-center text-[#9b1c1c] shadow-inner">
@@ -284,12 +297,13 @@ const LiveTest = () => {
             </div>
          </header>
 
-         <main className="max-w-7xl mx-auto px-6 py-12">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+         <main className="flex-1 overflow-hidden">
+            <div className="max-w-7xl mx-auto px-6 py-8 h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
                
                {/* SIDEBAR (Paper Path) */}
                <aside className="lg:col-span-3">
-                  <div className="bg-[#fafafa] rounded-[3rem] p-10 border border-slate-100 shadow-sm sticky top-36">
+                  <div className="bg-[#fafafa] rounded-[3rem] p-10 border border-slate-100 shadow-sm h-full">
                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8">Paper Path</h3>
                      <div className="flex flex-row overflow-x-auto lg:grid lg:grid-cols-4 gap-3 pb-8 border-b border-slate-100 hide-scrollbar">
                         {testData.questions.map((q, i) => (
@@ -331,15 +345,15 @@ const LiveTest = () => {
                      <motion.div 
                             key={currentIndex}
                             initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.4 }}
-                            className="bg-white rounded-[4rem] p-12 lg:p-20 border border-slate-100 shadow-sm min-h-[600px] flex flex-col relative overflow-hidden"
+                            className="bg-white rounded-[4rem] p-10 lg:p-14 border border-slate-100 shadow-sm h-full flex flex-col relative overflow-hidden"
                      >
                            <div className="absolute top-0 right-0 w-64 h-64 bg-[#9b1c1c]/5 rounded-bl-[10rem] pointer-events-none"></div>
                            
-                           <h2 className="text-3xl lg:text-5xl font-black text-[#1a202c] mb-16 leading-[1.1] tracking-tight uppercase italic relative z-10">
+                           <h2 className="text-3xl lg:text-5xl font-black text-[#1a202c] mb-10 leading-[1.1] tracking-tight uppercase italic relative z-10">
                               {currentIndex + 1}. <span className="not-italic opacity-90">{currentQuestion.question}</span>
                            </h2>
 
-                           <div className="space-y-5 mb-20 relative z-10">
+                           <div className="space-y-5 mb-10 relative z-10 flex-1 overflow-hidden">
                               {currentQuestion.options.map((opt, i) => (
                                  <button
                                         key={i} onClick={() => handleSelect(opt)}
@@ -361,7 +375,7 @@ const LiveTest = () => {
                               ))}
                            </div>
 
-                           <div className="mt-auto flex justify-between items-center gap-6 pt-12 border-t border-slate-50 relative z-10">
+                           <div className="mt-auto flex justify-between items-center gap-6 pt-8 border-t border-slate-50 relative z-10 shrink-0">
                                <button onClick={() => setCurrentIndex(prev => prev - 1)} disabled={currentIndex === 0} className="flex items-center gap-3 px-8 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-slate-300 hover:text-[#9b1c1c] hover:bg-[#9b1c1c]/5 disabled:opacity-20 transition-all">
                                   <FiChevronLeft size={24} strokeWidth={3} /> Prev
                                </button>
@@ -379,6 +393,7 @@ const LiveTest = () => {
                      </motion.div>
                   </AnimatePresence>
                </section>
+            </div>
             </div>
          </main>
 

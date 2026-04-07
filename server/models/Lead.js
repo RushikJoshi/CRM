@@ -10,9 +10,17 @@ const leadSchema = new mongoose.Schema(
     email: {
       type: String
     },
+    emailNormalized: {
+      type: String,
+      default: ""
+    },
 
     phone: {
       type: String
+    },
+    phoneNormalized: {
+      type: String,
+      default: ""
     },
 
     companyName: {
@@ -207,6 +215,8 @@ leadSchema.index({ companyId: 1, wonAt: -1 });
 leadSchema.index({ companyId: 1, lostAt: -1 });
 leadSchema.index({ email: 1, companyId: 1 });
 leadSchema.index({ phone: 1, companyId: 1 });
+leadSchema.index({ companyId: 1, type: 1, emailNormalized: 1 });
+leadSchema.index({ companyId: 1, type: 1, phoneNormalized: 1 });
 leadSchema.index({ assignedTo: 1 });
 leadSchema.index({ cityId: 1 });
 leadSchema.index({ assignedBranchId: 1 });

@@ -21,7 +21,9 @@ const {
   logInteraction,
   createTask,
   updateFollowUp,
-  updateTags
+  updateTags,
+  getLeadDuplicates,
+  mergeLead
 } = require("../controllers/leadController");
 const upload = require("../middleware/uploadMiddleware");
 
@@ -29,6 +31,7 @@ router.post("/", auth, requireRole("branch_manager", "sales", "company_admin"), 
 router.get("/", auth, requireRole("branch_manager", "sales", "company_admin", "super_admin"), checkCompanyAccess, getLeads);
 router.get("/pipeline", auth, requireRole("branch_manager", "sales", "company_admin", "super_admin"), checkCompanyAccess, getLeadsPipeline);
 router.get("/lost", auth, requireRole("branch_manager", "sales", "company_admin", "super_admin"), checkCompanyAccess, getLostLeads);
+router.get("/:id/duplicates", auth, requireRole("branch_manager", "sales", "company_admin", "super_admin"), checkCompanyAccess, getLeadDuplicates);
 router.get("/:id", auth, requireRole("branch_manager", "sales", "company_admin", "super_admin"), checkCompanyAccess, getLeadById);
 router.post("/import", auth, requireRole("branch_manager", "company_admin"), checkCompanyAccess, upload.single("file"), importLeads);
 router.patch("/bulk", auth, requireRole("branch_manager", "company_admin"), checkCompanyAccess, bulkUpdateLeads);
@@ -43,5 +46,6 @@ router.post("/:id/tasks", auth, requireRole("branch_manager", "sales", "company_
 router.patch("/:id/follow-up", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, updateFollowUp);
 router.patch("/:id/tags", auth, requireRole("branch_manager", "sales", "company_admin"), checkCompanyAccess, updateTags);
 router.patch("/:id/assign", auth, requireRole("branch_manager", "company_admin", "sales"), checkCompanyAccess, assignLead);
+router.post("/:id/merge", auth, requireRole("branch_manager", "sales", "company_admin", "super_admin"), checkCompanyAccess, mergeLead);
 
 module.exports = router;

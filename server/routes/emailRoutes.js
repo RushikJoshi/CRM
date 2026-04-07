@@ -17,6 +17,12 @@ router.post("/templates", emailController.createTemplate);
 router.patch("/templates/:id", emailController.updateTemplate);
 router.delete("/templates/:id", emailController.deleteTemplate);
 
+// Sender Profiles
+router.get("/senders", emailController.getSenderProfiles);
+router.post("/senders", emailController.createSenderProfile);
+router.patch("/senders/:id", emailController.updateSenderProfile);
+router.delete("/senders/:id", emailController.deleteSenderProfile);
+
 // Sending Route
 router.post("/send", emailController.sendEmail);
 

@@ -1,8 +1,12 @@
-import { Suspense, lazy } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { getSessionKeyForPath, readSession, ROLE_HOME } from "./context/AuthContext";
+import axios from "axios";
+import { Suspense, lazy, useContext, useState } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { api } from "./config/api";
+axios.defaults.withCredentials = true;
+import { AuthContext, getSessionKeyForPath, readSession, ROLE_HOME } from "./context/AuthContext";
 import SessionGuard from "./components/SessionGuard";
-
+import { useEffect, useRef } from "react";
+import { API_BASE_URL } from "./config/api";
 // ── Lazy-loaded Layouts ───────────────────────────────────────────────────────
 const SuperAdminLayout = lazy(() => import("./layouts/SuperAdminLayout"));
 const CompanyAdminLayout = lazy(() => import("./layouts/CompanyAdminLayout"));
@@ -50,6 +54,7 @@ const EmailTemplates = lazy(() => import("./pages/EmailTemplates"));
 const Chat = lazy(() => import("./pages/Chat"));
 const MassMessaging = lazy(() => import("./pages/massMessaging/CampaignDashboard"));
 const CampaignFormPage = lazy(() => import("./pages/massMessaging/CampaignFormPage"));
+const CampaignDetailPage = lazy(() => import("./pages/massMessaging/CampaignDetailPage"));
 
 // ── Test Management System ───────────────────────────────────────────────────
 const CourseManagement = lazy(() => import("./pages/testManagement/CourseManagement"));
@@ -110,18 +115,81 @@ const FallbackRedirect = () => {
   return <Navigate to="/login" replace />;
 };
 
+// ── SSO Verification Service ──
+const verifySSO = async () => {
+  try {
+    const res = await api.get("/auth/sso/me");
+    console.log("SSO RESPONSE DATA:", res.data);
+
+    const user = res.data.user;
+    const token = res.data.token || "sso-session"; // Fallback to temporary session token
+
+    return { user, token };
+
+  } catch (err) {
+    console.log("SSO FAILED:", err.response?.data || err.message);
+    return null;
+  }
+};
+
 function App() {
+  const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+  const [isChecking, setIsChecking] = useState(true);
+  const hasRun = useRef(false);
+
+  useEffect(() => {
+    if (hasRun.current) return; // 🚫 prevent double call
+    hasRun.current = true;
+
+    const checkSSO = async () => {
+      try {
+        const data = await verifySSO();
+
+        if (data && data.user) {
+          const user = data.user;
+          const role = user.role;
+          const token = data.token;
+
+          console.log("SSO LOGIN USER:", data.user);
+
+          // 🔥 SAVE SESSION (as requested for fallback)
+          localStorage.setItem("crm_user", JSON.stringify(user));
+          localStorage.setItem("crm_token", token);
+
+          // 🔥 PROPERLY SAVE SESSION USING AUTH CONTEXT
+          // This handles tokenManager, sessionStorage and state sync
+          await login(token, user, null);
+
+          // 🔥 IMPORTANT FIX
+          if (window.location.pathname === "/login" || window.location.pathname === "/" || window.location.pathname === "") {
+            navigate(ROLE_HOME[role], { replace: true });
+            console.log("Redirecting to:", ROLE_HOME[role]);
+          }
+        }
+      } catch (err) {
+        console.log("No SSO session detected during init");
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkSSO();
+  }, [login, navigate]);
+
+  if (isChecking) return <PageLoader />;
+
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<SmartRedirect />} />
-        
+
         {/* ── High Conversion Assessment Funnel ── */}
         <Route path="/assessment/:companyId/:slug" element={<PublicAssessmentLanding />} />
         <Route path="/assessment/test/:token" element={<AssessmentTest />} />
         <Route path="/assessment/result/:token" element={<AssessmentResult />} />
-        
+
         <Route path="/login" element={<Login />} />
         <Route path="/subscription-expired" element={<SubscriptionExpired />} />
 
@@ -144,12 +212,12 @@ function App() {
           <Route path="/superadmin/usage-analytics" element={<UsageAnalytics />} />
           <Route path="/superadmin/system-logs" element={<SystemLogs />} />
           <Route path="/superadmin/api-keys" element={<ApiKeys />} />
-          
+
           {/* Test Management Sub-module */}
           <Route path="/superadmin/test-management/landing" element={<LandingPageManagement />} />
           <Route path="/superadmin/test-management/courses" element={<CourseManagement />} />
           <Route path="/superadmin/test-management/questions" element={<QuestionManagement />} />
-          
+
           <Route path="/superadmin/reports" element={<Reports />} />
           <Route path="/superadmin/automation" element={<Automation />} />
           <Route path="/superadmin/settings" element={<Settings />} />
@@ -207,6 +275,7 @@ function App() {
           <Route path="/company/chat" element={<Chat />} />
           <Route path="/company/mass-messaging" element={<MassMessaging />} />
           <Route path="/company/mass-messaging/create" element={<CampaignFormPage />} />
+          <Route path="/company/mass-messaging/:id" element={<CampaignDetailPage />} />
           <Route path="/company/settings" element={<Settings />} />
         </Route>
 
@@ -257,6 +326,7 @@ function App() {
           <Route path="/branch/chat" element={<Chat />} />
           <Route path="/branch/mass-messaging" element={<MassMessaging />} />
           <Route path="/branch/mass-messaging/create" element={<CampaignFormPage />} />
+          <Route path="/branch/mass-messaging/:id" element={<CampaignDetailPage />} />
           <Route path="/branch/settings" element={<Settings />} />
         </Route>
 
@@ -299,6 +369,8 @@ function App() {
           <Route path="/sales/email-templates" element={<EmailTemplates />} />
           <Route path="/sales/chat" element={<Chat />} />
           <Route path="/sales/mass-messaging" element={<MassMessaging />} />
+          <Route path="/sales/mass-messaging/create" element={<CampaignFormPage />} />
+          <Route path="/sales/mass-messaging/:id" element={<CampaignDetailPage />} />
           <Route path="/sales/settings" element={<Settings />} />
         </Route>
 

@@ -10,9 +10,21 @@ const emailTemplateSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    category: {
+      type: String,
+      default: "General",
+    },
+    previewText: {
+      type: String,
+      default: "",
+    },
     body: {
       type: String,
       required: true,
+    },
+    design: {
+      type: String,
+      default: "RICH_TEXT",
     },
     companyId: {
       type: mongoose.Schema.Types.ObjectId,

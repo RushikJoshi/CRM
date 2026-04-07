@@ -144,6 +144,22 @@ exports.getActivityTimeline = async (req, res) => {
             }))
         ].filter(item => item.date); // Ensure valid dates
 
+        const entityIds = [...new Set(
+            timeline
+                .map(item => item.leadId)
+                .filter(Boolean)
+                .map(id => String(id))
+        )];
+        if (entityIds.length > 0) {
+            const entities = await Lead.find({ _id: { $in: entityIds } }).select("_id type").lean();
+            const entityTypeById = new Map(entities.map(entity => [String(entity._id), entity.type || "LEAD"]));
+            timeline = timeline.map(item => {
+                if (!item.leadId) return item;
+                const entityType = entityTypeById.get(String(item.leadId)) || "LEAD";
+                return { ...item, entityType };
+            });
+        }
+
         // FILTER BY TYPE IF REQUESTED
         if (req.query.type) {
             timeline = timeline.filter(item => item.type === req.query.type);

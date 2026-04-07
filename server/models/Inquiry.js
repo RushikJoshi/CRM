@@ -5,7 +5,9 @@ const inquirySchema = new mongoose.Schema(
         // ── CORE FIELDS ────────────────────────────────────────────────────────
         name: { type: String, required: true, trim: true },
         email: { type: String, required: true, trim: true, lowercase: true },
+        emailNormalized: { type: String, trim: true, lowercase: true, default: "" },
         phone: { type: String, trim: true },
+        phoneNormalized: { type: String, trim: true, default: "" },
         companyName: { type: String, trim: true },
         
         // ── RBAC & OWNERSHIP ───────────────────────────────────────────────────
@@ -103,6 +105,8 @@ inquirySchema.index({ companyId: 1 });
 inquirySchema.index({ type: 1 });
 inquirySchema.index({ email: 1 });
 inquirySchema.index({ phone: 1 });
+inquirySchema.index({ companyId: 1, type: 1, emailNormalized: 1 });
+inquirySchema.index({ companyId: 1, type: 1, phoneNormalized: 1 });
 inquirySchema.index({ status: 1 });
 inquirySchema.index({ stage: 1 });
 inquirySchema.index({ assignedTo: 1 });

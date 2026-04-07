@@ -31,6 +31,8 @@ const ProctoringOverlay = ({ token, stream, isStarted, proctoringStatus, onViola
         statusRef.current = proctoringStatus;
     }, [proctoringStatus]);
 
+    const dismissWarning = () => setLastWarning("");
+
     // Toast logic (max once per 5 sec)
     const showWarning = (msg) => {
         const now = Date.now();
@@ -222,14 +224,21 @@ const ProctoringOverlay = ({ token, stream, isStarted, proctoringStatus, onViola
 
             {/* Floating Toast Message */}
             <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[300] transition-all duration-700 ${lastWarning ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95 pointer-events-none'}`}>
-                 <div className="bg-[#9b1c1c] text-white px-10 py-6 rounded-[3rem] shadow-4xl flex items-center gap-6 border-2 border-white/20 backdrop-blur-3xl ring-[12px] ring-[#9b1c1c]/10">
+                 <div className="bg-[#9b1c1c] text-white px-10 py-6 rounded-[3rem] shadow-4xl flex items-center gap-6 border-2 border-white/20 backdrop-blur-3xl ring-[12px] ring-[#9b1c1c]/10 max-w-[min(92vw,980px)]">
                     <div className="w-16 h-16 rounded-[1.8rem] bg-white/10 flex items-center justify-center shadow-inner shrink-0">
                         <FiAlertTriangle size={32} className="text-white animate-bounce" strokeWidth={2.5} />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-60 mb-1">Critical Violation Protocol</p>
                         <p className="text-xl font-black tracking-tight italic uppercase leading-none">{lastWarning}</p>
                     </div>
+                    <button
+                        type="button"
+                        onClick={dismissWarning}
+                        className="shrink-0 rounded-full bg-white text-[#9b1c1c] px-6 py-3 text-[10px] font-black uppercase tracking-[0.25em] shadow-xl hover:bg-slate-100 transition-colors"
+                    >
+                        Action
+                    </button>
                  </div>
             </div>
         </>

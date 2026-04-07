@@ -8,6 +8,7 @@ const {
   createBranch,
   getBranches,
   getBranchById,
+  lookupPostalCode,
   updateBranch,
   deleteBranch,
   toggleBranchStatus,
@@ -15,6 +16,7 @@ const {
 
 router.post("/", auth, requireRole("super_admin", "company_admin"), checkCompanyAccess, createBranch);
 router.get("/", auth, requireRole("super_admin", "company_admin", "branch_manager", "sales", "support"), checkCompanyAccess, getBranches);
+router.get("/postal-code/:postalCode", auth, requireRole("super_admin", "company_admin", "branch_manager", "sales", "support"), checkCompanyAccess, lookupPostalCode);
 router.get("/:id", auth, requireRole("super_admin", "company_admin", "branch_manager", "sales", "support"), checkCompanyAccess, getBranchById);
 router.put("/:id", auth, requireRole("super_admin", "company_admin"), checkCompanyAccess, updateBranch);
 router.patch("/:id/toggle-status", auth, requireRole("super_admin", "company_admin"), checkCompanyAccess, toggleBranchStatus);

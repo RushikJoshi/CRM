@@ -41,6 +41,13 @@ const Navbar = ({ toggleMobileSidebar }) => {
         } catch {}
     };
 
+    const openMessageContext = (msg) => {
+        if (!msg?.leadId) return;
+        const entityBase = msg.entityType === "INQUIRY" ? "inquiries" : "leads";
+        navigate(`${base}/${entityBase}/${msg.leadId}`);
+        setShowMessages(false);
+    };
+
     const handleLogout = () => {
         setShowProfileMenu(false);
         logout?.();
@@ -134,7 +141,7 @@ const Navbar = ({ toggleMobileSidebar }) => {
                                         <div className="py-12 text-center text-xs text-slate-400 font-medium">No recent messages</div>
                                     ) : (
                                         recentMessages.map((msg, i) => (
-                                            <div key={msg._id || i} className="p-4 hover:bg-slate-50/50 border-b border-slate-50 last:border-0 cursor-pointer transition-colors" onClick={() => navigate(`${base}/leads/${msg.leadId}`)}>
+                                            <div key={msg._id || i} className="p-4 hover:bg-slate-50/50 border-b border-slate-50 last:border-0 cursor-pointer transition-colors" onClick={() => openMessageContext(msg)}>
                                                 <p className="text-[13px] font-bold text-slate-700 line-clamp-1">{msg.note || msg.title}</p>
                                                 <p className="text-[11px] text-slate-400 mt-1 font-medium">{new Date(msg.createdAt || msg.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                             </div>

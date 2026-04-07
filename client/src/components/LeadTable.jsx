@@ -5,7 +5,7 @@ import {
 } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 
-const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, onView, onAssign, onAddTask }) => {
+const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, onView, onAssign, onAddTask, onMerge }) => {
     const handleSelectAll = (e) => {
         if (e.target.checked) {
             setSelectedIds(leads.map(l => l._id));
@@ -76,6 +76,11 @@ const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, 
                                                 <div className="text-[10px] text-slate-400 font-black uppercase tracking-tighter truncate opacity-70">
                                                     {lead.customId || "No-ID"}
                                                 </div>
+                                                {lead.duplicateCount > 0 && (
+                                                    <div className="mt-1 inline-flex px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[9px] font-black uppercase tracking-widest border border-amber-100">
+                                                        {lead.duplicateCount} Duplicate{lead.duplicateCount > 1 ? "s" : ""}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </td>
@@ -119,6 +124,14 @@ const LeadTable = ({ leads, selectedIds = [], setSelectedIds, onEdit, onDelete, 
                                             >
                                                 <FiEdit2 size={13} /> Edit
                                             </button>
+                                            {lead.duplicateCount > 0 && (
+                                                <button
+                                                    onClick={() => onMerge?.(lead)}
+                                                    className="flex items-center gap-1.5 text-[10px] font-black text-amber-500 hover:text-amber-600 uppercase tracking-widest transition-all"
+                                                >
+                                                    Merge
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

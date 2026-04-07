@@ -5,7 +5,7 @@ const emailLogSchema = new mongoose.Schema(
     leadId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Lead",
-      required: true,
+      default: null,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -20,6 +20,16 @@ const emailLogSchema = new mongoose.Schema(
     templateId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "EmailTemplate",
+      default: null,
+    },
+    campaignId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Campaign",
+      default: null,
+    },
+    campaignLogId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CampaignLog",
       default: null,
     },
     subject: {
@@ -58,9 +68,13 @@ const emailLogSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    fromAddress: {
+      type: String,
+      default: "",
+    },
     status: {
       type: String,
-      enum: ["sent", "failed"],
+      enum: ["sent", "failed", "opened", "clicked"],
       default: "sent",
     },
   },

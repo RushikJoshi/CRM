@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const http = require("http");
 const { Server } = require("socket.io");
 
@@ -39,19 +40,19 @@ app.use(helmet({
 
 // CSP Fix (Production Safe) - Add as middleware
 app.use((req, res, next) => {
-  if (process.env.NODE_ENV === "production") {
-    res.setHeader(
-      "Content-Security-Policy",
-      "default-src 'self'; " +
-      "connect-src 'self' https://app.gitakshmilabs.com https://app.dev.gitakshmilabs.com wss://app.gitakshmilabs.com wss://app.dev.gitakshmilabs.com http://localhost:5003 ws://localhost:5003 https://fonts.googleapis.com https://fonts.gstatic.com https://api.postalpincode.in; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-      "font-src 'self' https://fonts.gstatic.com data:; " +
-      "img-src 'self' data: blob:; " +
-      "media-src 'self' blob:;"
-    );
-  }
-  next();
+    if (process.env.NODE_ENV === "production") {
+        res.setHeader(
+            "Content-Security-Policy",
+            "default-src 'self'; " +
+            "connect-src 'self' https://app.gitakshmilabs.com https://app.dev.gitakshmilabs.com wss://app.gitakshmilabs.com wss://app.dev.gitakshmilabs.com http://localhost:5003 ws://localhost:5003 https://fonts.googleapis.com https://fonts.gstatic.com https://api.postalpincode.in; " +
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+            "font-src 'self' https://fonts.gstatic.com data:; " +
+            "img-src 'self' data: blob:; " +
+            "media-src 'self' blob:;"
+        );
+    }
+    next();
 });
 
 // Global Rate Limiter (Prevent 429 Errors & stabilize production)
@@ -71,7 +72,7 @@ app.use("/api/", limiter);
 // ── Origins handled above ──
 
 // ── Placeholder for relocation ──
-
+app.use(cookieParser());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
@@ -83,7 +84,7 @@ app.use((req, res, next) => {
 
 /* ================= PUBLIC ROUTES ================= */
 app.use("/api/public", require("./routes/publicRoutes"));
-app.use("/api/track", require("./routes/trackRoutes")); 
+app.use("/api/track", require("./routes/trackRoutes"));
 // app.use("/api/events", forceJsonResponse(false), require("./routes/trackRoutes")); 
 
 function forceJsonResponse(val) {
@@ -110,7 +111,6 @@ app.use("/api/meetings", require("./routes/meetingRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/search", require("./routes/searchRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
-app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/audit-logs", require("./routes/auditLogRoutes"));
 app.use("/api/automation", require("./routes/automationRoutes"));
@@ -147,7 +147,7 @@ mongoose.connect(process.env.MONGO_URI)
     .then(async () => {
         const dbName = mongoose.connection.db.databaseName;
         console.log(`✅ MongoDB Connected to DB: ${dbName}`);
-        
+
         // ── 🛠️ UNIFIED COLLECTION MIGRATION (Seamless Evolution) ──────────────────
         try {
             const Inquiry = require("./models/Inquiry");
@@ -161,7 +161,7 @@ mongoose.connect(process.env.MONGO_URI)
             const cityCount = await City.countDocuments();
             if (cityCount < defaultCities.length) {
                 console.log(`🏙️  City count (${cityCount}) is less than master list (${defaultCities.length}). Seeding missing cities...`);
-                
+
                 const bulkOps = defaultCities.map(city => ({
                     updateOne: {
                         filter: { name: city.name },
@@ -178,7 +178,7 @@ mongoose.connect(process.env.MONGO_URI)
 
             // 1. Tag all existing inquiries as INQUIRY (if not already)
             const inquirySync = await Inquiry.updateMany(
-                { type: { $exists: false } }, 
+                { type: { $exists: false } },
                 { $set: { type: "INQUIRY" } }
             );
             if (inquirySync.modifiedCount > 0) console.log(`🏷️  Updated ${inquirySync.modifiedCount} legacy records to INQUIRY.`);
@@ -189,21 +189,21 @@ mongoose.connect(process.env.MONGO_URI)
                 const legacyLeads = await db.collection("leads").find({}).toArray();
                 if (legacyLeads.length > 0) {
                     console.log(`📡 Moving ${legacyLeads.length} records from 'leads' to unified inquiries...`);
-                    
+
                     for (const lead of legacyLeads) {
                         // Check if already moved to prevent duplicates
-                        const exists = await Inquiry.findOne({ 
+                        const exists = await Inquiry.findOne({
                             $or: [
-                                { _id: lead._id }, 
+                                { _id: lead._id },
                                 { email: lead.email, phone: lead.phone, companyId: lead.companyId, type: "LEAD" }
-                            ] 
+                            ]
                         });
 
                         if (!exists) {
                             const { _id, ...leadData } = lead;
-                            await Inquiry.create({ 
-                                ...leadData, 
-                                _id, 
+                            await Inquiry.create({
+                                ...leadData,
+                                _id,
                                 type: "LEAD",
                                 status: lead.status || "ASSIGNED"
                             });
@@ -256,7 +256,7 @@ io.on("connection", (socket) => {
         socket.join(`user:${userId}`);
         onlineUsers.add(userId);
         console.log(`🔌 User joined room: user:${userId} | Online: ${onlineUsers.size}`);
-        
+
         // Broadcast presence update (bonus)
         if (companyId) {
             io.to(`company:${companyId}`).emit("presence:update", Array.from(onlineUsers));
@@ -277,7 +277,7 @@ io.on("connection", (socket) => {
         if (userId) {
             onlineUsers.delete(userId);
             console.log(`❌ User disconnected: ${userId} | Online: ${onlineUsers.size}`);
-            
+
             if (companyId) {
                 io.to(`company:${companyId}`).emit("presence:update", Array.from(onlineUsers));
             }
@@ -290,6 +290,9 @@ initFollowUpCron(io);
 
 const { initCampaignCron } = require("./cron/campaignCron");
 initCampaignCron();
+
+const { initMeetingReminderCron } = require("./cron/meetingReminderCron");
+initMeetingReminderCron();
 
 app.set("io", io);
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FiSearch, FiMapPin, FiChevronDown, FiX } from "react-icons/fi";
 import API from "../services/api";
 
-const CitySelect = ({ value, onChange, placeholder = "Search and select city...", error, disabled }) => {
+const CitySelect = ({ value, onChange, placeholder = "Search and select city...", error, disabled, displayText = "" }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -74,7 +74,7 @@ const CitySelect = ({ value, onChange, placeholder = "Search and select city..."
 
   const handleSelect = (city) => {
     setSelectedCityName(city.name);
-    onChange(city._id, city.name); // Send cityId and name back
+    onChange(city._id, city.name, city);
     setIsOpen(false);
     setSearchTerm("");
   };
@@ -95,9 +95,9 @@ const CitySelect = ({ value, onChange, placeholder = "Search and select city..."
         } ${disabled ? "opacity-50 cursor-not-allowed bg-slate-50" : ""}`}
       >
         <div className="flex items-center gap-2 truncate">
-          <FiMapPin className={selectedCityName ? "text-indigo-500" : "text-slate-400"} size={14} />
-          <span className={selectedCityName ? "text-slate-900 font-medium" : "text-slate-400"}>
-            {selectedCityName || placeholder}
+          <FiMapPin className={selectedCityName || displayText ? "text-indigo-500" : "text-slate-400"} size={14} />
+          <span className={selectedCityName || displayText ? "text-slate-900 font-medium" : "text-slate-400"}>
+            {selectedCityName || displayText || placeholder}
           </span>
         </div>
         

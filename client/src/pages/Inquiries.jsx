@@ -83,6 +83,18 @@ const InquiriesPage = () => {
         fetchInquiries();
     };
 
+    const handleMerge = async (item) => {
+        if (!item?._id) return;
+        if (!window.confirm(`Merge this duplicate inquiry into the oldest matching inquiry for ${item.name}?`)) return;
+        try {
+            await API.post(`/inquiries/${item._id}/merge`);
+            toast.success("Duplicate inquiry merged.");
+            fetchInquiries();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to merge inquiry.");
+        }
+    };
+
     if (activeTask === 'create' || activeTask === 'edit') {
         return (
             <div className="animate-fade-in bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
@@ -203,6 +215,11 @@ const InquiriesPage = () => {
                                                     <div className="min-w-0">
                                                         <div className="font-bold text-slate-800 text-[12px] truncate group-hover:text-teal-600 transition-colors leading-tight">{item.name}</div>
                                                         <div className="text-[10px] text-slate-400 font-black uppercase tracking-tighter truncate opacity-70 mt-0.5">{item.email}</div>
+                                                        {item.duplicateCount > 0 && (
+                                                            <div className="mt-1 inline-flex px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[9px] font-black uppercase tracking-widest border border-amber-100">
+                                                                {item.duplicateCount} Duplicate{item.duplicateCount > 1 ? "s" : ""}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
@@ -235,6 +252,14 @@ const InquiriesPage = () => {
                                             </td>
                                             <td className="saas-td-excel text-right px-6" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex items-center justify-end gap-1.5 translate-x-3">
+                                                    {item.duplicateCount > 0 && (
+                                                        <button
+                                                            onClick={() => handleMerge(item)}
+                                                            className="h-7 px-3 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-amber-100 transition-all active:scale-95 border border-amber-100"
+                                                        >
+                                                            Merge
+                                                        </button>
+                                                    )}
                                                     {item.status !== "converted" ? (
                                                         <button
                                                             onClick={() => handleConvert(item._id)}

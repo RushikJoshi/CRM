@@ -8,6 +8,7 @@ const Pipeline = require("../models/Pipeline"); // DYNAMIC PIPELINE
 const { runAutomation } = require("../utils/automationEngine");
 const { calculateLeadScore, assignLeadAutomatically } = require("../utils/leadManagement");
 const { logChange, createAuditEntry } = require("../utils/auditLogger");
+const { annotateDuplicates, findDuplicateCandidates, mergePrimaryRecordData, normalizeEmail, normalizePhone, reassignLinkedDocuments } = require("../utils/duplicateUtils");
 const Activity = require("../models/Activity");
 const { getNextCustomId } = require("../utils/idGenerator");
 const leadRoutingService = require("../services/leadRouting.service");
@@ -73,6 +74,10 @@ exports.createLead = async (req, res) => {
     }
 
     const cleanData = { ...req.body };
+    cleanData.email = cleanData.email ? String(cleanData.email).trim().toLowerCase() : "";
+    cleanData.phone = cleanData.phone ? String(cleanData.phone).trim() : "";
+    cleanData.emailNormalized = normalizeEmail(cleanData.email);
+    cleanData.phoneNormalized = normalizePhone(cleanData.phone);
     if (cleanData.sourceId === "") cleanData.sourceId = null;
     if (cleanData.assignedTo === "") cleanData.assignedTo = null;
 
@@ -274,9 +279,11 @@ exports.getLeads = async (req, res) => {
       })
     );
 
+    const leadsWithDuplicateInfo = await annotateDuplicates(Lead, leadsWithTaskCounts, "LEAD");
+
     res.json({
       success: true,
-      data: leadsWithTaskCounts,
+      data: leadsWithDuplicateInfo,
       total,
       page: pageNum,
       limit: limitNum,
@@ -293,7 +300,7 @@ exports.getLeads = async (req, res) => {
 exports.getLeadById = async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ success: false, message: "Unauthorized" });
-    const query = { _id: req.params.id, isDeleted: false, type: { $ne: "INQUIRY" } };
+    const query = { _id: req.params.id, isDeleted: false };
     if (req.user.role !== "super_admin") {
       query.companyId = req.user.companyId;
       if (req.user.role === "branch_manager") {
@@ -316,7 +323,15 @@ exports.getLeadById = async (req, res) => {
       .populate("branchId", "name")
       .populate("sourceId");
     if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
-    res.json({ success: true, data: lead });
+    if (lead.type === "INQUIRY") {
+      return res.json({
+        success: true,
+        entityType: "INQUIRY",
+        redirectTo: `/inquiries/${lead._id}`,
+        data: lead
+      });
+    }
+    res.json({ success: true, entityType: "LEAD", data: lead });
   } catch (error) {
     console.error("GET LEAD BY ID ERROR:", error);
     res.status(500).json({ success: false, message: error.message });
@@ -349,6 +364,14 @@ exports.updateLead = async (req, res) => {
     if (!previousLead) return res.status(404).json({ success: false, message: "Lead not found" });
 
     const updateData = { ...req.body };
+    if (Object.prototype.hasOwnProperty.call(updateData, "email")) {
+      updateData.email = updateData.email ? String(updateData.email).trim().toLowerCase() : "";
+      updateData.emailNormalized = normalizeEmail(updateData.email);
+    }
+    if (Object.prototype.hasOwnProperty.call(updateData, "phone")) {
+      updateData.phone = updateData.phone ? String(updateData.phone).trim() : "";
+      updateData.phoneNormalized = normalizePhone(updateData.phone);
+    }
     if (updateData.sourceId === "") updateData.sourceId = null;
     if (updateData.assignedTo === "") updateData.assignedTo = null;
 
@@ -639,7 +662,7 @@ exports.getLeadsPipeline = async (req, res) => {
 
     const companyId = req.user.companyId;
 
-    let filter = { isDeleted: false, isLost: { $ne: true } };
+    let filter = { isDeleted: false, isLost: { $ne: true }, type: { $ne: "INQUIRY" } };
     if (req.user.role !== "super_admin") {
       filter.companyId = companyId;
       if (req.user.role === "branch_manager" && req.user.branchId) {
@@ -1160,4 +1183,117 @@ exports.updateTags = async (req, res) => {
         console.error("UPDATE TAGS ERROR:", error);
         res.status(500).json({ success: false, message: error.message });
     }
-};
+};
+
+exports.getLeadDuplicates = async (req, res) => {
+  try {
+    const baseQuery = { _id: req.params.id, companyId: req.user.companyId, type: "LEAD", isDeleted: false };
+    if (req.user.role === "branch_manager") {
+      baseQuery.$or = [
+        { branchId: req.user.branchId },
+        { assignedBranchId: req.user.branchId },
+        { assignedManagerId: req.user.id }
+      ];
+    }
+    if (req.user.role === "sales") {
+      baseQuery.$or = [
+        { assignedTo: req.user.id },
+        { assignedSalesIds: req.user.id }
+      ];
+    }
+
+    const lead = await Lead.findOne(baseQuery).lean();
+    if (!lead) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    const duplicates = await findDuplicateCandidates(Lead, {
+      companyId: req.user.companyId,
+      type: "LEAD",
+      email: lead.email,
+      phone: lead.phone,
+      excludeId: lead._id,
+    });
+
+    res.json({ success: true, data: duplicates });
+  } catch (error) {
+    console.error("GET LEAD DUPLICATES ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.mergeLead = async (req, res) => {
+  try {
+    const sourceQuery = { _id: req.params.id, companyId: req.user.companyId, type: "LEAD", isDeleted: false };
+    if (req.user.role === "branch_manager") {
+      sourceQuery.$or = [
+        { branchId: req.user.branchId },
+        { assignedBranchId: req.user.branchId },
+        { assignedManagerId: req.user.id }
+      ];
+    }
+    if (req.user.role === "sales") {
+      sourceQuery.$or = [
+        { assignedTo: req.user.id },
+        { assignedSalesIds: req.user.id }
+      ];
+    }
+
+    const source = await Lead.findOne(sourceQuery);
+    if (!source) return res.status(404).json({ success: false, message: "Lead not found" });
+
+    let target = null;
+    if (req.body?.targetId) {
+      target = await Lead.findOne({
+        _id: req.body.targetId,
+        companyId: req.user.companyId,
+        type: "LEAD",
+        isDeleted: false,
+      });
+    } else {
+      const duplicates = await findDuplicateCandidates(Lead, {
+        companyId: req.user.companyId,
+        type: "LEAD",
+        email: source.email,
+        phone: source.phone,
+        excludeId: source._id,
+      });
+      if (duplicates.length) {
+        target = await Lead.findById(duplicates[0]._id);
+      }
+    }
+
+    if (!target) {
+      return res.status(400).json({ success: false, message: "No duplicate lead found to merge into." });
+    }
+
+    mergePrimaryRecordData(target, source);
+    source.isDeleted = true;
+    source.notes = mergeTextForDeletion(source.notes, target._id);
+
+    await Promise.all([
+      target.save(),
+      source.save(),
+      reassignLinkedDocuments({ sourceId: source._id, targetId: target._id, type: "LEAD" }),
+      Activity.create({
+        leadId: target._id,
+        userId: req.user.id,
+        companyId: req.user.companyId,
+        branchId: target.branchId || null,
+        type: "system",
+        note: `Merged duplicate lead ${source.name || source._id} into ${target.name || target._id}`,
+        metadata: { mergedFromId: source._id, mergedIntoId: target._id }
+      })
+    ]);
+
+    const mergedLead = await Lead.findById(target._id).populate("assignedTo", "name email role").lean();
+    res.json({ success: true, message: "Lead merged successfully.", data: mergedLead });
+  } catch (error) {
+    console.error("MERGE LEAD ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+function mergeTextForDeletion(existingNotes, targetId) {
+  const base = String(existingNotes || "").trim();
+  const suffix = `Merged into record ${targetId}`;
+  return base ? `${base}\n\n${suffix}` : suffix;
+}

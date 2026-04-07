@@ -4,7 +4,10 @@ const Lead = require("../models/Inquiry"); // Unified model
 const Activity = require("../models/Activity");
 const nodemailer = require("nodemailer");
 const MessageTracking = require("../models/MessageTracking");
+const EmailSenderProfile = require("../models/EmailSenderProfile");
+const CampaignLog = require("../models/CampaignLog");
 const { updateLeadEngagement, POINTS } = require("../utils/engagementTracker");
+const { getTrackingBaseUrl } = require("../utils/trackingUrl");
 
 // SMTP Transporter setup assuming these env vars exist or will be added.
 const transporter = nodemailer.createTransport({
@@ -17,6 +20,25 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const getTransportFromProfile = (profile) => {
+  if (!profile) return transporter;
+  return nodemailer.createTransport({
+    host: profile.smtpHost || process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(profile.smtpPort, 10) || parseInt(process.env.SMTP_PORT, 10) || 587,
+    secure: profile.smtpSecure === true,
+    auth: {
+      user: profile.smtpUser || process.env.SMTP_USER,
+      pass: profile.smtpPass || process.env.SMTP_PASS,
+    },
+  });
+};
+
+const getFromAddress = (profile, fallbackEmail) => {
+  const fromName = profile?.fromName || "CRM Notification";
+  const fromEmail = profile?.fromEmail || fallbackEmail || process.env.SMTP_USER || "";
+  return `"${fromName}" <${fromEmail}>`;
+};
+
 exports.getTemplates = async (req, res) => {
   try {
     const templates = await EmailTemplate.find({
@@ -24,6 +46,69 @@ exports.getTemplates = async (req, res) => {
       isDeleted: false,
     }).sort({ createdAt: -1 });
     res.status(200).json({ status: "success", data: templates });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+};
+
+exports.getSenderProfiles = async (req, res) => {
+  try {
+    const profiles = await EmailSenderProfile.find({
+      companyId: req.user.companyId,
+      isDeleted: false,
+    }).sort({ isDefault: -1, createdAt: -1 });
+    res.status(200).json({ status: "success", data: profiles });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+};
+
+exports.createSenderProfile = async (req, res) => {
+  try {
+    const payload = {
+      ...req.body,
+      companyId: req.user.companyId,
+      createdBy: req.user.id,
+    };
+    if (payload.isDefault) {
+      await EmailSenderProfile.updateMany(
+        { companyId: req.user.companyId, isDeleted: false },
+        { isDefault: false }
+      );
+    }
+    const profile = await EmailSenderProfile.create(payload);
+    res.status(201).json({ status: "success", data: profile });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+};
+
+exports.updateSenderProfile = async (req, res) => {
+  try {
+    if (req.body.isDefault) {
+      await EmailSenderProfile.updateMany(
+        { companyId: req.user.companyId, isDeleted: false },
+        { isDefault: false }
+      );
+    }
+    const profile = await EmailSenderProfile.findOneAndUpdate(
+      { _id: req.params.id, companyId: req.user.companyId, isDeleted: false },
+      req.body,
+      { new: true }
+    );
+    res.status(200).json({ status: "success", data: profile });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+};
+
+exports.deleteSenderProfile = async (req, res) => {
+  try {
+    await EmailSenderProfile.findOneAndUpdate(
+      { _id: req.params.id, companyId: req.user.companyId },
+      { isDeleted: true, isDefault: false }
+    );
+    res.status(200).json({ status: "success", message: "Sender profile deleted" });
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message });
   }
@@ -68,7 +153,7 @@ exports.deleteTemplate = async (req, res) => {
 };
 
 exports.sendEmail = async (req, res) => {
-  const { leadId, templateId, subject, body, to, from } = req.body;
+  const { leadId, templateId, subject, body, to, from, senderProfileId } = req.body;
   if (!leadId) return res.status(400).json({ success: false, message: "leadId is required" });
   if (!subject || !body) return res.status(400).json({ success: false, message: "subject and body are required" });
   try {
@@ -80,6 +165,11 @@ exports.sendEmail = async (req, res) => {
 
     console.log("SENDING EMAIL TO:", recipientEmail);
     console.log("SMTP USER:", process.env.SMTP_USER);
+
+    const senderProfile = senderProfileId
+      ? await EmailSenderProfile.findOne({ _id: senderProfileId, companyId: req.user.companyId, isDeleted: false })
+      : null;
+    const activeTransporter = getTransportFromProfile(senderProfile);
 
     let finalSubject = subject;
     let finalBody = body;
@@ -106,12 +196,19 @@ exports.sendEmail = async (req, res) => {
       subject: finalSubject,
       body: finalBody,
       toAddress: recipientEmail,
+      fromAddress: senderProfile?.fromEmail || from || process.env.SMTP_FROM || process.env.SMTP_USER || "",
     });
 
     // Tracking pixel (New Engagement System)
-    const engagementTrackingUrl = `${process.env.API_BASE_URL || process.env.BASE_URL + "/api"}/track/email/${emailLog._id}`;
-    const engagementPixelHtml = `<img src="${engagementTrackingUrl}" width="1" height="1" style="display:none;" />`;
-    finalBody += engagementPixelHtml;
+    const trackingBase = getTrackingBaseUrl();
+    if (trackingBase) {
+      const engagementTrackingUrl = `${trackingBase}/email/track/open/${emailLog._id}`;
+      const clickBase = `${trackingBase}/email/track/click/${emailLog._id}?url=`;
+      finalBody = finalBody.replace(/href=(["'])(.*?)\1/g, (_match, quote, url) => {
+        return `href=${quote}${clickBase}${encodeURIComponent(url)}${quote}`;
+      });
+      finalBody += `<img src="${engagementTrackingUrl}" width="1" height="1" style="display:none;" />`;
+    }
 
     // Create MessageTracking entry
     await MessageTracking.create({
@@ -129,8 +226,8 @@ exports.sendEmail = async (req, res) => {
     await emailLog.save();
 
     // Send via Nodemailer
-    await transporter.sendMail({
-      from: from || process.env.SMTP_FROM || `"CRM Notification" <${process.env.SMTP_USER}>`,
+    await activeTransporter.sendMail({
+      from: from || getFromAddress(senderProfile, process.env.SMTP_FROM || process.env.SMTP_USER),
       to: recipientEmail,
       subject: finalSubject,
       html: finalBody,
@@ -165,23 +262,41 @@ exports.trackOpen = async (req, res) => {
       log.isOpened = true;
       log.openedAt = new Date();
       log.openedCount += 1;
+      log.status = "opened";
       await log.save();
 
+      if (log.campaignLogId) {
+        await CampaignLog.findByIdAndUpdate(log.campaignLogId, {
+          status: "OPENED",
+          openedAt: log.openedAt,
+          $inc: { openedCount: 1 },
+          emailLogId: log._id,
+        });
+      }
+
       // Lead Scoring (+10)
-      await Lead.findByIdAndUpdate(log.leadId, { $inc: { score: 10 } });
+      if (log.leadId) await Lead.findByIdAndUpdate(log.leadId, { $inc: { score: 10 } });
 
       // Activity for tracking
-      await Activity.create({
-        leadId: log.leadId,
-        userId: log.userId, // Attributing to the sender
-        companyId: log.companyId,
-        type: "system",
-        title: "Email Opened",
-        note: `The recipient opened the email: ${log.subject}`,
-      });
+      if (log.leadId) {
+        await Activity.create({
+          leadId: log.leadId,
+          userId: log.userId, // Attributing to the sender
+          companyId: log.companyId,
+          type: "system",
+          title: "Email Opened",
+          note: `The recipient opened the email: ${log.subject}`,
+        });
+      }
     } else if (log) {
       log.openedCount += 1;
       await log.save();
+      if (log.campaignLogId) {
+        await CampaignLog.findByIdAndUpdate(log.campaignLogId, {
+          $inc: { openedCount: 1 },
+          emailLogId: log._id,
+        });
+      }
     }
   } catch (err) {
     console.error("TRACKING ERROR:", err);
@@ -209,23 +324,41 @@ exports.trackClick = async (req, res) => {
         log.isClicked = true;
         log.clickedAt = new Date();
         log.clickedCount += 1;
+        log.status = "clicked";
         await log.save();
 
+        if (log.campaignLogId) {
+          await CampaignLog.findByIdAndUpdate(log.campaignLogId, {
+            status: "CLICKED",
+            clickedAt: log.clickedAt,
+            $inc: { clickedCount: 1 },
+            emailLogId: log._id,
+          });
+        }
+
         // Lead Scoring (+20)
-        await Lead.findByIdAndUpdate(log.leadId, { $inc: { score: 20 } });
+        if (log.leadId) await Lead.findByIdAndUpdate(log.leadId, { $inc: { score: 20 } });
 
         // Activity for tracking
-        await Activity.create({
-          leadId: log.leadId,
-          userId: log.userId,
-          companyId: log.companyId,
-          type: "system",
-          title: "Link Clicked",
-          note: `Recipient clicked a link in the email: ${url}`,
-        });
+        if (log.leadId) {
+          await Activity.create({
+            leadId: log.leadId,
+            userId: log.userId,
+            companyId: log.companyId,
+            type: "system",
+            title: "Link Clicked",
+            note: `Recipient clicked a link in the email: ${url}`,
+          });
+        }
       } else {
         log.clickedCount += 1;
         await log.save();
+        if (log.campaignLogId) {
+          await CampaignLog.findByIdAndUpdate(log.campaignLogId, {
+            $inc: { clickedCount: 1 },
+            emailLogId: log._id,
+          });
+        }
       }
     }
   } catch (err) {

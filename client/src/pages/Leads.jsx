@@ -78,6 +78,18 @@ function Leads() {
         }
     };
 
+    const handleMerge = async (lead) => {
+        if (!lead?._id) return;
+        if (!window.confirm(`Merge this duplicate lead into the oldest matching lead for ${lead.name}?`)) return;
+        try {
+            await API.post(`/leads/${lead._id}/merge`);
+            toast.success("Duplicate lead merged.");
+            fetchLeads();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to merge lead.");
+        }
+    };
+
     const [selectedIds, setSelectedIds] = useState([]);
 
     const handleExportCSV = () => {
@@ -275,6 +287,7 @@ function Leads() {
                         onView={(l) => l?._id && navigate(`${formBase}/${l._id}`)}
                         onAssign={(l) => { setAssignLead(l); setActiveTask('assign'); }}
                         onAddTask={(l) => { setTaskLead(l); setActiveTask('task'); }}
+                        onMerge={handleMerge}
                         onBulkAction={handleBulkAction}
                     />
                     <div className="flex items-center justify-end">
