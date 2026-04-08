@@ -59,9 +59,30 @@ const inputCls = (errors, field) =>
   `w-full px-3 py-2 bg-white border rounded-lg text-sm text-[#111827] placeholder-[#9CA3AF] outline-none transition-all focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] ${
     errors[field] ? "border-[#EF4444]" : "border-[#E5E7EB]"
   }`;
-const labelCls = "block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1.5";
+const labelCls = "block text-sm font-medium text-[#6B7280] mb-1.5";
 const cardCls = "bg-white rounded-xl border border-[#E5E7EB] shadow-sm overflow-hidden";
-const sectionTitleCls = "flex items-center gap-2 text-xs font-bold text-[#111827] uppercase tracking-wider px-4 py-2.5 border-b border-[#E5E7EB] bg-[#F8FAFC]";
+const sectionTitleCls = "flex items-center gap-2 text-sm font-semibold text-[#111827] px-5 py-4 border-b border-[#E5E7EB] bg-[#F8FAFC]";
+const requiredNumberRule = (label) => (value) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return `${label} is required`;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return `${label} must be a valid number`;
+  if (n < 0) return `${label} cannot be negative`;
+  return null;
+};
+const commissionRule = (value) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "Commission % is required";
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return "Commission % must be a valid number";
+  if (n < 0 || n > 100) return "Commission % must be between 0 and 100";
+  return null;
+};
+const passwordStrengthRule = (value) => {
+  if (!String(value || "").trim()) return "Password is required";
+  if (String(value).length < 8) return "Password must be at least 8 characters";
+  return null;
+};
 
 const defaultForm = (currentUser) => ({
   firstName: "",
@@ -134,43 +155,103 @@ export default function UserFormPage() {
 
   const fullSchema = useMemo(() => ({
     firstName: [rules.required("First name")],
-    lastName: [],
-    workEmail: [],
-    personalEmail: [],
-    email: [rules.required("Email")],
-    password: [rules.required("Password")],
+    lastName: [rules.required("Last name")],
+    displayName: [rules.required("Display name")],
+    gender: [rules.required("Gender")],
+    dateOfBirth: [rules.required("Date of birth")],
+    workEmail: [rules.required("Work email"), rules.email()],
+    personalEmail: [rules.required("Personal email"), rules.email()],
+    phone: [rules.required("Phone"), rules.phone()],
+    alternatePhone: [rules.required("Alternate phone"), rules.phone()],
+    whatsappNumber: [rules.required("WhatsApp number"), rules.phone()],
+    address: [rules.required("Address")],
+    cityId: [rules.required("City")],
+    primaryBranchId: [rules.required("Primary branch")],
+    employeeId: [rules.required("Employee ID")],
+    jobTitle: [rules.required("Job title")],
+    joiningDate: [rules.required("Joining date")],
+    employmentType: [rules.required("Employment type")],
+    salesTarget: [requiredNumberRule("Sales target")],
+    commissionPercentage: [commissionRule],
+    leadAssignmentRule: [rules.required("Lead assignment rule")],
+    defaultPipelineId: [rules.required("Default pipeline")],
+    username: [rules.required("Username")],
+    email: [rules.required("Email"), rules.email()],
+    password: [passwordStrengthRule],
+    confirmPassword: [
+      (value) => {
+        if (!String(formData.password || "").trim()) return null;
+        if (!String(value || "").trim()) return "Confirm password is required";
+        if (value !== formData.password) return "Password and Confirm Password do not match";
+        return null;
+      },
+    ],
     role: [rules.required("Role")],
+    department: [rules.required("Department")],
+    reportingManagerId: [rules.required("Reporting manager")],
+    permissionLevel: [rules.required("Permission level")],
+    status: [rules.required("Status")],
+    language: [rules.required("Language")],
+    timezone: [rules.required("Timezone")],
     ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
-  }), [isSuperAdmin]);
+  }), [isSuperAdmin, formData.password]);
 
-  const stepSchema = useMemo(() => {
-    switch (step) {
+  const getStepSchema = useCallback((stepIndex) => {
+    switch (stepIndex) {
       case 0:
         return {
           firstName: fullSchema.firstName,
           lastName: fullSchema.lastName,
+          displayName: fullSchema.displayName,
+          gender: fullSchema.gender,
+          dateOfBirth: fullSchema.dateOfBirth,
           workEmail: fullSchema.workEmail,
           personalEmail: fullSchema.personalEmail,
+          phone: fullSchema.phone,
+          alternatePhone: fullSchema.alternatePhone,
+          whatsappNumber: fullSchema.whatsappNumber,
+          address: fullSchema.address,
+          cityId: fullSchema.cityId,
         };
       case 1:
         return {
           ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}),
+          ...(!isBranchManager ? { primaryBranchId: fullSchema.primaryBranchId } : {}),
+          employeeId: fullSchema.employeeId,
+          jobTitle: fullSchema.jobTitle,
+          joiningDate: fullSchema.joiningDate,
+          employmentType: fullSchema.employmentType,
         };
       case 2:
         return {
+          salesTarget: fullSchema.salesTarget,
+          commissionPercentage: fullSchema.commissionPercentage,
+          leadAssignmentRule: fullSchema.leadAssignmentRule,
+          defaultPipelineId: fullSchema.defaultPipelineId,
+          username: fullSchema.username,
           email: fullSchema.email,
-          ...(!isEdit && { password: fullSchema.password }),
+          ...(!isEdit || String(formData.password || "").trim()
+            ? { password: fullSchema.password, confirmPassword: fullSchema.confirmPassword }
+            : {}),
         };
       case 3:
         return {
           role: fullSchema.role,
+          department: fullSchema.department,
+          reportingManagerId: fullSchema.reportingManagerId,
+          permissionLevel: fullSchema.permissionLevel,
+          status: fullSchema.status,
+          language: fullSchema.language,
+          timezone: fullSchema.timezone,
         };
       default:
         return {};
     }
-  }, [step, isSuperAdmin, isEdit, fullSchema]);
+  }, [fullSchema, isSuperAdmin, isEdit, isBranchManager, formData.password]);
 
-  const { errors, validate, clearError } = useFormValidation(stepSchema);
+  const stepSchema = useMemo(() => getStepSchema(step), [getStepSchema, step]);
+
+  const { errors, validate, clearError, clearAllErrors } = useFormValidation(stepSchema);
 
   const handleChange = useCallback(
     (e) => {
@@ -186,6 +267,10 @@ export default function UserFormPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     clearError(name);
   }, [clearError]);
+
+  useEffect(() => {
+    clearAllErrors?.();
+  }, [step, clearAllErrors]);
 
   useEffect(() => {
     let active = true;
@@ -373,6 +458,33 @@ export default function UserFormPage() {
     setTimeout(() => setIsStepChanging(false), 500);
   };
 
+  const firstInvalidStep = useCallback(() => {
+    for (let index = 0; index < STEPS.length; index += 1) {
+      const schema = getStepSchema(index);
+      for (const field of Object.keys(schema)) {
+        const fieldRules = schema[field] || [];
+        for (const rule of fieldRules) {
+          if (rule(formData[field])) return index;
+        }
+      }
+    }
+    return -1;
+  }, [getStepSchema, formData]);
+
+  const handleStepClick = async (targetStep) => {
+    if (isView) return;
+    if (targetStep <= step) {
+      setStep(targetStep);
+      return;
+    }
+    const valid = await validate(formData);
+    if (!valid) {
+      toast.error("Please fix the errors before continuing.");
+      return;
+    }
+    setStep(targetStep);
+  };
+
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
   const handleKeyDown = (e) => {
@@ -400,18 +512,14 @@ export default function UserFormPage() {
 
     if (isView) return;
 
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      toast.error("Password and Confirm Password do not match.");
+    const invalidStep = firstInvalidStep();
+    if (invalidStep !== -1) {
+      setStep(invalidStep);
+      toast.error("Please fill all required fields before saving.");
       return;
     }
     setLoading(true);
     try {
-      // On final submit, validate current step first; if user skipped, enforce key required fields.
-      if (!validate(formData)) {
-        toast.error("Please fix the errors before saving.");
-        setLoading(false);
-        return;
-      }
       const payload = buildPayload();
       if (isEdit) {
         await API.put(`${apiBase}/${id}`, payload);
@@ -457,7 +565,8 @@ export default function UserFormPage() {
       </div>
 
       <form id="user-form" onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate className="flex-1 min-h-0 overflow-auto pb-4">
-        <div className="p-4 md:p-5 w-full">
+        <div className="p-4 md:p-6 w-full">
+          <div className="max-w-[1100px] mx-auto space-y-6">
           <div className="mb-4 bg-white rounded-xl border border-[#E5E7EB] shadow-sm px-3 py-2.5">
             <div className="flex flex-wrap items-center gap-2">
               {STEPS.map((s, idx) => {
@@ -467,7 +576,7 @@ export default function UserFormPage() {
                   <button
                     key={s.key}
                     type="button"
-                    onClick={() => !isView && setStep(idx)}
+                    onClick={() => handleStepClick(idx)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors ${
                       active ? "bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]" : done ? "bg-white text-[#111827] border-[#E5E7EB] hover:bg-[#F8FAFC]" : "bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-[#F8FAFC]"
                     } ${isView ? "cursor-default" : ""}`}
@@ -491,7 +600,7 @@ export default function UserFormPage() {
                   <div className={sectionTitleCls}>
                     <FiUser className="text-[#2563EB]" size={14} /> Personal Information
                   </div>
-                  <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>First Name <span className="text-red-500">*</span></label>
                       <input name="firstName" value={formData.firstName} onChange={handleChange} disabled={isView} className={inputCls(errors, "firstName")} placeholder="First name" />
@@ -505,16 +614,19 @@ export default function UserFormPage() {
                     <div className="md:col-span-2">
                       <label className={labelCls}>Display Name</label>
                       <input name="displayName" value={formData.displayName} onChange={handleChange} disabled={isView} className={inputCls(errors, "displayName")} placeholder="Display name" />
+                      <FieldError error={errors.displayName} />
                     </div>
                     <div>
                       <label className={labelCls}>Gender</label>
                       <select name="gender" value={formData.gender} onChange={handleChange} disabled={isView} className={inputCls(errors, "gender")}>
                         {GENDERS.map((g) => <option key={g.value || "x"} value={g.value}>{g.label}</option>)}
                       </select>
+                      <FieldError error={errors.gender} />
                     </div>
                     <div>
                       <label className={labelCls}>Date of Birth</label>
                       <input name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleChange} disabled={isView} className={inputCls(errors, "dateOfBirth")} />
+                      <FieldError error={errors.dateOfBirth} />
                     </div>
                   </div>
                 </div>
@@ -523,7 +635,7 @@ export default function UserFormPage() {
                   <div className={sectionTitleCls}>
                     <FiMail className="text-[#2563EB]" size={14} /> Contact Information
                   </div>
-                  <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className={labelCls}>Work Email <span className="text-red-500">*</span></label>
                       <input name="workEmail" type="email" value={formData.workEmail} onChange={handleChange} disabled={isView} className={inputCls(errors, "workEmail")} placeholder="work@company.com" />
@@ -537,18 +649,22 @@ export default function UserFormPage() {
                     <div>
                       <label className={labelCls}>Phone</label>
                       <input name="phone" type="tel" value={formData.phone} onChange={handleChange} disabled={isView} className={inputCls(errors, "phone")} placeholder="10-digit" />
+                      <FieldError error={errors.phone} />
                     </div>
                     <div>
                       <label className={labelCls}>Alternate Phone</label>
                       <input name="alternatePhone" type="tel" value={formData.alternatePhone} onChange={handleChange} disabled={isView} className={inputCls(errors, "alternatePhone")} />
+                      <FieldError error={errors.alternatePhone} />
                     </div>
                     <div>
                       <label className={labelCls}>WhatsApp Number</label>
                       <input name="whatsappNumber" type="tel" value={formData.whatsappNumber} onChange={handleChange} disabled={isView} className={inputCls(errors, "whatsappNumber")} />
+                      <FieldError error={errors.whatsappNumber} />
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelCls}>Address</label>
                       <input name="address" value={formData.address} onChange={handleChange} disabled={isView} className={inputCls(errors, "address")} placeholder="Full address" />
+                      <FieldError error={errors.address} />
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelCls}>City</label>
@@ -558,6 +674,7 @@ export default function UserFormPage() {
                         disabled={isView}
                         error={errors.cityId}
                       />
+                      <FieldError error={errors.cityId} />
                     </div>
                   </div>
                 </div>
@@ -571,7 +688,7 @@ export default function UserFormPage() {
                   <div className={sectionTitleCls}>
                     <FiMapPin className="text-[#2563EB]" size={14} /> Branch Assignment
                   </div>
-                  <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {isSuperAdmin && (
                       <div className="md:col-span-2">
                         <label className={labelCls}>Company <span className="text-red-500">*</span></label>
@@ -609,24 +726,28 @@ export default function UserFormPage() {
                   <div className={sectionTitleCls}>
                     <FiBriefcase className="text-[#2563EB]" size={14} /> Work Information
                   </div>
-                  <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Employee ID</label>
                       <input name="employeeId" value={formData.employeeId} onChange={handleChange} disabled={isView} className={inputCls(errors, "employeeId")} placeholder="EMP-001" />
+                      <FieldError error={errors.employeeId} />
                     </div>
                     <div>
                       <label className={labelCls}>Job Title</label>
                       <input name="jobTitle" value={formData.jobTitle} onChange={handleChange} disabled={isView} className={inputCls(errors, "jobTitle")} placeholder="e.g. Sales Rep" />
+                      <FieldError error={errors.jobTitle} />
                     </div>
                     <div>
                       <label className={labelCls}>Joining Date</label>
                       <input name="joiningDate" type="date" value={formData.joiningDate} onChange={handleChange} disabled={isView} className={inputCls(errors, "joiningDate")} />
+                      <FieldError error={errors.joiningDate} />
                     </div>
                     <div>
                       <label className={labelCls}>Employment Type</label>
                       <select name="employmentType" value={formData.employmentType} onChange={handleChange} disabled={isView} className={inputCls(errors, "employmentType")}>
                         {EMPLOYMENT_TYPES.map((e) => <option key={e.value || "x"} value={e.value}>{e.label}</option>)}
                       </select>
+                      <FieldError error={errors.employmentType} />
                     </div>
                   </div>
                 </div>
@@ -640,18 +761,21 @@ export default function UserFormPage() {
                   <div className={sectionTitleCls}>
                     <FiTrendingUp className="text-[#2563EB]" size={14} /> CRM Sales Settings
                   </div>
-                  <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Sales Target</label>
                       <input name="salesTarget" type="number" min={0} value={formData.salesTarget} onChange={handleChange} disabled={isView} className={inputCls(errors, "salesTarget")} placeholder="Amount" />
+                      <FieldError error={errors.salesTarget} />
                     </div>
                     <div>
                       <label className={labelCls}>Commission %</label>
                       <input name="commissionPercentage" type="number" min={0} max={100} step={0.01} value={formData.commissionPercentage} onChange={handleChange} disabled={isView} className={inputCls(errors, "commissionPercentage")} placeholder="%" />
+                      <FieldError error={errors.commissionPercentage} />
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelCls}>Lead Assignment Rule</label>
                       <input name="leadAssignmentRule" value={formData.leadAssignmentRule} onChange={handleChange} disabled={isView} className={inputCls(errors, "leadAssignmentRule")} placeholder="Rule name" />
+                      <FieldError error={errors.leadAssignmentRule} />
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelCls}>Default Pipeline</label>
@@ -659,6 +783,7 @@ export default function UserFormPage() {
                         <option value="">Select pipeline...</option>
                         {pipelines.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
                       </select>
+                      <FieldError error={errors.defaultPipelineId} />
                     </div>
                   </div>
                 </div>
@@ -667,10 +792,11 @@ export default function UserFormPage() {
                   <div className={sectionTitleCls}>
                     <FiLock className="text-[#2563EB]" size={14} /> Login Information
                   </div>
-                  <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Username</label>
                       <input name="username" value={formData.username} onChange={handleChange} disabled={isView} className={inputCls(errors, "username")} placeholder="Login username" />
+                      <FieldError error={errors.username} />
                     </div>
                     <div>
                       <label className={labelCls}>Email (login) <span className="text-red-500">*</span></label>
@@ -685,6 +811,7 @@ export default function UserFormPage() {
                     <div>
                       <label className={labelCls}>Confirm Password</label>
                       <input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} disabled={isView} className={inputCls(errors, "confirmPassword")} placeholder="Re-enter password" autoComplete="new-password" />
+                      <FieldError error={errors.confirmPassword} />
                     </div>
                     <div className="md:col-span-2 flex items-center gap-2">
                       <input type="checkbox" id="twoFactor" name="twoFactorEnabled" checked={formData.twoFactorEnabled} onChange={handleChange} disabled={isView} className="rounded border-[#E5E7EB]" />
@@ -702,7 +829,7 @@ export default function UserFormPage() {
                   <div className={sectionTitleCls}>
                     <FiShield className="text-[#2563EB]" size={14} /> Role & Permissions
                   </div>
-                  <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>User Role <span className="text-red-500">*</span></label>
                       <select name="role" value={formData.role} onChange={handleChange} className={inputCls(errors, "role")} disabled={isView || isBranchManager}>
@@ -713,6 +840,7 @@ export default function UserFormPage() {
                     <div>
                       <label className={labelCls}>Department</label>
                       <input name="department" value={formData.department} onChange={handleChange} disabled={isView} className={inputCls(errors, "department")} placeholder="e.g. Sales" />
+                      <FieldError error={errors.department} />
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelCls}>Reporting Manager</label>
@@ -720,15 +848,39 @@ export default function UserFormPage() {
                         <option value="">Select manager...</option>
                         {users.filter((u) => u._id !== id).map((u) => <option key={u._id} value={u._id}>{u.name} {u.email ? `(${u.email})` : ""}</option>)}
                       </select>
+                      <FieldError error={errors.reportingManagerId} />
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelCls}>Permission Level</label>
                       <input name="permissionLevel" value={formData.permissionLevel} onChange={handleChange} disabled={isView} className={inputCls(errors, "permissionLevel")} placeholder="e.g. Standard" />
+                      <FieldError error={errors.permissionLevel} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Status</label>
+                      <select name="status" value={formData.status} onChange={handleChange} disabled={isView} className={inputCls(errors, "status")}>
+                        {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      </select>
+                      <FieldError error={errors.status} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Language</label>
+                      <select name="language" value={formData.language} onChange={handleChange} disabled={isView} className={inputCls(errors, "language")}>
+                        {LANGUAGES.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+                      </select>
+                      <FieldError error={errors.language} />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className={labelCls}>Timezone</label>
+                      <select name="timezone" value={formData.timezone} onChange={handleChange} disabled={isView} className={inputCls(errors, "timezone")}>
+                        {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+                      </select>
+                      <FieldError error={errors.timezone} />
                     </div>
                   </div>
                 </div>
               </>
             )}
+          </div>
           </div>
         </div>
 
@@ -736,7 +888,7 @@ export default function UserFormPage() {
 
       {/* Sticky actions - Moved OUTSIDE form to prevent accidental submission */}
       <div className="shrink-0 sticky bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E7EB] shadow-lg py-4 px-5 md:px-6">
-        <div className="w-full max-w-[1400px] flex flex-wrap items-center justify-end gap-2">
+        <div className="w-full max-w-[1100px] mx-auto flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={step === 0 ? () => navigate(-1) : goBack}

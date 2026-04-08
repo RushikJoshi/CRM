@@ -28,6 +28,7 @@ const BRANCH_STATUSES = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
   { value: "closed", label: "Closed" },
+  { value: "draft", label: "Draft" },
 ];
 
 const TIMEZONES = [
@@ -50,8 +51,31 @@ const inputCls = (errors, field) =>
 const labelCls = "block text-sm font-medium text-[#6B7280] mb-1.5";
 const cardCls = "bg-white rounded-xl border border-[#E5E7EB] shadow-sm overflow-hidden";
 const sectionTitleCls = "text-sm font-semibold text-[#111827] px-5 py-4 border-b border-[#E5E7EB] bg-[#F8FAFC]";
-const postalCodeRule = (value) =>
-  value && !/^\d{6}$/.test(String(value).trim()) ? "Enter a valid 6-digit postal code" : null;
+const isValidPhone = (value) => /^\d{10,15}$/.test(String(value || "").replace(/\D/g, ""));
+const requiredPostalCodeRule = (value) =>
+  !String(value || "").trim()
+    ? "Postal code is required"
+    : !/^\d{6}$/.test(String(value).trim())
+    ? "Enter a valid 6-digit postal code"
+    : null;
+const requiredNumberRule = (label) => (value) => {
+  const nextValue = String(value ?? "").trim();
+  if (!nextValue) return `${label} is required`;
+  const n = Number(nextValue);
+  if (!Number.isFinite(n)) return `${label} must be a valid number`;
+  if (n < 0) return `${label} cannot be negative`;
+  return null;
+};
+
+const getDraftResumeStep = (data, isSuperAdmin) => {
+  if (!String(data?.name || "").trim()) return 0;
+  if (isSuperAdmin && !String(data?.companyId || "").trim()) return 0;
+  if (!String(data?.branchManagerId || "").trim()) return 1;
+  if (!isValidPhone(data?.phone)) return 2;
+  if (!String(data?.cityId || "").trim()) return 3;
+  if (String(data?.postalCode || "").trim() && !/^\d{6}$/.test(String(data?.postalCode).trim())) return 3;
+  return 4;
+};
 
 export default function BranchFormPage() {
   const { id } = useParams();
@@ -101,36 +125,93 @@ export default function BranchFormPage() {
     documentUrls: [],
     companyId: currentUser?.companyId || "",
   });
+  const managerIds = React.useMemo(
+    () =>
+      new Set(
+        users
+          .filter((user) => ["branch_manager", "company_admin"].includes(user.role))
+          .map((user) => String(user._id))
+      ),
+    [users]
+  );
 
   const fullSchema = React.useMemo(() => ({
     name: [rules.required("Branch name")],
-    branchManagerId: [rules.required("Branch manager")],
-    email: [rules.email()],
-    phone: [rules.phone()],
-    alternatePhone: [rules.phone()],
-    managerEmail: [rules.email()],
-    managerPhone: [rules.phone()],
+    branchCode: [rules.required("Branch code")],
+    branchType: [rules.required("Branch type")],
+    status: [rules.required("Status")],
+    branchManagerId: [
+      rules.required("Branch manager"),
+      (value) =>
+        value && managerIds.size > 0 && !managerIds.has(String(value))
+          ? "Please select a valid branch manager"
+          : null,
+    ],
+    email: [rules.required("Branch email"), rules.email()],
+    phone: [rules.required("Branch phone"), rules.phone()],
+    alternatePhone: [rules.required("Alternate phone"), rules.phone()],
+    managerEmail: [rules.required("Manager email"), rules.email()],
+    managerPhone: [rules.required("Manager phone"), rules.phone()],
+    assignedUserIds: [
+      (value) => (Array.isArray(value) && value.length > 0 ? null : "Please assign at least one user"),
+    ],
     ...(isSuperAdmin && { companyId: [rules.required("Company")] }),
+    addressLine1: [rules.required("Address line 1")],
+    addressLine2: [rules.required("Address line 2")],
     cityId: [rules.required("City")],
-    postalCode: [postalCodeRule],
-  }), [isSuperAdmin]);
+    state: [rules.required("State")],
+    country: [rules.required("Country")],
+    postalCode: [requiredPostalCodeRule],
+    latitude: [rules.required("Latitude")],
+    longitude: [rules.required("Longitude")],
+    openingDate: [rules.required("Opening date")],
+    workingHours: [rules.required("Working hours")],
+    timezone: [rules.required("Timezone")],
+    branchCapacity: [requiredNumberRule("Branch capacity")],
+  }), [isSuperAdmin, managerIds]);
 
   const stepSchema = React.useMemo(() => {
     // Validate only current step fields.
-    if (step === 0) return { name: fullSchema.name, ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}) };
+    if (step === 0) {
+      return {
+        name: fullSchema.name,
+        branchCode: fullSchema.branchCode,
+        branchType: fullSchema.branchType,
+        status: fullSchema.status,
+        ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}),
+      };
+    }
     if (step === 1) return {
       branchManagerId: fullSchema.branchManagerId,
       managerEmail: fullSchema.managerEmail,
       managerPhone: fullSchema.managerPhone,
+      assignedUserIds: fullSchema.assignedUserIds,
     };
     if (step === 2) return {
       email: fullSchema.email,
       phone: fullSchema.phone,
       alternatePhone: fullSchema.alternatePhone,
     };
-    if (step === 3) return { cityId: fullSchema.cityId, postalCode: fullSchema.postalCode };
-
-    if (step === 4) return { openingDate: [], workingHours: [] }; 
+    if (step === 3) {
+      return {
+        addressLine1: fullSchema.addressLine1,
+        addressLine2: fullSchema.addressLine2,
+        cityId: fullSchema.cityId,
+        state: fullSchema.state,
+        country: fullSchema.country,
+        postalCode: fullSchema.postalCode,
+        latitude: fullSchema.latitude,
+        longitude: fullSchema.longitude,
+      };
+    }
+    if (step === 4) {
+      return {
+        openingDate: fullSchema.openingDate,
+        workingHours: fullSchema.workingHours,
+        timezone: fullSchema.timezone,
+        branchCapacity: fullSchema.branchCapacity,
+      };
+    }
     return {};
   }, [step, isSuperAdmin, fullSchema]);
 
@@ -195,7 +276,7 @@ export default function BranchFormPage() {
       .then((res) => {
         const b = res.data?.data || res.data;
         if (!b) return;
-        setFormData({
+        const nextFormData = {
           name: b.name || "",
           branchCode: b.branchCode || "",
           branchType: b.branchType || "sales_branch",
@@ -223,12 +304,17 @@ export default function BranchFormPage() {
           logoUrl: b.logoUrl || "",
           description: b.description || "",
           documentUrls: Array.isArray(b.documentUrls) ? b.documentUrls : [],
-          companyId: b.companyId?._id || b.companyId || formData.companyId,
-        });
+          companyId: b.companyId?._id || b.companyId || currentUser?.companyId || "",
+        };
+
+        setFormData(nextFormData);
+        if (String(b.status || "").toLowerCase() === "draft") {
+          setStep(getDraftResumeStep(nextFormData, isSuperAdmin));
+        }
       })
       .catch(() => toast.error("Failed to load branch"))
       .finally(() => setFetching(false));
-  }, [id, isEdit, apiBase]);
+  }, [id, isEdit, apiBase, isSuperAdmin, currentUser?.companyId, toast]);
 
   useEffect(() => {
     clearAllErrors?.();
@@ -264,13 +350,20 @@ export default function BranchFormPage() {
 
   const getStepSchema = useCallback((stepIndex) => {
     if (stepIndex === 0) {
-      return { name: fullSchema.name, ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}) };
+      return {
+        name: fullSchema.name,
+        branchCode: fullSchema.branchCode,
+        branchType: fullSchema.branchType,
+        status: fullSchema.status,
+        ...(isSuperAdmin ? { companyId: fullSchema.companyId } : {}),
+      };
     }
     if (stepIndex === 1) {
       return {
         branchManagerId: fullSchema.branchManagerId,
         managerEmail: fullSchema.managerEmail,
         managerPhone: fullSchema.managerPhone,
+        assignedUserIds: fullSchema.assignedUserIds,
       };
     }
     if (stepIndex === 2) {
@@ -281,13 +374,30 @@ export default function BranchFormPage() {
       };
     }
     if (stepIndex === 3) {
-      return { cityId: fullSchema.cityId, postalCode: fullSchema.postalCode };
+      return {
+        addressLine1: fullSchema.addressLine1,
+        addressLine2: fullSchema.addressLine2,
+        cityId: fullSchema.cityId,
+        state: fullSchema.state,
+        country: fullSchema.country,
+        postalCode: fullSchema.postalCode,
+        latitude: fullSchema.latitude,
+        longitude: fullSchema.longitude,
+      };
+    }
+    if (stepIndex === 4) {
+      return {
+        openingDate: fullSchema.openingDate,
+        workingHours: fullSchema.workingHours,
+        timezone: fullSchema.timezone,
+        branchCapacity: fullSchema.branchCapacity,
+      };
     }
     return {};
   }, [fullSchema, isSuperAdmin]);
 
   const firstInvalidStep = useCallback(() => {
-    for (let index = 0; index < 4; index += 1) {
+    for (let index = 0; index < 5; index += 1) {
       if (!validateAgainstSchema(getStepSchema(index), formData)) {
         return index;
       }
@@ -340,8 +450,9 @@ export default function BranchFormPage() {
     });
   }, [users, formData.branchManagerId]);
 
-  const buildPayload = useCallback(() => ({
+  const buildPayload = useCallback((statusOverride) => ({
     ...formData,
+    status: statusOverride || formData.status,
     website: "",
     name: String(formData.name || "").trim(),
     branchCode: formData.branchCode?.trim() || undefined,
@@ -369,7 +480,7 @@ export default function BranchFormPage() {
     }
     setLoading(true);
     try {
-      const payload = buildPayload();
+      const payload = buildPayload(formData.status === "draft" ? "active" : undefined);
       if (isEdit) {
         await API.put(`${apiBase}/${id}`, payload);
         toast.success("Branch updated successfully.");
@@ -396,8 +507,7 @@ export default function BranchFormPage() {
     setLoading(true);
     try {
       const payload = {
-        ...buildPayload(),
-        status: "draft",
+        ...buildPayload("draft"),
       };
       if (isEdit) {
         await API.put(`${apiBase}/${id}`, payload);
@@ -618,18 +728,21 @@ export default function BranchFormPage() {
             <div>
               <label className={labelCls}>Branch Code</label>
               <input name="branchCode" type="text" placeholder="Auto if empty" value={formData.branchCode} onChange={handleChange} className={inputCls(errors, "branchCode")} />
+              <FieldError error={errors.branchCode} />
             </div>
             <div>
               <label className={labelCls}>Type</label>
               <select name="branchType" value={formData.branchType} onChange={handleChange} className={inputCls(errors, "branchType")}>
                 {BRANCH_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
+              <FieldError error={errors.branchType} />
             </div>
             <div>
               <label className={labelCls}>Status</label>
               <select name="status" value={formData.status} onChange={handleChange} className={inputCls(errors, "status")}>
                 {BRANCH_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
+              <FieldError error={errors.status} />
             </div>
           </div>
             </div>
@@ -667,6 +780,7 @@ export default function BranchFormPage() {
               >
                 {assignedUserOptions.map((u) => <option key={u._id} value={u._id}>{u.name} ({u.email})</option>)}
               </select>
+              <FieldError error={errors.assignedUserIds} />
               <p className="mt-1 text-xs text-[#6B7280]">Manager contact details auto-fill from the selected manager.</p>
             </div>
               </div>
@@ -685,6 +799,7 @@ export default function BranchFormPage() {
                   <div>
                     <label className={labelCls}>Phone</label>
                     <input name="phone" type="tel" placeholder="10-digit" value={formData.phone} onChange={handleChange} className={inputCls(errors, "phone")} />
+                    <FieldError error={errors.phone} />
                   </div>
                   <div>
                     <label className={labelCls}>Alternate Phone</label>
@@ -702,10 +817,12 @@ export default function BranchFormPage() {
                   <div className="sm:col-span-2">
                     <label className={labelCls}>Address Line 1</label>
                     <input name="addressLine1" type="text" value={formData.addressLine1} onChange={handleChange} className={inputCls(errors, "addressLine1")} />
+                    <FieldError error={errors.addressLine1} />
                   </div>
                   <div className="sm:col-span-2">
                     <label className={labelCls}>Address Line 2</label>
                     <input name="addressLine2" type="text" value={formData.addressLine2} onChange={handleChange} className={inputCls(errors, "addressLine2")} />
+                    <FieldError error={errors.addressLine2} />
                   </div>
                   <div>
                     <label className={labelCls}>City <span className="text-red-500">*</span></label>
@@ -729,10 +846,12 @@ export default function BranchFormPage() {
                   <div>
                     <label className={labelCls}>State</label>
                     <input name="state" type="text" value={formData.state} onChange={handleChange} className={inputCls(errors, "state")} />
+                    <FieldError error={errors.state} />
                   </div>
                   <div>
                     <label className={labelCls}>Country</label>
                     <input name="country" type="text" value={formData.country} onChange={handleChange} className={inputCls(errors, "country")} />
+                    <FieldError error={errors.country} />
                   </div>
                   <div>
                     <label className={labelCls}>Postal Code (6-digit; auto-fills city/state/country on blur)</label>
@@ -755,10 +874,12 @@ export default function BranchFormPage() {
                   <div>
                     <label className={labelCls}>Latitude</label>
                     <input name="latitude" type="text" placeholder="19.0760" value={formData.latitude} onChange={handleChange} className={inputCls(errors, "latitude")} />
+                    <FieldError error={errors.latitude} />
                   </div>
                   <div>
                     <label className={labelCls}>Longitude</label>
                     <input name="longitude" type="text" placeholder="72.8777" value={formData.longitude} onChange={handleChange} className={inputCls(errors, "longitude")} />
+                    <FieldError error={errors.longitude} />
                   </div>
                   <div className="sm:col-span-2 pt-1">
                     <a href={`https://www.google.com/maps?q=${formData.latitude || "0"},${formData.longitude || "0"}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#0D9488] hover:underline">Open in Google Maps</a>
@@ -774,20 +895,24 @@ export default function BranchFormPage() {
                 <div>
                   <label className={labelCls}>Opening Date</label>
                   <input name="openingDate" type="date" value={formData.openingDate} onChange={handleChange} className={inputCls(errors, "openingDate")} />
+                  <FieldError error={errors.openingDate} />
                 </div>
                 <div>
                   <label className={labelCls}>Working Hours</label>
                   <input name="workingHours" type="text" placeholder="9 AM - 6 PM" value={formData.workingHours} onChange={handleChange} className={inputCls(errors, "workingHours")} />
+                  <FieldError error={errors.workingHours} />
                 </div>
                 <div>
                   <label className={labelCls}>Timezone</label>
                   <select name="timezone" value={formData.timezone} onChange={handleChange} className={inputCls(errors, "timezone")}>
                     {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
                   </select>
+                  <FieldError error={errors.timezone} />
                 </div>
                 <div>
                   <label className={labelCls}>Branch Capacity</label>
                   <input name="branchCapacity" type="number" min={0} placeholder="Seats" value={formData.branchCapacity} onChange={handleChange} className={inputCls(errors, "branchCapacity")} />
+                  <FieldError error={errors.branchCapacity} />
                 </div>
               </div>
               </div>
