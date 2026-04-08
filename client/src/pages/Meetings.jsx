@@ -626,9 +626,8 @@ export default function MeetingsPage() {
         </div>
       )}
       {showModal ? (
-        <div className="fixed inset-0 z-[100] bg-slate-950/45 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="min-h-full flex items-center justify-center py-6">
-            <div className="w-full max-w-6xl bg-white rounded-[36px] shadow-2xl overflow-hidden border border-slate-100">
+        <div className="crm-card overflow-hidden">
+          <div className="w-full bg-white overflow-hidden border border-slate-100 rounded-[20px]">
               <div className="px-6 md:px-8 py-6 border-b border-slate-100 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-indigo-500">
@@ -933,7 +932,6 @@ export default function MeetingsPage() {
                   </div>
                 </div>
               </form>
-            </div>
           </div>
         </div>
       ) : null}

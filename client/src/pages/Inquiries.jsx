@@ -103,15 +103,15 @@ const InquiriesPage = () => {
     }
 
     return (
-        <div className="animate-fade-in space-y-3 pb-4">
+        <div className="crm-page animate-fade-in space-y-3 pb-4">
             {/* Excel Filter Header */}
-            <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-100 shadow-sm overflow-x-auto text-left">
+            <div className="crm-toolbar text-left">
                 <div className="relative group min-w-[240px]">
                     <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors" size={12} />
                     <input
                         type="text"
                         placeholder="Search inquiries by name or email..."
-                        className="w-full h-8 pl-9 pr-3 bg-slate-50 border border-transparent rounded-lg text-[12px] font-medium outline-none focus:bg-white focus:border-teal-600/20 focus:ring-4 focus:ring-teal-600/5 transition-all text-slate-700"
+                        className="crm-input pl-9"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
@@ -123,7 +123,7 @@ const InquiriesPage = () => {
                     <div className="relative">
                         <FiFilter size={10} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             <select
-                                className="h-8 pl-8 pr-8 bg-slate-50 border border-transparent rounded-lg text-[11px] font-bold text-slate-700 outline-none focus:bg-white focus:border-teal-600/20 transition-all appearance-none cursor-pointer min-w-[130px]"
+                                className="crm-input pl-8 pr-8 min-w-[130px]"
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
@@ -139,7 +139,7 @@ const InquiriesPage = () => {
                         <div className="relative">
                             <FiGlobe size={10} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             <select
-                                className="h-8 pl-8 pr-8 bg-slate-50 border border-transparent rounded-lg text-[11px] font-bold text-slate-700 outline-none focus:bg-white focus:border-teal-600/20 transition-all appearance-none cursor-pointer min-w-[120px]"
+                                className="crm-input pl-8 pr-8 min-w-[120px]"
                                 value={typeFilter}
                                 onChange={(e) => setTypeFilter(e.target.value)}
                             >
@@ -154,7 +154,7 @@ const InquiriesPage = () => {
             </div>
 
             {loading ? (
-                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center space-y-4">
+                    <div className="crm-card p-20 flex flex-col items-center justify-center space-y-4">
                         <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Hydrating Records...</p>
                     </div>

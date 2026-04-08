@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import UserTable from "../components/UserTable";
-import AddUserModal from "../components/AddUserModal";
 import Pagination from "../components/Pagination";
-import { FiPlus, FiSearch, FiShield, FiX, FiUser } from "react-icons/fi";
+import { FiSearch } from "react-icons/fi";
 import { useToast } from "../context/ToastContext";
 import { getCurrentUser } from "../context/AuthContext";
 
@@ -16,14 +15,13 @@ function Users() {
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
     const pageSize = 10;
-    
-    const [activeTask, setActiveTask] = useState(null); // 'create', 'edit'
-    const [editingUser, setEditingUser] = useState(null);
 
     const navigate = useNavigate();
     const toast = useToast();
     const currentUser = getCurrentUser();
     const isSuperAdmin = currentUser?.role === "super_admin";
+    const isSales = currentUser?.role === "sales";
+    const rolePath = isSuperAdmin ? "/superadmin" : isSales ? "/sales" : currentUser?.role === "branch_manager" ? "/branch" : "/company";
     const apiBase = isSuperAdmin ? "/super-admin/users" : "/users";
 
     const fetchUsers = async () => {
@@ -59,49 +57,13 @@ function Users() {
             await API.put(`${apiBase}/${user._id}`, { status: newStatus });
             toast.success("User access updated.");
             fetchUsers();
-        } catch (err) {
+        } catch {
             toast.error("Failed to update user status.");
-        }
-    };
-
-    const handleFormSubmit = async (formData) => {
-        try {
-            if (activeTask === 'edit' && editingUser) {
-                await API.put(`${apiBase}/${editingUser._id}`, formData);
-                toast.success("Identity updated successfully.");
-            } else {
-                await API.post(apiBase, formData);
-                toast.success("New user onboarded successfully.");
-            }
-            setActiveTask(null);
-            setEditingUser(null);
-            fetchUsers();
-        } catch (err) {
-            toast.error(err.response?.data?.message || "Operation failed.");
         }
     };
 
     useEffect(() => { setPage(1); }, [search]);
     useEffect(() => { fetchUsers(); }, [page, search]);
-
-    const closeTask = () => {
-        setActiveTask(null);
-        setEditingUser(null);
-    };
-
-    if (activeTask === 'create' || activeTask === 'edit') {
-        return (
-            <div className="animate-fade-in bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
-                <AddUserModal 
-                    isOpen={true} 
-                    onClose={closeTask} 
-                    onSubmit={handleFormSubmit}
-                    editingData={editingUser}
-                    isStandalone={true}
-                />
-            </div>
-        );
-    }
 
     return (
         <div className="animate-fade-in space-y-3 pb-4">
@@ -128,7 +90,8 @@ function Users() {
                 <div className="space-y-4">
                     <UserTable
                         users={users}
-                        onEdit={(u) => { setEditingUser(u); setActiveTask('edit'); }}
+                        onView={(u) => navigate(`${rolePath}/users/${u._id}?mode=view`)}
+                        onEdit={(u) => navigate(`${rolePath}/users/${u._id}/edit`)}
                         onDelete={handleDelete}
                         onToggleStatus={handleToggleStatus}
                     />

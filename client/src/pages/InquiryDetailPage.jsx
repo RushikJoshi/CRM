@@ -10,6 +10,7 @@ import { useToast } from "../context/ToastContext";
 import { getCurrentUser } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 
+// eslint-disable-next-line no-unused-vars
 function formatDate(d) {
     return d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
 }
@@ -112,25 +113,15 @@ export default function InquiryDetailPage() {
         try {
             const res = await API.get(`/inquiries/${id}`);
             setInquiry(res.data?.data || res.data);
-        } catch (err) {
+            setActivities(res.data?.activities || []);
+        } catch {
             toast.error("Failed to load inquiry.");
             navigate(-1);
         } finally {
             setLoading(false);
-        }
-    }, [id, navigate, toast]);
-
-    const fetchActivities = useCallback(async () => {
-        setActivityLoading(true);
-        try {
-            const res = await API.get(`/activities/timeline?inquiryId=${id}`);
-            setActivities(res.data?.data || []);
-        } catch (err) {
-            console.error("Failed to load activities", err);
-        } finally {
             setActivityLoading(false);
         }
-    }, [id]);
+    }, [id, navigate, toast]);
 
     const fetchProctoring = useCallback(async (token) => {
         if (!token) return;
@@ -147,21 +138,19 @@ export default function InquiryDetailPage() {
 
     useEffect(() => {
         fetchInquiry();
-        fetchActivities();
         fetchUsers();
-    }, [fetchInquiry, fetchActivities, fetchUsers]);
+    }, [fetchInquiry, fetchUsers]);
 
     useEffect(() => {
         if (!socket || !id) return;
         const handleUpdate = (data) => {
             if (data.inquiryId === id) {
                 fetchInquiry();
-                fetchActivities();
             }
         };
         socket.on("inquiry_updated", handleUpdate);
         return () => socket.off("inquiry_updated", handleUpdate);
-    }, [socket, id, fetchInquiry, fetchActivities]);
+    }, [socket, id, fetchInquiry]);
 
     useEffect(() => {
         if (inquiry?.testToken) {
@@ -175,7 +164,6 @@ export default function InquiryDetailPage() {
             await API.patch(`/inquiries/${id}`, { status: newStatus });
             toast.success(`Status updated to ${newStatus}`);
             fetchInquiry();
-            fetchActivities();
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to update status.");
         } finally {
@@ -189,8 +177,7 @@ export default function InquiryDetailPage() {
             await API.patch(`/inquiries/${id}/assign`, { assignedTo: userId });
             toast.success("Assignment updated");
             fetchInquiry();
-            fetchActivities();
-        } catch (err) {
+        } catch {
             toast.error("Failed to update assignment");
         } finally {
             setUpdatingAssignee(false);
@@ -209,8 +196,8 @@ export default function InquiryDetailPage() {
             });
             setNoteText("");
             toast.success("Note logged successfully.");
-            fetchActivities();
-        } catch (err) {
+            fetchInquiry();
+        } catch {
             toast.error("Failed to log note.");
         } finally {
             setSavingNote(false);

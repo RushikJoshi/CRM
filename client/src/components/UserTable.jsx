@@ -1,7 +1,7 @@
 import React from "react";
 import { FiEdit2, FiTrash2, FiShield, FiBriefcase, FiLayers, FiMail, FiPhone } from "react-icons/fi";
 
-const UserTable = ({ users, onEdit, onDelete, onToggleStatus }) => {
+const UserTable = ({ users, onEdit, onView, onToggleStatus }) => {
     return (
         <div className="saas-table-excel-container">
             <table className="saas-table-excel">
@@ -18,7 +18,7 @@ const UserTable = ({ users, onEdit, onDelete, onToggleStatus }) => {
                 <tbody className="divide-y divide-slate-100">
                     {users.length > 0 ? (
                         users.map((user) => (
-                            <tr key={user._id} className="saas-tr-excel group">
+                            <tr key={user._id} className="saas-tr-excel group cursor-pointer" onClick={() => onView?.(user)}>
                                 <td className="saas-td-excel">
                                     <div className="flex items-center gap-2.5">
                                         <div className="min-w-0">
@@ -52,7 +52,10 @@ const UserTable = ({ users, onEdit, onDelete, onToggleStatus }) => {
                                 </td>
                                 <td className="saas-td-excel">
                                     <button
-                                        onClick={() => onToggleStatus?.(user)}
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            onToggleStatus?.(user);
+                                        }}
                                         className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest inline-block cursor-pointer transition-all hover:scale-105 active:scale-95 ${
                                             user.status === 'active' 
                                             ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
@@ -65,7 +68,10 @@ const UserTable = ({ users, onEdit, onDelete, onToggleStatus }) => {
                                 <td className="saas-td-excel text-right px-6">
                                     <div className="flex items-center justify-end gap-3 translate-x-3">
                                         <button 
-                                            onClick={() => onEdit(user)} 
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                onEdit(user);
+                                            }} 
                                             className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 hover:text-amber-600 uppercase tracking-widest transition-all"
                                         >
                                             <FiEdit2 size={13} /> Edit

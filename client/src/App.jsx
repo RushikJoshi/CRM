@@ -70,6 +70,7 @@ const AssessmentResult = lazy(() => import("./pages/publicTest/AssessmentResult"
 const CompanyFormPage = lazy(() => import("./pages/forms/CompanyFormPage"));
 const CompanyDetailPage = lazy(() => import("./pages/companies/CompanyDetailPage"));
 const BranchFormPage = lazy(() => import("./pages/forms/BranchFormPage"));
+const BranchDetailsPage = lazy(() => import("./pages/BranchDetailsPage"));
 const UserFormPage = lazy(() => import("./pages/forms/UserFormPage"));
 const LeadFormPage = lazy(() => import("./pages/forms/LeadFormPage"));
 const LeadDetailPage = lazy(() => import("./pages/LeadDetailPage"));
@@ -207,6 +208,7 @@ function App() {
           <Route path="/superadmin/plans" element={<Plans />} />
           <Route path="/superadmin/users" element={<Users />} />
           <Route path="/superadmin/users/create" element={<UserFormPage />} />
+          <Route path="/superadmin/users/:id" element={<UserFormPage />} />
           <Route path="/superadmin/users/:id/edit" element={<UserFormPage />} />
           <Route path="/superadmin/billing" element={<Billing />} />
           <Route path="/superadmin/usage-analytics" element={<UsageAnalytics />} />
@@ -230,10 +232,12 @@ function App() {
           <Route path="/company/dashboard" element={<Dashboard />} />
           <Route path="/company/profile" element={<Profile />} />
           <Route path="/company/branches" element={<Branches />} />
+          <Route path="/company/branches/:id" element={<BranchDetailsPage />} />
           <Route path="/company/branches/create" element={<BranchFormPage />} />
           <Route path="/company/branches/:id/edit" element={<BranchFormPage />} />
           <Route path="/company/users" element={<Users />} />
           <Route path="/company/users/create" element={<UserFormPage />} />
+          <Route path="/company/users/:id" element={<UserFormPage />} />
           <Route path="/company/users/:id/edit" element={<UserFormPage />} />
           <Route path="/company/leads" element={<Leads />} />
           <Route path="/company/leads/create" element={<LeadFormPage />} />
@@ -287,6 +291,7 @@ function App() {
           <Route path="/branch/profile" element={<Profile />} />
           <Route path="/branch/users" element={<Users />} />
           <Route path="/branch/users/create" element={<UserFormPage />} />
+          <Route path="/branch/users/:id" element={<UserFormPage />} />
           <Route path="/branch/users/:id/edit" element={<UserFormPage />} />
           <Route path="/branch/leads" element={<Leads />} />
           <Route path="/branch/leads/create" element={<LeadFormPage />} />

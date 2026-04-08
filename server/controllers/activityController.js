@@ -6,11 +6,12 @@ const Meeting = require("../models/Meeting");
 const Todo = require("../models/Todo");
 const Note = require("../models/Note");
 const Message = require("../models/Message");
+const Inquiry = require("../models/Inquiry");
 
 // ── LOG NEW ACTIVITY ──────────────────────────────────────────────────────────
 exports.createActivity = async (req, res) => {
     try {
-        const { leadId, dealId, customerId, type, note, title, mentionedUserId, attachments } = req.body;
+        const { leadId, dealId, inquiryId, customerId, type, note, title, mentionedUserId, attachments } = req.body;
 
         if (!type || !note) {
             return res.status(400).json({ success: false, message: "Type and note are required." });
@@ -19,6 +20,7 @@ exports.createActivity = async (req, res) => {
         const activity = await Activity.create({
             leadId: leadId || null,
             dealId: dealId || null,
+            inquiryId: inquiryId || null,
             customerId: customerId || null,
             userId: req.user.id,
             companyId: req.user.companyId,
@@ -40,7 +42,7 @@ exports.createActivity = async (req, res) => {
                 type: "info",
                 title: "You were mentioned",
                 message: `${req.user.name} mentioned you in a ${type} note for lead.`,
-                metadata: { leadId, activityId: activity._id }
+                metadata: { leadId, inquiryId, activityId: activity._id }
             });
         }
 
@@ -49,6 +51,7 @@ exports.createActivity = async (req, res) => {
             const broadcastData = {
                 id: activity._id,
                 leadId: activity.leadId,
+                inquiryId: activity.inquiryId,
                 type: activity.type,
                 note: activity.note,
                 userId: req.user.id,
@@ -90,7 +93,7 @@ exports.getActivitiesByLead = async (req, res) => {
 // ── UNIFIED TIMELINE (Existing + New Activities) ──────────────────────────────
 exports.getActivityTimeline = async (req, res) => {
     try {
-        const { leadId, customerId, dealId } = req.query;
+        const { leadId, inquiryId, customerId, dealId } = req.query;
         const { getRBACFilter } = require("../utils/rbac");
         let baseFilter = getRBACFilter(req.user);
 
@@ -102,6 +105,17 @@ exports.getActivityTimeline = async (req, res) => {
         if (leadId) {
             leadMatch._id = leadId;
             activityMatch.$or = [{ leadId: leadId }, { inquiryId: leadId }];
+        }
+        if (inquiryId) {
+            // Strict isolation for a single inquiry timeline.
+            const inquiry = await Inquiry.findById(inquiryId).select("_id leadId").lean();
+            const inquiryLeadId = inquiry?.leadId ? String(inquiry.leadId) : null;
+            activityMatch.$or = inquiryLeadId
+                ? [{ inquiryId }, { leadId: inquiryLeadId }]
+                : [{ inquiryId }];
+            // Prevent broad fetch from non-target entities when inquiry is specified.
+            leadMatch._id = inquiryLeadId || "__none__";
+            dealMatch._id = "__none__";
         }
         if (customerId) {
             dealMatch.customerId = customerId;
