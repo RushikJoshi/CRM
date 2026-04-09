@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "playwright test",
+    "e2e:smoke": "playwright test tests/smoke.flows.spec.js --project=chromium",
+    "e2e:headed": "playwright test tests/smoke.flows.spec.js --project=chromium --headed"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../../services/api';
-import { 
-  FiClock, FiCheckSquare, FiChevronRight, FiChevronLeft, FiAlertTriangle, 
-  FiMonitor, FiArrowRight, FiCamera, FiActivity 
+import {
+  FiClock,
+  FiCheckSquare,
+  FiChevronRight,
+  FiChevronLeft,
+  FiAlertTriangle,
+  FiMonitor,
+  FiArrowRight,
+  FiCamera,
+  FiActivity,
+  FiShield,
+  FiCheckCircle,
+  FiList
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProctoringOverlay from '../../components/ProctoringOverlay';
@@ -11,7 +21,7 @@ import ProctoringOverlay from '../../components/ProctoringOverlay';
 const LiveTest = () => {
   const { token } = useParams();
   const navigate = useNavigate();
-  
+
   const [testData, setTestData] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -22,9 +32,11 @@ const LiveTest = () => {
   const [isProctoringStarted, setIsProctoringStarted] = useState(false);
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [proctoringStream, setProctoringStream] = useState(null);
-  const [proctoringStatus, setProctoringStatus] = useState("not_requested"); 
+  const [proctoringStatus, setProctoringStatus] = useState('not_requested');
   const [resetting, setResetting] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [pauseReason, setPauseReason] = useState('');
 
   useEffect(() => {
     fetchTest();
@@ -44,9 +56,9 @@ const LiveTest = () => {
   }, []);
 
   useEffect(() => {
-    if (isExamStarted && timeLeft > 0) {
+    if (isExamStarted && !isPaused && timeLeft > 0) {
       const timer = setInterval(() => {
-        setTimeLeft(prev => {
+        setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
             handleSubmit();
@@ -57,7 +69,7 @@ const LiveTest = () => {
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [isExamStarted, timeLeft]);
+  }, [isExamStarted, isPaused, timeLeft]);
 
   const enterFullscreen = () => {
     const el = document.documentElement;
@@ -72,24 +84,24 @@ const LiveTest = () => {
       const stream = await startProctoring();
       setProctoringStream(stream);
       setIsProctoringStarted(true);
-      setProctoringStatus("active");
-      
+      setProctoringStatus('active');
+
       setTimeout(() => {
-        const video = document.getElementById("pre-exam-preview");
+        const video = document.getElementById('pre-exam-preview');
         if (video) {
-            video.srcObject = stream;
-            video.play();
+          video.srcObject = stream;
+          video.play();
         }
       }, 100);
 
       enterFullscreen();
     } catch (error) {
-      if (error.message === "Permission denied") {
-        setProctoringStatus("denied");
-        alert("WARNING: Camera access denied. Monitoring limited.");
-      } else if (error.message === "Camera not supported") {
-        setProctoringStatus("not_supported");
-        alert("Your browser does not support proctoring hardware. Proceeding...");
+      if (error.message === 'Permission denied') {
+        setProctoringStatus('denied');
+        alert('WARNING: Camera access denied. Monitoring limited.');
+      } else if (error.message === 'Camera not supported') {
+        setProctoringStatus('not_supported');
+        alert('Your browser does not support proctoring hardware. Proceeding...');
       }
       setIsExamStarted(true);
     } finally {
@@ -99,18 +111,18 @@ const LiveTest = () => {
 
   const startProctoring = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error("Hardware access not supported");
+      throw new Error('Hardware access not supported');
     }
     try {
       return await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
         audio: true
       });
     } catch (error) {
-      if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
-        throw new Error("Permission denied");
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        throw new Error('Permission denied');
       }
-      throw new Error("Unknown media error");
+      throw new Error('Unknown media error');
     }
   };
 
@@ -137,12 +149,14 @@ const LiveTest = () => {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await API.post('/test/public/submit-test', { 
-        token, answers, proctoringStatus
+      const res = await API.post('/test/public/submit-test', {
+        token,
+        answers,
+        proctoringStatus
       });
-      navigate(`/test/result/done`, { state: res.data.data });
+      navigate('/test/result/done', { state: res.data.data });
     } catch (err) {
-      alert("Submission failed. Please check your connection.");
+      alert('Submission failed. Please check your connection.');
       setSubmitting(false);
     }
   };
@@ -152,17 +166,29 @@ const LiveTest = () => {
     setTimeout(() => {
       setCurrentIndex(0);
       setAnswers({});
-      setSessionKey(prev => prev + 1);
+      setSessionKey((prev) => prev + 1);
       setResetting(false);
-    }, 4000); 
+    }, 4000);
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
-       <div className="w-16 h-16 border-[6px] border-[#9b1c1c] border-t-transparent rounded-full animate-spin"></div>
-       <p className="text-[#9b1c1c] font-bold uppercase tracking-[0.3em] text-xs">Authenticating Portal...</p>
-    </div>
-  );
+  const handleWarningAction = (message) => {
+    setPauseReason(message || 'Violation detected. Please review and continue when ready.');
+    setIsPaused(true);
+  };
+
+  const handleResumeExam = () => {
+    setIsPaused(false);
+    enterFullscreen();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-6">
+        <div className="w-16 h-16 border-[6px] border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sky-700 font-semibold uppercase tracking-[0.2em] text-xs">Preparing assessment workspace...</p>
+      </div>
+    );
+  }
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -172,242 +198,304 @@ const LiveTest = () => {
 
   const currentQuestion = testData.questions[currentIndex];
   const progress = ((currentIndex + 1) / testData.questions.length) * 100;
+  const attemptedCount = Object.keys(answers).length;
+  const pendingCount = testData.questions.length - attemptedCount;
 
   return (
-    <div className="h-screen overflow-hidden bg-white font-sans selection:bg-[#9b1c1c] selection:text-white">
-      <ProctoringOverlay 
+    <div className="h-screen overflow-hidden bg-slate-50 font-sans text-slate-900 selection:bg-sky-200 selection:text-slate-900">
+      <ProctoringOverlay
         key={sessionKey}
-        token={token} 
-        stream={proctoringStream} 
-        isStarted={isProctoringStarted} 
+        token={token}
+        stream={proctoringStream}
+        isStarted={isProctoringStarted}
         proctoringStatus={proctoringStatus}
         onLimitReached={() => handleSecurityReset()}
+        onWarningAction={handleWarningAction}
       />
 
-      {/* ── SECURITY VIOLATION RESET OVERLAY ───────────────────────────────── */}
       <AnimatePresence>
         {resetting && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[500] bg-[#9b1c1c] text-white flex flex-col items-center justify-center p-10 text-center backdrop-blur-2xl"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[500] bg-slate-950/95 text-white flex flex-col items-center justify-center p-8 text-center"
           >
-             <motion.div 
-               initial={{ scale: 0.9, rotate: -5 }} animate={{ scale: 1, rotate: 0 }}
-               className="max-w-2xl"
-             >
-                <div className="w-32 h-32 bg-white/10 rounded-[3rem] flex items-center justify-center mx-auto mb-10 border-4 border-white/20 animate-pulse">
-                   <FiAlertTriangle size={64} strokeWidth={3} />
-                </div>
-                <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter italic mb-6 leading-none">Security Violation</h1>
-                <p className="text-xl font-bold italic opacity-80 mb-10 tracking-tight">Too many protocol breaches detected. Your session is being forcibly synchronized and restarted from the beginning.</p>
-                <div className="flex items-center justify-center gap-4">
-                   <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                   <span className="font-black uppercase tracking-[0.3em] text-xs">Re-authenticating...</span>
-                </div>
-             </motion.div>
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="max-w-2xl">
+              <div className="w-28 h-28 bg-amber-500/20 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-amber-300/40 animate-pulse">
+                <FiAlertTriangle size={54} strokeWidth={2.8} className="text-amber-300" />
+              </div>
+              <h1 className="text-4xl lg:text-6xl font-extrabold mb-4 leading-tight">Security protocol triggered</h1>
+              <p className="text-base lg:text-lg text-slate-200 mb-8">
+                Multiple violations were detected. Session is being synchronized and restarted from question 1.
+              </p>
+              <div className="flex items-center justify-center gap-3 text-sm font-semibold tracking-wide uppercase text-slate-100">
+                <div className="w-10 h-10 border-4 border-slate-100 border-t-transparent rounded-full animate-spin"></div>
+                Re-authenticating session
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── READY TO BEGIN / SECURITY PROTOCOL UI ───────────────────────────── */}
       {!isExamStarted && (
-        <div className="fixed inset-0 z-[200] bg-slate-50 flex flex-col items-center justify-center p-6 min-h-screen overflow-y-auto">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-xl w-full bg-white rounded-[3rem] p-10 lg:p-14 shadow-3xl flex flex-col items-center text-center border border-slate-100">
-               <h1 className="text-4xl font-black text-[#1a202c] mb-3 tracking-tighter uppercase italic">Ready to begin?</h1>
-               <p className="text-[#9b1c1c]/50 font-black uppercase tracking-[0.4em] text-[10px] mb-12">SECURE ASSESSMENT PROTOCOL V2.0</p>
-               
-               <div className="w-full text-left space-y-5 mb-12">
-                  {!isProctoringStarted ? (
-                    <>
-                    <div className="bg-[#2c336b]/5 border border-[#2c336b]/10 p-6 rounded-[2rem] flex items-center gap-6 group hover:bg-[#2c336b]/10 transition-colors">
-                       <div className="w-14 h-14 bg-white text-[#2c336b] rounded-2xl flex items-center justify-center shadow-lg shadow-[#2c336b]/5 shrink-0 group-hover:scale-110 transition-transform">
-                          <FiCamera size={28} strokeWidth={2.5} />
-                       </div>
-                       <div>
-                          <h4 className="text-sm font-black text-[#1a202c] uppercase tracking-wide">Face Detection Active</h4>
-                          <p className="text-xs text-slate-500 mt-1 font-medium italic opacity-80">Real-time acoustic and visual tracking enabled.</p>
-                       </div>
+        <div className="fixed inset-0 z-[200] bg-gradient-to-b from-sky-50 via-white to-slate-50 flex items-center justify-center p-4 lg:p-8 overflow-y-auto">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-6xl bg-white rounded-3xl border border-slate-200 shadow-xl p-6 lg:p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-2 space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-900">
+                    <FiList /> Exam Details
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-xl bg-white border border-slate-200 p-3">
+                      <p className="text-slate-500 text-xs">Questions</p>
+                      <p className="text-xl font-bold">{testData.questions.length}</p>
                     </div>
-                    
-                    <div className="bg-[#9b1c1c]/5 border border-[#9b1c1c]/10 p-6 rounded-[2rem] flex items-center gap-6 group hover:bg-[#9b1c1c]/10 transition-colors">
-                       <div className="w-14 h-14 bg-white text-[#9b1c1c] rounded-2xl flex items-center justify-center shadow-lg shadow-[#9b1c1c]/5 shrink-0 group-hover:scale-110 transition-transform">
-                          <FiActivity size={28} strokeWidth={2.5} />
-                       </div>
-                       <div>
-                          <h4 className="text-sm font-black text-[#1a202c] uppercase tracking-wide">Integrity Score Monitoring</h4>
-                          <p className="text-xs text-slate-500 mt-1 font-medium italic opacity-80">Tab switching and full-screen exits are penalized.</p>
-                       </div>
+                    <div className="rounded-xl bg-white border border-slate-200 p-3">
+                      <p className="text-slate-500 text-xs">Duration</p>
+                      <p className="text-xl font-bold">{Math.max(1, Math.ceil(timeLeft / 60))} min</p>
                     </div>
-                    </>
-                  ) : (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center w-full">
-                        <div className="w-full bg-[#1a202c] rounded-[3rem] overflow-hidden shadow-2xl mb-8 relative group aspect-[4/3] border-[6px] border-white">
-                            <video id="pre-exam-preview" autoPlay muted playsInline className="w-full h-full object-cover transform -scale-x-100" />
-                            <div className="absolute top-6 left-6 bg-emerald-500 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl">
-                                <div className="w-2 h-2 bg-white rounded-full animate-ping"></div> Live
-                            </div>
-                        </div>
-                        <div className="w-full bg-emerald-50 border border-emerald-100 text-emerald-800 p-5 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest">
-                           <FiCheckSquare size={18} /> Hardware Synchronized Properly
-                        </div>
-                    </motion.div>
-                  )}
-               </div>
+                    <div className="rounded-xl bg-white border border-slate-200 p-3 col-span-2">
+                      <p className="text-slate-500 text-xs">Mode</p>
+                      <p className="text-base font-semibold tracking-wide">LIVE PORTAL</p>
+                    </div>
+                  </div>
+                </div>
 
-               {!isProctoringStarted ? (
-                 <button onClick={handleStartExam} disabled={hardwareVerifying} className="w-full py-6 bg-[#1a202c] text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-slate-300 hover:bg-black hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-50">
-                  {hardwareVerifying ? 'Verifying Hardware...' : 'Verify Hardware'} <FiArrowRight strokeWidth={3} />
-                 </button>
-               ) : (
-                 <button onClick={() => setIsExamStarted(true)} className="w-full py-6 bg-[#9b1c1c] text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-[#9b1c1c]/20 hover:bg-[#7f1717] hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
-                  Start Examination <FiChevronRight strokeWidth={3} />
-                 </button>
-               )}
-            </motion.div>
+                {isProctoringStarted ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                    <p className="font-semibold flex items-center gap-2 mb-2"><FiCheckCircle /> Hardware verified successfully</p>
+                    <p>Camera and microphone are active. Keep your face visible throughout the exam.</p>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    <p className="font-semibold flex items-center gap-2 mb-2"><FiShield /> Verification recommended</p>
+                    <p>Allow camera and microphone access for full monitoring quality.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="lg:col-span-3 space-y-5">
+                <div>
+                  <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900">Ready to begin your assessment?</h1>
+                  <p className="text-sm text-slate-600 mt-1">Please review instructions carefully before starting.</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <FiCamera className="text-sky-600 mt-0.5" />
+                    <p>Face detection remains active for full exam duration.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <FiActivity className="text-sky-600 mt-0.5" />
+                    <p>Tab switching and full-screen exit attempts are recorded as violations.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <FiClock className="text-sky-600 mt-0.5" />
+                    <p>Timer starts once the exam opens and auto-submits on timeout.</p>
+                  </div>
+                </div>
+
+                {isProctoringStarted && (
+                  <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 aspect-video max-w-md">
+                    <video id="pre-exam-preview" autoPlay muted playsInline className="w-full h-full object-cover -scale-x-100" />
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                  {!isProctoringStarted ? (
+                    <button
+                      onClick={handleStartExam}
+                      disabled={hardwareVerifying}
+                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-sky-700 text-white font-semibold hover:bg-sky-800 transition disabled:opacity-60"
+                    >
+                      {hardwareVerifying ? 'Verifying hardware...' : 'Verify Camera & Mic'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIsExamStarted(true)}
+                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition flex items-center justify-center gap-2"
+                    >
+                      Start Examination <FiArrowRight />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       )}
 
-      {/* ── DIGITAL EXAMINATION ENGINE ───────────────────────────────────────── */}
       {isExamStarted && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="h-full flex flex-col overflow-hidden">
-          
-         {/* TOP BAR */}
-         <header className="bg-white border-b border-gray-100 z-50 shadow-sm shrink-0">
-            <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center h-24">
-               <div className="flex items-center gap-5">
-                  <div className="bg-[#9b1c1c]/5 w-14 h-14 rounded-[1.5rem] flex items-center justify-center text-[#9b1c1c] shadow-inner">
-                     <FiMonitor size={28} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                     <h2 className="text-[11px] font-black text-[#1a202c] tracking-[0.3em] uppercase">DIGITAL EXAMINATION</h2>
-                     <p className="text-[9px] text-slate-400 font-black tracking-widest uppercase mt-1">LIVE PORTAL</p>
-                  </div>
-               </div>
-
-               {/* Timer */}
-               <div className={`flex items-center gap-4 px-8 py-3 rounded-full border-2 transition-all duration-300 ${timeLeft < 300 ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse shadow-xl shadow-rose-100' : 'bg-[#fafafa] border-slate-100 text-[#1a202c]'}`}>
-                  <FiClock size={24} className={timeLeft < 300 ? "text-rose-500" : "text-slate-300"} />
-                  <span className="font-black text-2xl tracking-tighter tabular-nums">{formatTime(timeLeft)}</span>
-               </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="h-full flex flex-col overflow-hidden">
+          {isPaused && (
+            <div className="fixed inset-0 z-[350] bg-slate-950/55 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl p-6">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Exam paused due to violation</h3>
+                <p className="text-sm text-slate-600 mb-5">{pauseReason}</p>
+                <button
+                  onClick={handleResumeExam}
+                  className="w-full px-4 py-3 rounded-xl bg-sky-700 text-white font-semibold hover:bg-sky-800 transition"
+                >
+                  Resume Exam
+                </button>
+              </div>
             </div>
-            
-            {/* Progress Bar */}
-            <div className="w-full h-[3px] bg-slate-50">
-               <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-[#9b1c1c] shadow-[0_0_10px_#9b1c1c]"></motion.div>
+          )}
+          <header className="bg-white border-b border-slate-200 z-50 shrink-0">
+            <div className="max-w-7xl mx-auto px-4 lg:px-6 h-20 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                  <FiMonitor size={20} />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-bold tracking-wide uppercase text-slate-900">Digital Examination</h2>
+                  <p className="text-xs text-slate-500 truncate">Mode: Live portal</p>
+                </div>
+              </div>
+
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${timeLeft < 300 ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-slate-50 border-slate-200 text-slate-900'}`}>
+                <FiClock className={timeLeft < 300 ? 'text-rose-500' : 'text-slate-400'} />
+                <span className="font-bold text-lg tabular-nums">{formatTime(timeLeft)}</span>
+              </div>
             </div>
-         </header>
+            <div className="h-1 bg-slate-100">
+              <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-sky-600" />
+            </div>
+          </header>
 
-         <main className="flex-1 overflow-hidden">
-            <div className="max-w-7xl mx-auto px-6 py-8 h-full">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
-               
-               {/* SIDEBAR (Paper Path) */}
-               <aside className="lg:col-span-3">
-                  <div className="bg-[#fafafa] rounded-[3rem] p-10 border border-slate-100 shadow-sm h-full">
-                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8">Paper Path</h3>
-                     <div className="flex flex-row overflow-x-auto lg:grid lg:grid-cols-4 gap-3 pb-8 border-b border-slate-100 hide-scrollbar">
-                        {testData.questions.map((q, i) => (
-                           <button
-                              key={i}
-                              onClick={() => setCurrentIndex(i)}
-                              className={`shrink-0 w-12 h-12 lg:w-full lg:h-12 rounded-2xl flex items-center justify-center text-[11px] font-black transition-all ${
-                                 i === currentIndex 
-                                 ? 'bg-[#9b1c1c] text-white shadow-2xl shadow-[#9b1c1c]/40 scale-110 z-10' 
-                                 : answers[q._id] 
-                                    ? 'bg-[#2c336b] text-white shadow-lg shadow-[#2c336b]/10'
-                                    : 'bg-white text-slate-300 hover:bg-slate-200 border border-slate-100'
-                              }`}
-                           >
-                              {i + 1}
-                           </button>
-                        ))}
-                     </div>
-                     <div className="pt-8 space-y-5">
-                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                           <span className="flex items-center gap-4"><div className="w-2.5 h-2.5 rounded-full bg-[#9b1c1c]"></div> Active</span>
-                           <span className="text-[#1a202c] italic">{currentIndex + 1}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                           <span className="flex items-center gap-4"><div className="w-2.5 h-2.5 rounded-full bg-[#2c336b]"></div> Attempted</span>
-                           <span className="text-[#1a202c] italic">{Object.keys(answers).length}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                           <span className="flex items-center gap-4"><div className="w-2.5 h-2.5 rounded-full bg-slate-200 border border-slate-300"></div> Pending</span>
-                           <span className="text-[#1a202c] italic">{testData.questions.length - Object.keys(answers).length}</span>
-                        </div>
-                     </div>
+          <main className="flex-1 overflow-hidden pb-16">
+            <div className="max-w-7xl mx-auto h-full px-4 lg:px-6 py-4 lg:py-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 h-full">
+                <aside className="lg:col-span-3 h-full">
+                  <div className="h-full bg-white border border-slate-200 rounded-2xl p-4 flex flex-col">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Exam Instructions</h3>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2 text-xs text-slate-700 mb-4">
+                      <p>1. Keep your face visible in camera frame.</p>
+                      <p>2. Do not switch tabs or exit fullscreen.</p>
+                      <p>3. Choose one option and move to next question.</p>
+                      <p>4. Use Finish button only after final review.</p>
+                    </div>
+
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Question Navigator</h4>
+                    <div className="grid grid-cols-6 lg:grid-cols-4 gap-2 pb-4 border-b border-slate-100 overflow-y-auto">
+                      {testData.questions.map((q, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentIndex(i)}
+                          disabled={isPaused}
+                          className={`h-10 rounded-lg text-sm font-semibold transition ${
+                            i === currentIndex
+                              ? 'bg-sky-600 text-white'
+                              : answers[q._id]
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          } ${isPaused ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="pt-4 space-y-2 text-sm">
+                      <div className="flex items-center justify-between text-slate-600">
+                        <span>Current</span>
+                        <span className="font-semibold text-slate-900">{currentIndex + 1}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-600">
+                        <span>Attempted</span>
+                        <span className="font-semibold text-emerald-700">{attemptedCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-600">
+                        <span>Pending</span>
+                        <span className="font-semibold text-amber-700">{pendingCount}</span>
+                      </div>
+                    </div>
                   </div>
-               </aside>
+                </aside>
 
-               {/* QUESTION AREA */}
-               <section className="lg:col-span-9">
+                <section className="lg:col-span-9 h-full">
                   <AnimatePresence mode="wait">
-                     <motion.div 
-                            key={currentIndex}
-                            initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.4 }}
-                            className="bg-white rounded-[4rem] p-10 lg:p-14 border border-slate-100 shadow-sm h-full flex flex-col relative overflow-hidden"
-                     >
-                           <div className="absolute top-0 right-0 w-64 h-64 bg-[#9b1c1c]/5 rounded-bl-[10rem] pointer-events-none"></div>
-                           
-                           <h2 className="text-3xl lg:text-5xl font-black text-[#1a202c] mb-10 leading-[1.1] tracking-tight uppercase italic relative z-10">
-                              {currentIndex + 1}. <span className="not-italic opacity-90">{currentQuestion.question}</span>
-                           </h2>
+                    <motion.div
+                      key={currentIndex}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="h-full bg-white border border-slate-200 rounded-2xl p-4 lg:p-6 flex flex-col"
+                    >
+                      <h2 className="text-xl lg:text-3xl font-bold leading-snug mb-5 text-slate-900">
+                        {currentIndex + 1}. {currentQuestion.question}
+                      </h2>
 
-                           <div className="space-y-5 mb-10 relative z-10 flex-1 overflow-hidden">
-                              {currentQuestion.options.map((opt, i) => (
-                                 <button
-                                        key={i} onClick={() => handleSelect(opt)}
-                                        className={`w-full text-left p-8 rounded-[2.5rem] border-2 transition-all duration-300 flex items-center gap-8 group ${
-                                           answers[currentQuestion._id] === opt 
-                                           ? 'bg-[#9b1c1c]/5 border-[#9b1c1c] shadow-2xl shadow-[#9b1c1c]/10' 
-                                           : 'bg-[#fafafa] border-transparent hover:border-slate-200 hover:bg-white'
-                                        }`}
-                                 >
-                                        <div className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center font-black text-xl transition-all ${
-                                           answers[currentQuestion._id] === opt 
-                                           ? 'bg-[#9b1c1c] text-white shadow-2xl shadow-[#9b1c1c]/20 scale-110' 
-                                           : 'bg-white text-slate-400 group-hover:bg-slate-100 shadow-sm'
-                                        }`}>
-                                           {String.fromCharCode(65 + i)}
-                                        </div>
-                                        <span className={`text-xl font-bold tracking-tight ${answers[currentQuestion._id] === opt ? 'text-[#9b1c1c]' : 'text-[#2d3748] opacity-80'}`}>{opt}</span>
-                                 </button>
-                              ))}
-                           </div>
+                      <div className="space-y-3 overflow-y-auto pr-1 flex-1">
+                        {currentQuestion.options.map((opt, i) => {
+                          const selected = answers[currentQuestion._id] === opt;
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => handleSelect(opt)}
+                              disabled={isPaused}
+                              className={`w-full text-left p-4 lg:p-5 rounded-xl border transition flex items-center gap-4 ${
+                                selected
+                                  ? 'bg-sky-50 border-sky-300'
+                                  : 'bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300'
+                              } ${isPaused ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            >
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-semibold shrink-0 ${selected ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
+                                {String.fromCharCode(65 + i)}
+                              </div>
+                              <span className={`text-base lg:text-lg ${selected ? 'text-sky-900 font-semibold' : 'text-slate-700'}`}>{opt}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
 
-                           <div className="mt-auto flex justify-between items-center gap-6 pt-8 border-t border-slate-50 relative z-10 shrink-0">
-                               <button onClick={() => setCurrentIndex(prev => prev - 1)} disabled={currentIndex === 0} className="flex items-center gap-3 px-8 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-slate-300 hover:text-[#9b1c1c] hover:bg-[#9b1c1c]/5 disabled:opacity-20 transition-all">
-                                  <FiChevronLeft size={24} strokeWidth={3} /> Prev
-                               </button>
+                      <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                        <button
+                          onClick={() => setCurrentIndex((prev) => prev - 1)}
+                          disabled={currentIndex === 0 || isPaused}
+                          className="px-4 py-2.5 rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          <FiChevronLeft /> Previous
+                        </button>
 
-                               {currentIndex === testData.questions.length - 1 ? (
-                                  <button onClick={handleSubmit} disabled={submitting} className="px-12 py-5 rounded-[2rem] bg-[#2c336b] text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-[#2c336b]/20 hover:bg-[#1a202c] hover:scale-105 transition-all flex items-center gap-4">
-                                      {submitting ? 'Submitting...' : 'Finish Exam'} <FiCheckSquare size={20} strokeWidth={3} />
-                                  </button>
-                               ) : (
-                                  <button onClick={() => setCurrentIndex(prev => prev + 1)} className="px-12 py-5 rounded-[2rem] bg-[#9b1c1c] text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-[#9b1c1c]/20 hover:bg-[#7f1717] hover:scale-105 transition-all flex items-center gap-4">
-                                      Next <FiChevronRight size={24} strokeWidth={3} />
-                                  </button>
-                               )}
-                           </div>
-                     </motion.div>
+                        {currentIndex === testData.questions.length - 1 ? (
+                          <button
+                            onClick={handleSubmit}
+                            disabled={submitting || isPaused}
+                            className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition disabled:opacity-60 flex items-center gap-2"
+                          >
+                            {submitting ? 'Submitting...' : 'Finish & Submit'} <FiCheckSquare />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setCurrentIndex((prev) => prev + 1)}
+                            disabled={isPaused}
+                            className="px-5 py-2.5 rounded-lg bg-sky-700 text-white hover:bg-sky-800 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            Next <FiChevronRight />
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
                   </AnimatePresence>
-               </section>
+                </section>
+              </div>
             </div>
-            </div>
-         </main>
+          </main>
 
-         {/* SECURITY ALERTS / FOOTER */}
-         <footer className="fixed bottom-0 left-0 w-full bg-[#1a202c] border-t-4 border-[#9b1c1c] z-[200]">
-             <div className="max-w-7xl mx-auto py-3 px-8 flex items-center justify-between gap-10">
-                 <div className="flex items-center gap-4 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.3em]">
-                    <FiAlertTriangle className="text-[#9b1c1c] animate-pulse" size={20} strokeWidth={3} />
-                    <span className="hidden sm:inline italic">SESSION LOCKED. DO NOT REFRESH OR EXIT. IP & DEVICE FINGERPRINTING ACTIVE.</span>
-                    <span className="sm:hidden">SESSION LOCKED. DO NOT EXIT.</span>
-                 </div>
-                 <p className="text-slate-600 text-[10px] font-black uppercase tracking-[0.5em] hidden md:block">Protocol V2.0 Secured</p>
-             </div>
-         </footer>
+          <footer className="fixed bottom-0 left-0 w-full bg-slate-900 border-t border-slate-800 z-[200]">
+            <div className="max-w-7xl mx-auto py-2.5 px-4 lg:px-6 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-slate-100 text-[11px] md:text-xs">
+                <FiAlertTriangle className="text-amber-400" />
+                <span className="hidden sm:inline">Session locked. Do not refresh or exit during the exam.</span>
+                <span className="sm:hidden">Session locked.</span>
+              </div>
+              <p className="text-slate-400 text-[10px] uppercase tracking-wider hidden md:block">Secure mode active</p>
+            </div>
+          </footer>
         </motion.div>
       )}
     </div>

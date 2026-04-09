@@ -586,43 +586,6 @@ export default function BranchFormPage() {
     }
   }, [clearError, toast]);
 
-  // Indian Postal API: city/postoffice name -> pincode (pick result that best matches city name)
-  const fetchPincodeByCity = useCallback(async (cityName) => {
-    const name = String(cityName).trim();
-    if (name.length < 2) return;
-    const normalizedInput = name.toLowerCase();
-    try {
-      const res = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(name)}`);
-      const data = await res.json();
-      if (!data || data[0]?.Status !== "Success" || !data[0].PostOffice?.length) return;
-      const offices = data[0].PostOffice;
-      // Prefer post office whose District (city) best matches user input; avoid wrong state
-      const withDistrict = offices.filter((po) => po.District && po.Pincode);
-      if (!withDistrict.length) return;
-      let best = withDistrict[0];
-      let bestScore = editDistance(normalizedInput, (best.District || "").toLowerCase());
-      for (let i = 1; i < withDistrict.length; i++) {
-        const d = (withDistrict[i].District || "").toLowerCase();
-        const score = editDistance(normalizedInput, d);
-        if (score < bestScore) {
-          bestScore = score;
-          best = withDistrict[i];
-        }
-      }
-      // Only auto-fill if match is reasonable (allow 2–3 character typo for long names)
-      const maxAllowed = Math.min(4, Math.ceil(best.District.length / 2));
-      if (bestScore <= maxAllowed && best.Pincode) {
-        setFormData((prev) => ({
-          ...prev,
-          postalCode: best.Pincode,
-          state: best.State || prev.state,
-          city: best.District || prev.city,
-          country: best.Country || prev.country || "India",
-        }));
-      }
-    } catch (_) {}
-  }, []);
-
   const handlePostalCodeBlur = () => {
     if (formData.postalCode?.trim().length === 6) {
       fetchAddressByPincode(formData.postalCode.trim());
@@ -973,3 +936,4 @@ export default function BranchFormPage() {
     </div>
   );
 }
+

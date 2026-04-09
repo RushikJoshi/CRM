@@ -168,7 +168,7 @@ function App() {
             console.log("Redirecting to:", ROLE_HOME[role]);
           }
         }
-      } catch (err) {
+      } catch {
         console.log("No SSO session detected during init");
       } finally {
         setIsChecking(false);

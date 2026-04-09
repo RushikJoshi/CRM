@@ -50,7 +50,7 @@ const LoginForm = () => {
     return (
         <div className="flex flex-col justify-center h-full max-w-[360px] mx-auto">
             {/* Logo for mobile */}
-            <div className="flex flex-col mb-10 lg:hidden">
+            <div className="flex flex-col mb-10 md:hidden">
                 <h1 className="text-[32px] font-black text-[#1e40af] leading-none mb-1">Gitakshmi</h1>
                 <div className="flex items-center gap-2">
                     <div className="h-[1px] flex-1 bg-blue-900/20" />
@@ -77,6 +77,7 @@ const LoginForm = () => {
                     <div className="relative group">
                         <FiMail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2563eb] transition-colors" />
                         <input
+                            data-testid="login-email"
                             type="email"
                             placeholder="name@gitakshmilabs.com"
                             value={email}
@@ -93,6 +94,7 @@ const LoginForm = () => {
                     <div className="relative group">
                         <FiLock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2563eb] transition-colors" />
                         <input
+                            data-testid="login-password"
                             type={showPass ? "text" : "password"}
                             placeholder="••••••••"
                             value={password}
@@ -106,6 +108,7 @@ const LoginForm = () => {
                 </div>
 
                 <button
+                    data-testid="login-submit"
                     type="submit"
                     disabled={loading}
                     className="w-full h-12 flex items-center justify-center gap-2.5 rounded-xl font-black text-[14px] text-white bg-[#2563eb] hover:bg-[#1d4ed8] shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all disabled:opacity-50"
@@ -116,7 +119,7 @@ const LoginForm = () => {
 
             <div className="mt-20 flex flex-col items-center">
                 <span className="text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] text-center">
-                    SECURED BY GITAKSHMI <br className="lg:hidden" /> ENCRYPTION PROTOCOLS
+                    SECURED BY GITAKSHMI <br className="md:hidden" /> ENCRYPTION PROTOCOLS
                 </span>
             </div>
         </div>
@@ -124,3 +127,4 @@ const LoginForm = () => {
 };
 
 export default LoginForm;
+

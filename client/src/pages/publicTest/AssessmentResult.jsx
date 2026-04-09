@@ -1,10 +1,21 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import API from '../../services/api';
-import { 
-  FiUser, FiMail, FiPhone, FiCheckCircle, FiShield, 
-  FiFileText, FiAward, FiArrowRight, FiZap, FiTarget, 
-  FiBarChart2, FiDownload, FiStar, FiMapPin
+import {
+  FiArrowLeft,
+  FiArrowRight,
+  FiAward,
+  FiBarChart2,
+  FiCheckCircle,
+  FiDownload,
+  FiMail,
+  FiMapPin,
+  FiPhone,
+  FiShield,
+  FiStar,
+  FiTarget,
+  FiUser,
+  FiZap
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,270 +23,393 @@ const AssessmentResult = () => {
   const { token } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+
   const scoreData = location.state?.scoreData;
 
-  const [step, setStep] = useState('score'); // 'score' -> 'lead' -> 'final'
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', location: '', token });
+  const [step, setStep] = useState('score'); // score -> lead -> final
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    token
+  });
+
+  const { score = 0, totalMarks = 0, showResult, proctoringScore = 100, proctoringStatus } = scoreData || {};
+  const percentage = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
+
+  const performanceLabel = useMemo(() => {
+    if (percentage >= 85) return 'Superior Performance';
+    if (percentage >= 60) return 'Great Progress';
+    return 'Keep Building Momentum';
+  }, [percentage]);
+
+  const stars = useMemo(() => {
+    if (percentage >= 85) return 5;
+    if (percentage >= 70) return 4;
+    if (percentage >= 50) return 3;
+    return 2;
+  }, [percentage]);
+
+  if (!scoreData) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+        <div className="max-w-xl w-full bg-white border border-slate-200 rounded-3xl p-8 text-center">
+          <h2 className="text-3xl font-black text-slate-900 mb-2">Result not found</h2>
+          <p className="text-slate-600 mb-6">Please complete the assessment first.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="rounded-xl bg-slate-900 px-5 py-2.5 text-white font-semibold hover:bg-slate-800"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleInquirySubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError(null);
+    setError('');
+
     try {
       await API.post('/test/public/inquiry/create', {
         ...formData,
-        proctoringStatus: scoreData?.proctoringStatus
+        proctoringStatus: proctoringStatus || 'active'
       });
       setStep('final');
     } catch (err) {
-      setError(err.response?.data?.message || "Linking failed. Try again.");
+      setError(err.response?.data?.message || 'Could not register details. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!scoreData) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-10 font-sans">
-         <div className="bg-white rounded-[3rem] p-16 text-center shadow-2xl border border-slate-100 max-w-lg">
-            <h2 className="text-3xl font-black text-[#1a202c] mb-6 uppercase tracking-tighter italic">Access Restricted</h2>
-            <p className="text-slate-500 font-medium mb-10">Score data not found. Please complete the assessment first.</p>
-            <button onClick={() => navigate('/')} className="w-full bg-[#1a202c] text-white py-5 rounded-2xl font-black shadow-lg uppercase tracking-widest text-xs">Return to Home</button>
-         </div>
-      </div>
-    );
-  }
+  const generateCertificateHtml = () => {
+    const name = formData.name?.trim() || 'Candidate';
+    const date = new Date().toLocaleDateString();
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Gitakshmi Labs Certificate</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:30px}
+    .wrap{max-width:1000px;margin:0 auto;background:#fff;border:8px solid #0f172a;border-radius:16px;overflow:hidden}
+    .top{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:28px 36px}
+    .title{font-size:42px;font-weight:900;letter-spacing:1px;margin:8px 0}
+    .content{padding:40px 36px;color:#0f172a}
+    .line{font-size:20px;line-height:1.7}
+    .name{font-size:44px;font-weight:900;color:#c2363f;margin:14px 0}
+    .badge{margin-top:24px;display:inline-block;padding:10px 16px;background:#f1f5f9;border-radius:999px;font-size:13px;font-weight:700}
+    .footer{padding:20px 36px;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;display:flex;justify-content:space-between}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div style="font-size:14px;opacity:.8;letter-spacing:2px;text-transform:uppercase">Gitakshmi Labs</div>
+      <div class="title">Certificate of Assessment</div>
+      <div style="opacity:.8">This certifies completion of a verified online assessment.</div>
+    </div>
+    <div class="content">
+      <div class="line">This is proudly presented to</div>
+      <div class="name">${name}</div>
+      <div class="line">for successfully completing the exam with a score of <b>${score}/${totalMarks}</b> (${percentage}%).</div>
+      <div class="badge">Verification Token: ${token.toUpperCase()}</div>
+      <div class="badge" style="margin-left:8px">Proctoring Score: ${proctoringScore}</div>
+    </div>
+    <div class="footer">
+      <span>Date: ${date}</span>
+      <span>Gitakshmi Labs | Secure Assessment Engine</span>
+    </div>
+  </div>
+</body>
+</html>`;
+  };
 
-  const { score, totalMarks, showResult, proctoringStatus } = scoreData;
-  const percentage = Math.round((score / totalMarks) * 100);
+  const downloadCertificate = () => {
+    const html = generateCertificateHtml();
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gitakshmi-certificate-${token}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadReport = () => {
+    const report = {
+      token,
+      candidate: {
+        name: formData.name || 'Candidate',
+        email: formData.email || '',
+        phone: formData.phone || '',
+        location: formData.location || ''
+      },
+      result: {
+        score,
+        totalMarks,
+        percentage,
+        showResult: !!showResult,
+        proctoringScore,
+        proctoringStatus: proctoringStatus || 'active'
+      },
+      generatedAt: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gitakshmi-report-${token}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] font-sans py-20 px-6 selection:bg-[#9b1c1c]/10 selection:text-[#9b1c1c]">
-      <div className="max-w-4xl mx-auto">
-        
+    <div className="min-h-screen bg-[#eef1f5] py-10 px-4">
+      <div className="max-w-5xl mx-auto">
         <AnimatePresence mode="wait">
-          {/* STEP 1: SCORE DISPLAY */}
           {step === 'score' && (
-            <motion.div 
-               key="score"
-               initial={{ opacity: 0, scale: 0.95 }}
-               animate={{ opacity: 1, scale: 1 }}
-               exit={{ opacity: 0, scale: 0.9, y: -20 }}
-               className="bg-white rounded-[4rem] shadow-3xl shadow-slate-200 border border-slate-50 overflow-hidden"
+            <motion.div
+              data-testid="result-score-screen"
+              key="score"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -18 }}
+              className="bg-white rounded-[2rem] overflow-hidden border border-slate-200 shadow-sm"
             >
-               <div className="bg-[#1a202c] p-16 lg:p-24 text-center relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1.5 bg-[#9b1c1c]"></div>
-                  <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#9b1c1c]/10 rounded-full blur-3xl"></div>
-                  
-                  <motion.div 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", damping: 15 }}
-                    className="w-48 h-48 bg-white/5 rounded-[3rem] flex items-center justify-center mx-auto mb-12 border-2 border-white/10 backdrop-blur-xl shadow-2xl relative"
-                  >
-                     <div className="text-center">
-                        <span className="block text-6xl font-black text-white leading-none tracking-tighter italic">{score}</span>
-                        <span className="block text-[10px] font-black text-[#9b1c1c] uppercase tracking-[0.3em] mt-4">OUT OF {totalMarks}</span>
-                     </div>
-                     <motion.div 
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-                        className="absolute inset-0 border-2 border-[#9b1c1c]/20 rounded-[3rem] border-t-[#9b1c1c]"
-                     ></motion.div>
-                  </motion.div>
-                  
-                  <h2 className="text-4xl lg:text-6xl font-black text-white mb-6 uppercase tracking-tighter italic leading-none">
-                     {percentage >= 70 ? 'Superior Performance!' : percentage >= 40 ? 'Great Progress!' : 'Core Foundation Set!'}
-                  </h2>
-                  <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-[10px]">Verification Fingerprint: {token.slice(0,12).toUpperCase()}</p>
-               </div>
+              <div className="bg-gradient-to-r from-[#0f172a] to-[#1f2a44] text-white p-10 lg:p-14 text-center">
+                <div className="mx-auto w-28 h-28 rounded-[1.5rem] bg-white/10 border border-white/20 flex items-center justify-center mb-6">
+                  <div>
+                    <p className="text-5xl font-black leading-none">{score}</p>
+                    <p className="text-[10px] uppercase tracking-[0.25em] text-rose-300 mt-2">Out of {totalMarks}</p>
+                  </div>
+                </div>
+                <h2 className="text-5xl lg:text-6xl font-black italic uppercase leading-none mb-4">{performanceLabel}</h2>
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-300">Verification Fingerprint: {token.slice(0, 16).toUpperCase()}</p>
+              </div>
 
-               <div className="p-12 lg:p-20 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-                  <div className="space-y-10">
-                     <h3 className="text-xs font-black text-[#1a202c] uppercase tracking-[0.4em] text-center md:text-left">Performance Insights</h3>
-                     <div className="space-y-4">
-                        {[
-                          { icon: <FiTarget className="text-[#9b1c1c]" />, label: "Accuracy", value: `${percentage}%` },
-                          { icon: <FiZap className="text-[#2c336b]" />, label: "Module Status", value: "Verified" },
-                          { icon: <FiStar className="text-amber-500" />, label: "Rating", value: percentage >= 70 ? '⭐️⭐️⭐️⭐️⭐️' : '⭐️⭐️⭐️⭐️' }
-                        ].map((stat, i) => (
-                           <div key={i} className="flex items-center gap-6 bg-[#fafafa] p-6 rounded-[2rem] border border-slate-50 group hover:bg-white hover:shadow-xl transition-all duration-300">
-                              <div className="bg-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">{stat.icon}</div>
-                              <div>
-                                 <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">{stat.label}</span>
-                                 <span className="block text-xl font-black text-[#1a202c] tracking-tighter leading-none italic">{stat.value}</span>
-                              </div>
-                           </div>
+              <div className="p-8 lg:p-12 grid md:grid-cols-2 gap-6 items-start">
+                <div className="space-y-3">
+                  <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500 font-semibold">Performance Insights</h3>
+
+                  <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-rose-500"><FiTarget /></div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500">Accuracy</p>
+                      <p className="text-2xl font-black text-slate-900">{percentage}%</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-indigo-600"><FiZap /></div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500">Module Status</p>
+                      <p className="text-2xl font-black text-slate-900">Verified</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-amber-500"><FiStar /></div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500">Rating</p>
+                      <div className="flex items-center gap-1 text-amber-500">
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <FiStar key={i} className={i < stars ? 'fill-current' : 'text-slate-300'} />
                         ))}
-                     </div>
+                      </div>
+                    </div>
                   </div>
+                </div>
 
-                  <div className="bg-[#9b1c1c]/5 p-12 rounded-[3.5rem] border border-[#9b1c1c]/10 text-center space-y-10 relative overflow-hidden">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-[#9b1c1c]/5 rounded-bl-[5rem]"></div>
-                     <div className="bg-white w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl relative z-10 scale-110">
-                        <FiAward size={48} strokeWidth={2.5} className="text-[#9b1c1c]" />
-                     </div>
-                     <div className="space-y-4 relative z-10">
-                        <h4 className="text-2xl font-black text-[#1a202c] leading-none uppercase tracking-tighter italic">Official Mentorship</h4>
-                        <p className="text-slate-500 text-sm font-medium leading-relaxed italic opacity-80">Provide your professional details to receive your verified certificate and performance breakdown.</p>
-                     </div>
-                     <button 
-                        onClick={() => setStep('lead')}
-                        className="w-full bg-[#1a202c] text-white py-6 rounded-2xl font-black shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 relative z-10"
-                     >
-                        Get Scaled Report <FiArrowRight size={20} />
-                     </button>
+                <div className="rounded-[1.8rem] bg-rose-50 border border-rose-100 p-6 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-white border border-rose-100 mx-auto flex items-center justify-center text-rose-600 shadow-sm mb-4">
+                    <FiAward size={28} />
                   </div>
-               </div>
+                  <h4 className="text-3xl font-black italic text-slate-900 uppercase mb-3">Official Certificate</h4>
+                  <p className="text-slate-600 mb-6">
+                    Register your details to unlock certificate download and full performance report.
+                  </p>
+                  <button
+                    data-testid="register-result"
+                    onClick={() => setStep('lead')}
+                    className="w-full rounded-xl bg-slate-900 text-white py-3 font-semibold hover:bg-slate-800 inline-flex items-center justify-center gap-2"
+                  >
+                    Register Result <FiArrowRight />
+                  </button>
+                </div>
+              </div>
             </motion.div>
           )}
 
-          {/* STEP 2: LEAD CAPTURE FORM */}
           {step === 'lead' && (
-            <motion.div 
-               key="lead"
-               initial={{ opacity: 0, scale: 0.98, y: 40 }}
-               animate={{ opacity: 1, scale: 1, y: 0 }}
-               exit={{ opacity: 0, scale: 0.95, y: -20 }}
-               className="bg-white rounded-[4rem] shadow-4xl border border-slate-50 overflow-hidden p-14 lg:p-24 relative"
+            <motion.div
+              data-testid="result-lead-screen"
+              key="lead"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -18 }}
+              className="bg-white rounded-[2rem] overflow-hidden border border-slate-200 shadow-sm p-8 lg:p-12"
             >
-               <div className="absolute top-0 right-0 w-80 h-80 bg-[#9b1c1c]/5 rounded-bl-[10rem] -mr-10 -mt-10 pointer-events-none"></div>
-               
-               <div className="max-w-xl mx-auto space-y-16">
-                  <div className="text-center space-y-6">
-                     <div className="bg-[#9b1c1c]/10 w-20 h-20 rounded-[2rem] flex items-center justify-center text-[#9b1c1c] mx-auto shadow-inner relative">
-                        <FiUser size={36} strokeWidth={2.5} />
-                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
-                           <FiCheckCircle className="text-emerald-500" size={16} />
-                        </div>
-                     </div>
-                     <div>
-                        <h2 className="text-4xl lg:text-5xl font-black text-[#1a202c] tracking-tighter uppercase leading-none italic mb-4">Register Result</h2>
-                        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">Unlock certification and mentorship</p>
-                     </div>
+              <div className="max-w-3xl mx-auto">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-100 mx-auto flex items-center justify-center text-rose-600 mb-4">
+                    <FiUser size={28} />
+                  </div>
+                  <h2 className="text-5xl font-black italic uppercase text-slate-900 mb-2">Register Result</h2>
+                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Unlock Certification And Mentorship</p>
+                </div>
+
+                <form data-testid="result-form" onSubmit={handleInquirySubmit} className="space-y-5">
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-[0.2em] font-semibold text-rose-700 mb-2">Full Name</label>
+                    <div className="relative">
+                      <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        data-testid="result-name"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Enter full name"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 py-3 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-200"
+                      />
+                    </div>
                   </div>
 
-                  <form onSubmit={handleInquirySubmit} className="space-y-8">
-                     <div className="group">
-                        <label className="block text-[9px] font-black text-[#9b1c1c] uppercase tracking-[0.4em] mb-3 ml-2">Full Identity</label>
-                        <div className="relative">
-                            <FiUser className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#9b1c1c] transition-colors" size={24} strokeWidth={2.5} />
-                            <input 
-                                type="text" required
-                                placeholder="Enter full name"
-                                className="w-full bg-[#fafafa] border-2 border-transparent rounded-[2rem] p-6 pl-16 focus:bg-white focus:border-[#9b1c1c] focus:ring-4 focus:ring-[#9b1c1c]/5 font-black transition-all text-gray-800 tracking-tight"
-                                value={formData.name}
-                                onChange={e => setFormData({...formData, name: e.target.value})}
-                            />
-                        </div>
-                     </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-[0.2em] font-semibold text-rose-700 mb-2">Work Email</label>
+                      <div className="relative">
+                        <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          data-testid="result-email"
+                          type="email"
+                          required
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          placeholder="john@example.com"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 py-3 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-200"
+                        />
+                      </div>
+                    </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="group">
-                            <label className="block text-[9px] font-black text-[#9b1c1c] uppercase tracking-[0.4em] mb-3 ml-2">Work Email</label>
-                            <div className="relative">
-                                <FiMail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#9b1c1c] transition-colors" size={24} strokeWidth={2.5} />
-                                <input 
-                                    type="email" required
-                                    placeholder="john@example.com"
-                                    className="w-full bg-[#fafafa] border-2 border-transparent rounded-[2rem] p-6 pl-16 focus:bg-white focus:border-[#9b1c1c] focus:ring-4 focus:ring-[#9b1c1c]/5 font-black transition-all text-gray-800 tracking-tight"
-                                    value={formData.email}
-                                    onChange={e => setFormData({...formData, email: e.target.value})}
-                                />
-                            </div>
-                        </div>
-                        <div className="group">
-                            <label className="block text-[9px] font-black text-[#9b1c1c] uppercase tracking-[0.4em] mb-3 ml-2">Phone Number</label>
-                            <div className="relative">
-                                <FiPhone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#9b1c1c] transition-colors" size={24} strokeWidth={2.5} />
-                                <input 
-                                    type="tel" required
-                                    placeholder="+91 XXXXX XXXXX"
-                                    className="w-full bg-[#fafafa] border-2 border-transparent rounded-[2rem] p-6 pl-16 focus:bg-white focus:border-[#9b1c1c] focus:ring-4 focus:ring-[#9b1c1c]/5 font-black transition-all text-gray-800 tracking-tight"
-                                    value={formData.phone}
-                                    onChange={e => setFormData({...formData, phone: e.target.value})}
-                                />
-                            </div>
-                        </div>
-                     </div>
-                     
-                     <div className="group">
-                        <label className="block text-[9px] font-black text-[#9b1c1c] uppercase tracking-[0.4em] mb-3 ml-2">Current Location</label>
-                        <div className="relative">
-                            <FiMapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#9b1c1c] transition-colors" size={24} strokeWidth={2.5} />
-                            <input 
-                                type="text" required
-                                placeholder="City, State"
-                                className="w-full bg-[#fafafa] border-2 border-transparent rounded-[2rem] p-6 pl-16 focus:bg-white focus:border-[#9b1c1c] focus:ring-4 focus:ring-[#9b1c1c]/5 font-black transition-all text-gray-800 tracking-tight"
-                                value={formData.location}
-                                onChange={e => setFormData({...formData, location: e.target.value})}
-                            />
-                        </div>
-                     </div>
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-[0.2em] font-semibold text-rose-700 mb-2">Phone Number</label>
+                      <div className="relative">
+                        <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          data-testid="result-phone"
+                          type="tel"
+                          required
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          placeholder="+91 XXXXX XXXXX"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 py-3 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-200"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                     {error && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 bg-rose-50 text-rose-600 rounded-3xl border border-rose-100 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-4">
-                           <FiShield size={20} strokeWidth={3} /> {error}
-                        </motion.div>
-                     )}
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-[0.2em] font-semibold text-rose-700 mb-2">Current Location</label>
+                    <div className="relative">
+                      <FiMapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        data-testid="result-location"
+                        required
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        placeholder="City, State"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 py-3 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-200"
+                      />
+                    </div>
+                  </div>
 
-                     <button 
-                         type="submit"
-                         disabled={submitting}
-                         className="w-full bg-[#9b1c1c] text-white p-7 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.4em] shadow-3xl shadow-[#9b1c1c]/20 hover:bg-[#7f1717] hover:scale-[1.02] active:scale-95 transition-all disabled:bg-slate-200 flex items-center justify-center gap-4"
-                     >
-                        {submitting ? 'Authenticating Identity...' : 'Generate Full Report ⚡️'}
-                     </button>
-                     <button type="button" onClick={() => setStep('score')} className="w-full text-slate-300 font-black text-[10px] uppercase tracking-[0.3em] mt-6 hover:text-[#9b1c1c] transition-colors duration-300 italic">Back to Score Registry</button>
-                  </form>
-               </div>
+                  {error && <p className="text-sm text-rose-600 font-medium">{error}</p>}
+
+                  <button
+                    data-testid="generate-report"
+                    disabled={submitting}
+                    className="w-full rounded-full bg-[#af1f26] text-white py-4 font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#941b21] disabled:opacity-60"
+                  >
+                    {submitting ? 'Submitting...' : 'Generate Full Report'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStep('score')}
+                    className="w-full text-slate-400 text-xs uppercase tracking-[0.2em] font-semibold hover:text-slate-700 inline-flex items-center justify-center gap-2"
+                  >
+                    <FiArrowLeft /> Back To Score Screen
+                  </button>
+                </form>
+              </div>
             </motion.div>
           )}
 
-          {/* STEP 3: FINAL SUCCESS */}
           {step === 'final' && (
-            <motion.div 
-               key="final"
-               initial={{ opacity: 0, scale: 0.95 }}
-               animate={{ opacity: 1, scale: 1 }}
-               className="bg-white rounded-[4rem] shadow-4xl border border-slate-50 p-16 lg:p-32 text-center overflow-hidden relative"
+            <motion.div
+              data-testid="result-final-screen"
+              key="final"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-[2rem] border border-slate-200 shadow-sm p-8 lg:p-12"
             >
-               <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-emerald-500 via-[#9b1c1c] to-emerald-500 animate-pulse"></div>
-               
-               <div className="space-y-12 max-w-2xl mx-auto">
-                    <div className="bg-emerald-50 w-32 h-32 rounded-[3.5rem] flex items-center justify-center mx-auto shadow-2xl relative">
-                        <FiCheckCircle size={56} strokeWidth={3} className="text-emerald-500 animate-bounce" />
-                        <div className="absolute -top-4 -right-4 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-xl text-[#9b1c1c] font-black animate-pulse">!</div>
-                    </div>
-                    
-                    <div className="space-y-6">
-                        <h2 className="text-5xl lg:text-7xl font-black text-[#1a202c] tracking-tighter uppercase leading-none italic">Registration Finalized!</h2>
-                        <p className="text-slate-400 text-lg lg:text-2xl font-medium leading-tight italic opacity-80">Your performance report has been securely transmitted. A counselor will reach out via WhatsApp/Email within 2 hours.</p>
-                    </div>
+              <div className="max-w-3xl mx-auto text-center">
+                <div className="w-20 h-20 rounded-[1.6rem] bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-5">
+                  <FiCheckCircle size={42} />
+                </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <button className="bg-slate-50 text-[#1a202c] p-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-3 hover:bg-[#1a202c] hover:text-white transition-all border border-slate-100 shadow-sm">
-                           <FiDownload size={18} strokeWidth={3} /> Download Report
-                        </button>
-                        <button className="bg-[#9b1c1c] text-white p-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-3 hover:bg-[#7f1717] transition-all shadow-3xl shadow-[#9b1c1c]/20">
-                           <FiBarChart2 size={18} strokeWidth={3} /> View Analytics
-                        </button>
-                    </div>
+                <h2 className="text-5xl lg:text-6xl font-black italic uppercase text-slate-900 leading-none mb-4">Registration Finalized</h2>
+                <p className="text-slate-500 text-xl leading-relaxed mb-9">
+                  Your performance report has been securely submitted. You can now download your certificate and report.
+                </p>
 
-                    <div className="pt-10">
-                        <p className="text-[9px] text-[#9b1c1c]/30 font-black uppercase tracking-[1em] mb-4">PROTOCOL V2.0 ENCRYPTED</p>
-                        <div className="inline-flex items-center gap-3 bg-slate-50 px-6 py-3 rounded-full border border-slate-100">
-                           <FiShield className="text-[#9b1c1c]" size={14} />
-                           <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{token.toUpperCase()}</span>
-                        </div>
-                    </div>
-               </div>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <button
+                    data-testid="download-certificate"
+                    onClick={downloadCertificate}
+                    className="rounded-xl bg-slate-100 border border-slate-200 text-slate-800 py-3 font-semibold hover:bg-slate-200 inline-flex items-center justify-center gap-2"
+                  >
+                    <FiAward /> Download Certificate
+                  </button>
+
+                  <button
+                    data-testid="download-report"
+                    onClick={downloadReport}
+                    className="rounded-xl bg-[#af1f26] text-white py-3 font-semibold hover:bg-[#941b21] inline-flex items-center justify-center gap-2"
+                  >
+                    <FiDownload /> Download Report
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/')}
+                    className="rounded-xl bg-slate-900 text-white py-3 font-semibold hover:bg-slate-800 inline-flex items-center justify-center gap-2"
+                  >
+                    <FiBarChart2 /> View Analytics
+                  </button>
+                </div>
+
+                <div className="mt-10">
+                  <p className="text-[11px] uppercase tracking-[0.25em] text-rose-300 mb-3">Protocol v2.0 encrypted</p>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500 font-semibold">
+                    <FiShield className="text-rose-500" /> {token.toUpperCase()}
+                  </div>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
     </div>
   );

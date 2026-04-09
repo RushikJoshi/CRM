@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "tmp_check_pw.js",
-  "scripts": {},
+  "scripts": {
+    "e2e": "npm --prefix client run e2e",
+    "e2e:smoke": "npm --prefix client run e2e:smoke",
+    "e2e:headed": "npm --prefix client run e2e:headed"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TechDhruv16/CRM.git"

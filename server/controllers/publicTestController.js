@@ -78,12 +78,18 @@ exports.startTest = async (req, res, next) => {
        return res.status(400).json({ success: false, message: "Identify assessment first." });
     }
 
-    const course = await Course.findById(courseId);
-    console.log(`COURSE STATUS ${courseId}: ${course ? (course.isActive ? 'Active' : 'Inactive') : 'NOT FOUND'}`);
-    if (!course || !course.isActive) {
-       console.error(`Course ${courseId} is inactive or not found`);
-       return res.status(404).json({ success: false, message: "Assessment inactive." });
+    // Tenant-safe validation: requested course must belong to requested company and be active.
+    const course = await Course.findOne({ _id: courseId, companyId, isActive: true });
+    if (!course) {
+      const fallbackCourse = await Course.findById(courseId).select("companyId isActive");
+      if (!fallbackCourse || !fallbackCourse.isActive) {
+        console.error(`Course ${courseId} is inactive or not found`);
+        return res.status(404).json({ success: false, message: "Assessment inactive." });
+      }
+      console.error(`Tenant mismatch: course ${courseId} does not belong to company ${companyId}`);
+      return res.status(403).json({ success: false, message: "This assessment is not available for this company." });
     }
+    console.log(`COURSE STATUS ${courseId}: Active`);
 
     // Generate UUID token
     const token = crypto.randomUUID();
@@ -97,12 +103,19 @@ exports.startTest = async (req, res, next) => {
        console.error(`ERROR: Assessment "${course.title}" has zero questions. (ID: ${courseId})`);
        return res.status(400).json({ 
          success: false, 
-         message: "Course content is currently empty. Please add at least 1-10 questions for this assessment in the Admin Dashboard under Test Management." 
+         message: "Course content is currently empty. Please add at least 1 question for this assessment in the Admin Dashboard under Test Management." 
        });
     }
 
-    // Filter, Shuffle, Limit 10 (or pool size if < 10), Shuffle options, Remove correctAnswers
-    const snapshot = pool.sort(() => 0.5 - Math.random()).slice(0, 10).map(q => {
+    // Shuffle questions and include full course pool by default.
+    // Optional safety cap: set TEST_QUESTION_LIMIT in environment to enforce an upper bound.
+    const configuredLimit = Number(process.env.TEST_QUESTION_LIMIT);
+    const maxQuestions = Number.isFinite(configuredLimit) && configuredLimit > 0
+      ? Math.min(pool.length, configuredLimit)
+      : pool.length;
+
+    // Shuffle options and remove correct answers from frontend payload.
+    const snapshot = pool.sort(() => 0.5 - Math.random()).slice(0, maxQuestions).map(q => {
       const { correctAnswer, ...safe } = q;
       safe.options = [...q.options].sort(() => 0.5 - Math.random());
       return { ...safe, originalAnswer: correctAnswer }; 
@@ -201,6 +214,9 @@ exports.logProctoring = async (req, res, next) => {
   try {
     const { token, violations, proctoringStatus } = req.body;
     if (!token) return res.status(400).json({ success: false, message: "Token required." });
+    if (proctoringStatus && !["active", "completed"].includes(proctoringStatus)) {
+      return res.status(400).json({ success: false, message: "Invalid proctoring status." });
+    }
 
     let log = await ProctoringLog.findOne({ token });
     if (!log) {
@@ -211,12 +227,13 @@ exports.logProctoring = async (req, res, next) => {
     // User said: "Send data every 10–15 seconds: { testId, violations, timestamp }"
     // This implies violations are totals or current snapshots.
     // I'll assume they are totals from the frontend for simplicity.
+    const safeViolations = violations || {};
     log.violations = {
-      noFace: violations.noFace || 0,
-      multipleFaces: violations.multipleFaces || 0,
-      tabSwitch: violations.tabSwitch || 0,
-      noise: violations.noise || 0,
-      fullscreenExit: violations.fullscreenExit || 0
+      noFace: safeViolations.noFace || 0,
+      multipleFaces: safeViolations.multipleFaces || 0,
+      tabSwitch: safeViolations.tabSwitch || 0,
+      noise: safeViolations.noise || 0,
+      fullscreenExit: safeViolations.fullscreenExit || 0
     };
 
     // Calculate score
@@ -228,9 +245,12 @@ exports.logProctoring = async (req, res, next) => {
     score -= (log.violations.fullscreenExit * 15);
 
     log.score = Math.max(0, score);
+    if (proctoringStatus) {
+      log.status = proctoringStatus;
+    }
     await log.save();
 
-    res.json({ success: true, score: log.score });
+    res.json({ success: true, score: log.score, status: log.status });
   } catch (error) { next(error); }
 };
 
@@ -260,7 +280,8 @@ exports.submitLead = async (req, res, next) => {
     const companyId = submission.companyId;
     const phoneStr = phone ? String(phone).trim() : "";
     const emailStr = String(email).trim().toLowerCase();
-    const testScorePerc = Math.round((submission.score / (submission.totalMarks || 10)) * 100);
+    const fallbackTotalMarks = submission?.questions?.length || 1;
+    const testScorePerc = Math.round((submission.score / (submission.totalMarks || fallbackTotalMarks)) * 100);
 
     // 1. DUPLICATE CHECK (24H)
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -317,7 +338,7 @@ exports.submitLead = async (req, res, next) => {
     }
 
     // Notify admin/candidate (optional/legacy)
-    sendResultEmail(emailStr, name, submission.score, submission.totalMarks || 10);
+    sendResultEmail(emailStr, name, submission.score, submission.totalMarks || fallbackTotalMarks);
 
     // Final response
     res.json({ 

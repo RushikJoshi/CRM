@@ -1,9 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as faceapi from "@vladmandic/face-api";
-import { FiCamera, FiMic, FiAlertTriangle, FiMaximize, FiMinimize, FiActivity } from "react-icons/fi";
+import { FiCamera, FiAlertTriangle, FiMaximize, FiActivity } from "react-icons/fi";
 import API from "../services/api";
 
-const ProctoringOverlay = ({ token, stream, isStarted, proctoringStatus, onViolationsUpdate, onLimitReached }) => {
+const ProctoringOverlay = ({
+    token,
+    stream,
+    isStarted,
+    proctoringStatus,
+    onViolationsUpdate,
+    onLimitReached,
+    onWarningAction
+}) => {
     const videoRef = useRef(null);
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const [camActive, setCamActive] = useState(false);
@@ -31,7 +39,10 @@ const ProctoringOverlay = ({ token, stream, isStarted, proctoringStatus, onViola
         statusRef.current = proctoringStatus;
     }, [proctoringStatus]);
 
-    const dismissWarning = () => setLastWarning("");
+    const dismissWarning = () => {
+        if (onWarningAction && lastWarning) onWarningAction(lastWarning);
+        setLastWarning("");
+    };
 
     // Toast logic (max once per 5 sec)
     const showWarning = (msg) => {
@@ -48,7 +59,6 @@ const ProctoringOverlay = ({ token, stream, isStarted, proctoringStatus, onViola
                 return newCount;
             });
             
-            setTimeout(() => setLastWarning(""), 4000);
         }
     };
 
@@ -74,7 +84,11 @@ const ProctoringOverlay = ({ token, stream, isStarted, proctoringStatus, onViola
             videoRef.current.srcObject = stream;
             setCamActive(true);
             setMicActive(true);
-            setupAudioAnalysis(stream);
+            const cleanupAudio = setupAudioAnalysis(stream);
+            return () => {
+                if (typeof cleanupAudio === "function") cleanupAudio();
+                setMicActive(false);
+            };
         }
     }, [stream]);
 
@@ -101,7 +115,10 @@ const ProctoringOverlay = ({ token, stream, isStarted, proctoringStatus, onViola
                 clearInterval(interval);
                 audioCtx.close();
             };
-        } catch (e) { console.warn("Audio analysis blocked."); }
+        } catch (e) {
+            console.warn("Audio analysis blocked.");
+            return () => {};
+        }
     };
 
     // Face Detection Loop
@@ -237,7 +254,7 @@ const ProctoringOverlay = ({ token, stream, isStarted, proctoringStatus, onViola
                         onClick={dismissWarning}
                         className="shrink-0 rounded-full bg-white text-[#9b1c1c] px-6 py-3 text-[10px] font-black uppercase tracking-[0.25em] shadow-xl hover:bg-slate-100 transition-colors"
                     >
-                        Action
+                        OK
                     </button>
                  </div>
             </div>

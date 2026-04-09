@@ -11,8 +11,11 @@ const formatDateTime = (d) => {
 };
 
 function LeadPipelineCard({ lead, isOverlay = false, onView }) {
-  if (!lead || lead._id == null) return null;
-  const id = String(lead._id);
+  const isValidLead = Boolean(lead && lead._id != null);
+  const safeLead = isValidLead
+    ? lead
+    : { _id: "__invalid__", name: "", stageUpdatedAt: null, updatedAt: null, createdAt: null };
+  const id = String(safeLead._id);
   const {
     attributes,
     listeners,
@@ -20,7 +23,13 @@ function LeadPipelineCard({ lead, isOverlay = false, onView }) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id, data: { type: "lead", lead } });
+  } = useSortable({
+    id,
+    data: { type: "lead", lead: safeLead },
+    disabled: !isValidLead || isOverlay,
+  });
+
+  if (!isValidLead) return null;
 
   const style = {
     transform: CSS.Transform.toString(transform),

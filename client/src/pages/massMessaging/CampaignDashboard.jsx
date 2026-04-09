@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
 import { API_BASE_URL } from "../../config/api";
@@ -10,22 +10,27 @@ const CampaignDashboard = () => {
     const [campaigns, setCampaigns] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchCampaigns();
-        const timer = window.setInterval(fetchCampaigns, 15000);
-        return () => window.clearInterval(timer);
-    }, []);
-
-    const fetchCampaigns = async () => {
+    const fetchCampaigns = useCallback(async () => {
         try {
             const res = await API.get("/mass-messaging");
             setCampaigns(res.data?.data || []);
             setLoading(false);
-        } catch (err) {
+        } catch {
             toast.error("Failed to load campaigns.");
             setLoading(false);
         }
-    };
+    }, [toast]);
+
+    useEffect(() => {
+        const initialTimer = window.setTimeout(() => {
+            void fetchCampaigns();
+        }, 0);
+        const timer = window.setInterval(fetchCampaigns, 15000);
+        return () => {
+            window.clearTimeout(initialTimer);
+            window.clearInterval(timer);
+        };
+    }, [fetchCampaigns]);
 
     const getStatusColor = (status) => {
         switch (status) {

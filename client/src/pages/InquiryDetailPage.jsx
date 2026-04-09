@@ -10,7 +10,6 @@ import { useToast } from "../context/ToastContext";
 import { getCurrentUser } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 
-// eslint-disable-next-line no-unused-vars
 function formatDate(d) {
     return d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
 }
