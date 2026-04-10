@@ -191,15 +191,21 @@ exports.publicCreateInquiry = async (req, res) => {
         const normalizedEmail = normalizeEmail(email);
         const normalizedPhone = normalizePhone(phoneStr);
 
-        // 1. DUPLICATE PREVENTION: Check same phone OR email within last 24 hours
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        let inquiry = await Inquiry.findOne({
-            companyId,
-            type: "INQUIRY",
-            isDeleted: false,
-            $or: [{ emailNormalized: normalizedEmail }, { phoneNormalized: normalizedPhone || "NONE" }],
-            createdAt: { $gte: twentyFourHoursAgo }
-        });
+        // 1. Optional duplicate upsert mode.
+        // Default behavior: always create a new inquiry row for every external/public submit.
+        // To re-enable "update latest duplicate", send upsertDuplicate=true from caller.
+        const shouldUpsertDuplicate = String(req.body?.upsertDuplicate || "").toLowerCase() === "true";
+        let inquiry = null;
+        if (shouldUpsertDuplicate) {
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            inquiry = await Inquiry.findOne({
+                companyId,
+                type: "INQUIRY",
+                isDeleted: false,
+                $or: [{ emailNormalized: normalizedEmail }, { phoneNormalized: normalizedPhone || "NONE" }],
+                createdAt: { $gte: twentyFourHoursAgo }
+            });
+        }
 
         if (inquiry) {
             // Update existing
