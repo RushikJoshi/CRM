@@ -33,8 +33,7 @@ const InquiriesPage = () => {
             const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
             if (search) params.set("search", search);
             if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
-            if (typeFilter === "external") params.set("isExternal", "true");
-            if (typeFilter === "internal") params.set("isExternal", "false");
+            if (typeFilter && typeFilter !== "all") params.set("source", typeFilter);
             
             const res = await API.get(`/inquiries?${params.toString()}`);
             const data = res.data?.data || res.data || [];
@@ -148,6 +147,7 @@ const InquiriesPage = () => {
                                 <option value="whatsapp">WhatsApp</option>
                                 <option value="manual">Manual</option>
                                 <option value="ads">Ads</option>
+                                <option value="test_portal">Test Portal</option>
                             </select>
                         </div>
                 </div>

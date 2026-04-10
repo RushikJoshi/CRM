@@ -26,7 +26,7 @@ const AssessmentResult = () => {
 
   const scoreData = location.state?.scoreData;
 
-  const [step, setStep] = useState('score'); // score -> lead -> final
+  const [step, setStep] = useState('lead'); // lead -> score -> final
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -80,7 +80,7 @@ const AssessmentResult = () => {
         ...formData,
         proctoringStatus: proctoringStatus || 'active'
       });
-      setStep('final');
+      setStep('score');
     } catch (err) {
       setError(err.response?.data?.message || 'Could not register details. Please try again.');
     } finally {
@@ -176,7 +176,7 @@ const AssessmentResult = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#eef1f5] py-10 px-4">
+    <div className="min-h-screen bg-[#eef1f5] py-10 px-4 selection:bg-amber-300 selection:text-slate-900">
       <div className="max-w-5xl mx-auto">
         <AnimatePresence mode="wait">
           {step === 'score' && (
@@ -188,64 +188,66 @@ const AssessmentResult = () => {
               exit={{ opacity: 0, y: -18 }}
               className="bg-white rounded-[2rem] overflow-hidden border border-slate-200 shadow-sm"
             >
-              <div className="bg-gradient-to-r from-[#0f172a] to-[#1f2a44] text-white p-10 lg:p-14 text-center">
-                <div className="mx-auto w-28 h-28 rounded-[1.5rem] bg-white/10 border border-white/20 flex items-center justify-center mb-6">
+              <div className="bg-gradient-to-r from-[#0f172a] to-[#1f2a44] text-white p-8 lg:p-10">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                   <div>
-                    <p className="text-5xl font-black leading-none">{score}</p>
-                    <p className="text-[10px] uppercase tracking-[0.25em] text-rose-300 mt-2">Out of {totalMarks}</p>
+                    <p className="text-[10px] uppercase tracking-[0.25em] text-slate-300">Assessment Snapshot</p>
+                    <h2 className="text-3xl lg:text-4xl font-black italic uppercase leading-none mt-2 selection:bg-cyan-300 selection:text-slate-950">{performanceLabel}</h2>
+                    <p className="text-xs uppercase tracking-[0.25em] text-slate-300 mt-3">Verification Fingerprint: {token.slice(0, 16).toUpperCase()}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/20 bg-white/10 px-5 py-4 min-w-[180px]">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-300">Score</p>
+                    <p className="text-4xl font-black leading-none mt-1">{score}<span className="text-base font-semibold text-slate-300">/{totalMarks}</span></p>
+                    <p className="text-xs text-emerald-300 font-semibold mt-2">{percentage}% Accuracy</p>
                   </div>
                 </div>
-                <h2 className="text-5xl lg:text-6xl font-black italic uppercase leading-none mb-4">{performanceLabel}</h2>
-                <p className="text-xs uppercase tracking-[0.25em] text-slate-300">Verification Fingerprint: {token.slice(0, 16).toUpperCase()}</p>
               </div>
 
-              <div className="p-8 lg:p-12 grid md:grid-cols-2 gap-6 items-start">
-                <div className="space-y-3">
-                  <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500 font-semibold">Performance Insights</h3>
-
-                  <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-rose-500"><FiTarget /></div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wider text-slate-500">Accuracy</p>
-                      <p className="text-2xl font-black text-slate-900">{percentage}%</p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-indigo-600"><FiZap /></div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wider text-slate-500">Module Status</p>
-                      <p className="text-2xl font-black text-slate-900">Verified</p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-amber-500"><FiStar /></div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wider text-slate-500">Rating</p>
-                      <div className="flex items-center gap-1 text-amber-500">
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <FiStar key={i} className={i < stars ? 'fill-current' : 'text-slate-300'} />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+              <div className="p-6 lg:p-8 grid md:grid-cols-2 gap-5 items-start">
+                <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                  <div className="bg-slate-50 px-4 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Performance Table</div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      <tr className="border-t border-slate-100">
+                        <td className="px-4 py-3 font-semibold text-slate-500">Total Score</td>
+                        <td className="px-4 py-3 text-right font-black text-slate-900">{score} / {totalMarks}</td>
+                      </tr>
+                      <tr className="border-t border-slate-100">
+                        <td className="px-4 py-3 font-semibold text-slate-500">Accuracy</td>
+                        <td className="px-4 py-3 text-right font-black text-slate-900">{percentage}%</td>
+                      </tr>
+                      <tr className="border-t border-slate-100">
+                        <td className="px-4 py-3 font-semibold text-slate-500">Module Status</td>
+                        <td className="px-4 py-3 text-right font-black text-emerald-600">Verified</td>
+                      </tr>
+                      <tr className="border-t border-slate-100">
+                        <td className="px-4 py-3 font-semibold text-slate-500">Rating</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1 text-amber-500">
+                            {Array.from({ length: 5 }, (_, i) => (
+                              <FiStar key={i} className={i < stars ? 'fill-current' : 'text-slate-300'} />
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
 
-                <div className="rounded-[1.8rem] bg-rose-50 border border-rose-100 p-6 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-white border border-rose-100 mx-auto flex items-center justify-center text-rose-600 shadow-sm mb-4">
+                <div className="rounded-[1.5rem] bg-rose-50 border border-rose-100 p-5 text-center">
+                  <div className="w-14 h-14 rounded-xl bg-white border border-rose-100 mx-auto flex items-center justify-center text-rose-600 shadow-sm mb-3">
                     <FiAward size={28} />
                   </div>
-                  <h4 className="text-3xl font-black italic text-slate-900 uppercase mb-3">Official Certificate</h4>
-                  <p className="text-slate-600 mb-6">
-                    Register your details to unlock certificate download and full performance report.
+                  <h4 className="text-2xl font-black italic text-slate-900 uppercase mb-2">Result Registered</h4>
+                  <p className="text-slate-600 mb-4 text-sm">
+                    Your details are captured. Continue to unlock certificate and performance report.
                   </p>
                   <button
-                    data-testid="register-result"
-                    onClick={() => setStep('lead')}
-                    className="w-full rounded-xl bg-slate-900 text-white py-3 font-semibold hover:bg-slate-800 inline-flex items-center justify-center gap-2"
+                    data-testid="continue-final"
+                    onClick={() => setStep('final')}
+                    className="w-full rounded-xl bg-slate-900 text-white py-2.5 font-semibold hover:bg-slate-800 inline-flex items-center justify-center gap-2"
                   >
-                    Register Result <FiArrowRight />
+                    Continue <FiArrowRight />
                   </button>
                 </div>
               </div>
@@ -347,10 +349,10 @@ const AssessmentResult = () => {
 
                   <button
                     type="button"
-                    onClick={() => setStep('score')}
+                    onClick={() => navigate('/')}
                     className="w-full text-slate-400 text-xs uppercase tracking-[0.2em] font-semibold hover:text-slate-700 inline-flex items-center justify-center gap-2"
                   >
-                    <FiArrowLeft /> Back To Score Screen
+                    <FiArrowLeft /> Back To Home
                   </button>
                 </form>
               </div>

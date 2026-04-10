@@ -435,34 +435,61 @@ const AssessmentTest = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.2 }}
-                      className="h-full bg-white border border-slate-200 rounded-2xl p-4 lg:p-6 flex flex-col"
+                      className="h-full bg-white border border-slate-200 rounded-2xl p-3 lg:p-4 flex flex-col"
                     >
-                      <h2 className="text-xl lg:text-3xl font-bold leading-snug mb-5 text-slate-900">
+                      <h2 className="text-lg lg:text-xl font-bold leading-snug mb-3 text-slate-900">
                         {currentIndex + 1}. {currentQuestion.question}
                       </h2>
 
-                      <div className="space-y-3 overflow-y-auto pr-1 flex-1">
-                        {currentQuestion.options.map((opt, i) => {
-                          const selected = answers[currentQuestion._id] === opt;
-                          return (
-                            <button
-                              data-testid={`answer-option-${i}`}
-                              key={i}
-                              onClick={() => handleSelect(opt)}
-                              disabled={isPaused}
-                              className={`w-full text-left p-4 lg:p-5 rounded-xl border transition flex items-center gap-4 ${
-                                selected
-                                  ? 'bg-sky-50 border-sky-300'
-                                  : 'bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300'
-                              } ${isPaused ? 'opacity-60 cursor-not-allowed' : ''}`}
-                            >
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-semibold shrink-0 ${selected ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
-                                {String.fromCharCode(65 + i)}
-                              </div>
-                              <span className={`text-base lg:text-lg ${selected ? 'text-sky-900 font-semibold' : 'text-slate-700'}`}>{opt}</span>
-                            </button>
-                          );
-                        })}
+                      <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">
+                          Question <span className="font-bold text-slate-900">{currentIndex + 1} / {testData.questions.length}</span>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">
+                          Selected <span className="font-bold text-slate-900">{answers[currentQuestion._id] || 'Not selected'}</span>
+                        </div>
+                      </div>
+
+                      <div className="overflow-y-auto pr-1 flex-1">
+                        <div className="rounded-xl border border-slate-200 overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-slate-50 text-slate-500 uppercase tracking-[0.08em] text-[11px]">
+                              <tr>
+                                <th className="px-3 py-2 text-left w-16">Option</th>
+                                <th className="px-3 py-2 text-left">Answer</th>
+                                <th className="px-3 py-2 text-right w-28">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {currentQuestion.options.map((opt, i) => {
+                                const selected = answers[currentQuestion._id] === opt;
+                                return (
+                                  <tr
+                                    key={i}
+                                    className={`border-t border-slate-100 ${selected ? 'bg-sky-50' : 'bg-white'} ${isPaused ? 'opacity-60' : ''}`}
+                                  >
+                                    <td className="px-3 py-2.5 font-bold text-slate-700">{String.fromCharCode(65 + i)}</td>
+                                    <td className={`px-3 py-2.5 ${selected ? 'font-semibold text-sky-900' : 'text-slate-700'}`}>{opt}</td>
+                                    <td className="px-3 py-2.5 text-right">
+                                      <button
+                                        data-testid={`answer-option-${i}`}
+                                        onClick={() => handleSelect(opt)}
+                                        disabled={isPaused}
+                                        className={`inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                                          selected
+                                            ? 'bg-sky-600 text-white'
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                        } ${isPaused ? 'cursor-not-allowed' : ''}`}
+                                      >
+                                        {selected ? 'Selected' : 'Choose'}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
 
                       <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">

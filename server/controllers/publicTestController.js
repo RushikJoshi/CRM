@@ -6,6 +6,7 @@ const ProctoringLog = require("../models/ProctoringLog");
 const LandingPage = require("../models/LandingPage");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
+const Branch = require("../models/Branch");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
@@ -293,13 +294,32 @@ exports.submitLead = async (req, res, next) => {
 
     let inquiry = await Inquiry.findOne({
       companyId,
+      type: "INQUIRY",
+      isDeleted: false,
       $or: [{ email: emailStr }, { phone: phoneStr || "NONE" }],
       createdAt: { $gte: twentyFourHoursAgo }
     });
 
+    const defaultBranch = await Branch.findOne({
+      companyId,
+      isDeleted: false,
+      status: "active"
+    }).sort({ createdAt: 1 });
+
+    if (!defaultBranch?._id) {
+      return res.status(400).json({
+        success: false,
+        message: "No active branch configured for this company. Please contact support."
+      });
+    }
+
     if (inquiry) {
       // Update existing
       inquiry.name = name;
+      inquiry.email = emailStr;
+      inquiry.emailNormalized = emailStr;
+      inquiry.phone = phoneStr;
+      inquiry.phoneNormalized = phoneStr || "";
       inquiry.courseSelected = course?.title || inquiry.courseSelected;
       inquiry.testScore = testScorePerc;
       inquiry.proctoringScore = pScore;
@@ -308,15 +328,21 @@ exports.submitLead = async (req, res, next) => {
       inquiry.proctoringStatus = proctoringStatus || (procLog ? "active" : "unknown");
       inquiry.location = location || inquiry.location;
       inquiry.message = `Updated via Test Portal (Score: ${testScorePerc}%) [Proctoring: ${pScore} / ${pRisk}]`;
+      inquiry.branchId = inquiry.branchId || defaultBranch._id;
+      inquiry.assignedBranchId = inquiry.assignedBranchId || defaultBranch._id;
+      inquiry.assignedManagerId = inquiry.assignedManagerId || defaultBranch.branchManagerId || null;
       await inquiry.save();
     } else {
       // Create new
       inquiry = await Inquiry.create({
         name,
         email: emailStr,
+        emailNormalized: emailStr,
         phone: phoneStr,
+        phoneNormalized: phoneStr || "",
         location: location || "",
         companyId,
+        type: "INQUIRY",
         source: "test_portal",
         courseSelected: course?.title || "Unknown",
         testScore: testScorePerc,
@@ -325,6 +351,9 @@ exports.submitLead = async (req, res, next) => {
         testToken: token,
         proctoringStatus: proctoringStatus || (procLog ? "active" : "unknown"),
         status: "new",
+        branchId: defaultBranch._id,
+        assignedBranchId: defaultBranch._id,
+        assignedManagerId: defaultBranch.branchManagerId || null,
         message: `Captured via Test Portal Assessment (Result: ${submission.score}/${submission.totalMarks}) [Proctoring: ${pScore} / ${pRisk}]`
       });
 
