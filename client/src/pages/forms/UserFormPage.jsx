@@ -60,7 +60,7 @@ const inputCls = (errors, field) =>
     errors[field] ? "border-[#EF4444]" : "border-[#E5E7EB]"
   }`;
 const labelCls = "block text-sm font-medium text-[#6B7280] mb-1.5";
-const cardCls = "bg-white rounded-xl border border-[#E5E7EB] shadow-sm overflow-hidden";
+const cardCls = "bg-white rounded-xl border border-[#E5E7EB] shadow-sm overflow-visible";
 const sectionTitleCls = "flex items-center gap-2 text-sm font-semibold text-[#111827] px-5 py-4 border-b border-[#E5E7EB] bg-[#F8FAFC]";
 const requiredNumberRule = (label) => (value) => {
   const raw = String(value ?? "").trim();

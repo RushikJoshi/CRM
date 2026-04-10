@@ -6,7 +6,8 @@ exports.getCities = async (req, res) => {
   try {
     const { q, search, id } = req.query;
     const searchTerm = String(q ?? search ?? "").trim();
-    const query = { isActive: true };
+    // Keep backward compatibility with older records that do not have isActive set.
+    const query = { isActive: { $ne: false } };
 
     if (id) {
       query._id = id;
