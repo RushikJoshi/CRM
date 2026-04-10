@@ -53,7 +53,7 @@ const CitySelect = ({ value, onChange, placeholder = "Search and select city..."
     try {
       const search = String(q || "").trim();
       const res = await API.get("/cities", {
-        params: search ? { q: search } : {}
+        params: search ? { q: search, search } : {}
       });
       setCities(res.data.data);
     } catch (err) {

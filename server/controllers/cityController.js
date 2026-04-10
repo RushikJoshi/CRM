@@ -4,21 +4,21 @@ const escapeRegex = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g,
 
 exports.getCities = async (req, res) => {
   try {
-    const { q, id } = req.query;
+    const { q, search, id } = req.query;
+    const searchTerm = String(q ?? search ?? "").trim();
     const query = { isActive: true };
 
     if (id) {
       query._id = id;
-    } else if (q && String(q).trim()) {
-      const search = String(q).trim();
-      const safePattern = escapeRegex(search);
+    } else if (searchTerm) {
+      const safePattern = escapeRegex(searchTerm);
       query.$or = [
         { name: { $regex: safePattern, $options: "i" } },
         { state: { $regex: safePattern, $options: "i" } }
       ];
     }
 
-    console.log(`[CITY] Fetching cities matching: "${q || "ALL"}"`);
+    console.log(`[CITY] Fetching cities matching: "${searchTerm || "ALL"}"`);
     const cities = await City.find(query).sort({ name: 1 }).limit(20).lean();
     console.log(`[CITY] Found ${cities.length} cities.`);
     return res.json({ success: true, data: cities });
