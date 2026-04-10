@@ -236,34 +236,6 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-/* ================= GET USER BY ID ================= */
-exports.getUserById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const mongoose = require("mongoose");
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: "Invalid ID format" });
-    }
-
-    let query = { _id: id, isDeleted: { $ne: true } };
-    if (req.user.role !== "super_admin") {
-      query.companyId = req.user.companyId;
-    }
-
-    const user = await User.findOne(query).select("-password")
-      .populate("branchId", "name branchCode")
-      .populate("primaryBranchId", "name branchCode")
-      .populate("companyId", "name");
-
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    res.json({ success: true, data: user });
-  } catch (error) {
-    console.error("GET USER BY ID ERROR:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 /* ================= GET ASSIGNABLE USERS ================= */
 exports.getAssignableUsers = async (req, res) => {
   try {

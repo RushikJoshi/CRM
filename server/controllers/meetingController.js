@@ -9,6 +9,11 @@ const ACTIVE_STATUSES = ["Scheduled", "Confirmed", "In Progress"];
 const DEFAULT_REMINDER_MINUTES = [30];
 
 const normalizeDate = (value) => (value ? new Date(value) : null);
+const normalizeObjectIdInput = (value) => {
+  if (value === null || value === undefined) return undefined;
+  const raw = String(value).trim();
+  return raw ? raw : undefined;
+};
 
 const buildReminderPlan = (payload = {}, currentMeeting = null) => {
   const minuteValues = Array.isArray(payload.reminderMinutes) && payload.reminderMinutes.length
@@ -124,6 +129,11 @@ const validateAndNormalizePayload = async (req, currentMeeting = null) => {
     notes: payload.notes || currentMeeting?.notes || "",
     meetingType: payload.meetingType || currentMeeting?.meetingType || "Consultation",
     status: payload.status || currentMeeting?.status || "Scheduled",
+    assignedTo: normalizeObjectIdInput(payload.assignedTo) || currentMeeting?.assignedTo || undefined,
+    leadId: normalizeObjectIdInput(payload.leadId) || currentMeeting?.leadId || undefined,
+    inquiryId: normalizeObjectIdInput(payload.inquiryId) || currentMeeting?.inquiryId || undefined,
+    customerId: normalizeObjectIdInput(payload.customerId) || currentMeeting?.customerId || undefined,
+    dealId: normalizeObjectIdInput(payload.dealId) || currentMeeting?.dealId || undefined,
   };
 
   normalized.shareMessage = buildShareMessage(normalized);
@@ -143,7 +153,7 @@ const checkConflict = async ({ companyId, meetingId = null, assignedTo, startDat
 
 exports.createMeeting = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     const companyId = req.user.companyId;
     const payload = await validateAndNormalizePayload(req);
     const assignedTo = payload.assignedTo || userId;
@@ -228,7 +238,7 @@ exports.getMeetings = async (req, res) => {
 
     const query = { companyId: req.user.companyId };
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
-    if (req.user.role === "sales") query.assignedTo = req.user.id;
+    if (req.user.role === "sales") query.assignedTo = req.user.id || req.user._id;
 
     if (start && end) {
       query.startDate = { $gte: new Date(start), $lte: new Date(end) };
@@ -281,7 +291,7 @@ exports.getMeetingById = async (req, res) => {
   try {
     const query = { _id: req.params.id, companyId: req.user.companyId };
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
-    if (req.user.role === "sales") query.assignedTo = req.user.id;
+    if (req.user.role === "sales") query.assignedTo = req.user.id || req.user._id;
 
     const data = await Meeting.findOne(query)
       .populate("leadId", "name email phone")
@@ -302,13 +312,13 @@ exports.updateMeeting = async (req, res) => {
   try {
     const query = { _id: req.params.id, companyId: req.user.companyId };
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
-    if (req.user.role === "sales") query.assignedTo = req.user.id;
+    if (req.user.role === "sales") query.assignedTo = req.user.id || req.user._id;
 
     const current = await Meeting.findOne(query);
     if (!current) return res.status(404).json({ success: false, message: "Meeting not found" });
 
     const payload = await validateAndNormalizePayload(req, current);
-    const assignedTo = payload.assignedTo || current.assignedTo || req.user.id;
+    const assignedTo = payload.assignedTo || current.assignedTo || req.user.id || req.user._id;
 
     const overlap = await checkConflict({
       companyId: req.user.companyId,
@@ -353,7 +363,7 @@ exports.deleteMeeting = async (req, res) => {
   try {
     const query = { _id: req.params.id, companyId: req.user.companyId };
     if (req.user.role === "branch_manager") query.branchId = req.user.branchId;
-    if (req.user.role === "sales") query.assignedTo = req.user.id;
+    if (req.user.role === "sales") query.assignedTo = req.user.id || req.user._id;
 
     const deleted = await Meeting.findOneAndDelete(query);
     if (!deleted) return res.status(404).json({ success: false, message: "Meeting not found" });

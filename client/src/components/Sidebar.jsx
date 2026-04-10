@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     FiGrid,
@@ -31,7 +31,9 @@ import {
     FiX,
     FiMail,
     FiSend,
-    FiLayout
+    FiLayout,
+    FiToggleLeft,
+    FiToggleRight
 } from "react-icons/fi";
 import { AuthContext, getCurrentUser, USER_DATA_KEYS } from "../context/AuthContext";
 import logo from "/src/assets/logos/edupathpro_logo.png";
@@ -42,6 +44,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
     const { logout } = useContext(AuthContext);
     const user = getCurrentUser() || {};
     const role = user.role;
+    const [isDesktop, setIsDesktop] = useState(() => (typeof window !== "undefined" ? window.innerWidth >= 1024 : false));
+    const [isPinned, setIsPinned] = useState(false);
 
     const rolePrefix = (() => {
         if (role === "super_admin") return "/superadmin";
@@ -50,6 +54,42 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
         if (role === "sales") return "/sales";
         return "";
     })();
+    const pinStorageKey = useMemo(() => `crm.sidebar.pinned.${role || "guest"}`, [role]);
+
+    useEffect(() => {
+        const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    useEffect(() => {
+        if (!isDesktop) return;
+        const savedPinned = localStorage.getItem(pinStorageKey) === "1";
+        setIsPinned(savedPinned);
+        setIsCollapsed(!savedPinned);
+    }, [isDesktop, pinStorageKey, setIsCollapsed]);
+
+    const handlePinToggle = () => {
+        const next = !isPinned;
+        setIsPinned(next);
+        localStorage.setItem(pinStorageKey, next ? "1" : "0");
+        if (isDesktop) {
+            setIsCollapsed(!next);
+        }
+    };
+
+    const handleMouseEnter = () => {
+        if (isDesktop && !isPinned) {
+            setIsCollapsed(false);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        if (isDesktop && !isPinned) {
+            setIsCollapsed(true);
+        }
+    };
 
     const menuGroups = role === "super_admin" ? [
         {
@@ -128,6 +168,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
             )}
 
             <aside
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
                 className={`fixed lg:relative z-[90] lg:z-10 h-full bg-[var(--sb-bg)] transition-all duration-300 flex flex-col border-r border-[var(--sb-border)] ${
                     isCollapsed ? "w-[var(--sb-collapsed)]" : "w-[var(--sb-width)]"
                 } ${isMobileOpen ? "left-0" : "-left-80 lg:left-0"}`}
@@ -154,12 +196,33 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
                         </div>
                     </div>
                     {!isCollapsed && (
-                        <button
-                            onClick={() => setIsCollapsed(true)}
-                            className="p-1.5 rounded-md text-[var(--sb-text)] hover:bg-[var(--sb-hover)] transition-colors opacity-60 hover:opacity-100 hidden lg:block"
-                        >
-                            <FiChevronLeft size={16} />
-                        </button>
+                        <div className="hidden lg:flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={handlePinToggle}
+                                className={`p-1.5 rounded-md transition-colors ${
+                                    isPinned
+                                        ? "text-[#2563EB] bg-[#EFF6FF]"
+                                        : "text-[var(--sb-text)] hover:bg-[var(--sb-hover)] opacity-70 hover:opacity-100"
+                                }`}
+                                title={isPinned ? "Unfix sidebar" : "Fix sidebar"}
+                                aria-label={isPinned ? "Unfix sidebar" : "Fix sidebar"}
+                            >
+                                {isPinned ? <FiToggleRight size={16} /> : <FiToggleLeft size={16} />}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsPinned(false);
+                                    localStorage.setItem(pinStorageKey, "0");
+                                    setIsCollapsed(true);
+                                }}
+                                className="p-1.5 rounded-md text-[var(--sb-text)] hover:bg-[var(--sb-hover)] transition-colors opacity-60 hover:opacity-100"
+                                title="Collapse sidebar"
+                                aria-label="Collapse sidebar"
+                            >
+                                <FiChevronLeft size={16} />
+                            </button>
+                        </div>
                     )}
                     {/* Mobile Close Button */}
                     <button 
@@ -172,6 +235,19 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
 
                 {isCollapsed && (
                     <div className="flex justify-center py-4 border-b border-[var(--sb-border)]">
+                        <button
+                            type="button"
+                            onClick={handlePinToggle}
+                            className={`p-1.5 rounded-md transition-colors mr-1 ${
+                                isPinned
+                                    ? "text-[#2563EB] bg-[#EFF6FF]"
+                                    : "text-[var(--sb-text)] hover:bg-[var(--sb-hover)] opacity-70 hover:opacity-100"
+                            }`}
+                            title={isPinned ? "Unfix sidebar" : "Fix sidebar"}
+                            aria-label={isPinned ? "Unfix sidebar" : "Fix sidebar"}
+                        >
+                            {isPinned ? <FiToggleRight size={16} /> : <FiToggleLeft size={16} />}
+                        </button>
                         <button
                             onClick={() => setIsCollapsed(false)}
                             className="p-1.5 rounded-md text-[var(--sb-text)] hover:bg-[var(--sb-hover)] transition-colors opacity-60 hover:opacity-100"

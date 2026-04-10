@@ -95,6 +95,7 @@ const buildFormFromMeeting = (meeting = {}) => ({
 });
 
 const buildFormFromPrefill = (prefill = {}, currentUser = null) => {
+  const currentUserId = currentUser?.id || currentUser?._id || "";
   const startDate = prefill.startDate || plusMinutes(new Date(), 30);
   return {
     ...emptyForm,
@@ -102,7 +103,7 @@ const buildFormFromPrefill = (prefill = {}, currentUser = null) => {
     title: prefill.title || (prefill.contactName ? `${prefill.contactName} Meeting` : "New Meeting"),
     startDate,
     endDate: prefill.endDate || plusMinutes(startDate, 30),
-    assignedTo: prefill.assignedTo || currentUser?.id || "",
+    assignedTo: prefill.assignedTo || currentUserId,
     status: prefill.status || "Scheduled",
     meetingType: prefill.meetingType || "Consultation",
     attendanceMode: prefill.attendanceMode || "online",
@@ -139,6 +140,7 @@ export default function MeetingsPage() {
   const location = useLocation();
   const toast = useToast();
   const currentUser = getCurrentUser();
+  const currentUserId = currentUser?.id || currentUser?._id || "";
   const prefillConsumed = useRef(false);
 
   const [meetings, setMeetings] = useState([]);
@@ -149,7 +151,7 @@ export default function MeetingsPage() {
   const [editingMeeting, setEditingMeeting] = useState(null);
   const [formData, setFormData] = useState({
     ...emptyForm,
-    assignedTo: currentUser?.id || "",
+    assignedTo: currentUserId,
     startDate: plusMinutes(new Date(), 30),
     endDate: plusMinutes(new Date(), 60),
   });
@@ -239,7 +241,7 @@ export default function MeetingsPage() {
     setEditingMeeting(null);
     setFormData({
       ...emptyForm,
-      assignedTo: currentUser?.id || "",
+      assignedTo: currentUserId,
       startDate: plusMinutes(new Date(), 30),
       endDate: plusMinutes(new Date(), 60),
     });
@@ -291,11 +293,6 @@ export default function MeetingsPage() {
       return;
     }
 
-    if (["online", "hybrid"].includes(formData.attendanceMode) && !formData.meetingLink.trim()) {
-      toast.error("Please add the meeting link for online or hybrid meetings.");
-      return;
-    }
-
     if (["offline", "in_person", "hybrid"].includes(formData.attendanceMode) && !formData.location.trim()) {
       toast.error("Please add the meeting location.");
       return;
@@ -303,10 +300,17 @@ export default function MeetingsPage() {
 
     try {
       setSaving(true);
+      const rawLink = formData.meetingLink.trim();
+      const resolvedMeetingLink = rawLink;
+
       const payload = {
         ...formData,
+        assignedTo: String(formData.assignedTo || "").trim() || undefined,
+        leadId: String(formData.leadId || "").trim() || undefined,
+        inquiryId: String(formData.inquiryId || "").trim() || undefined,
+        meetingLink: resolvedMeetingLink,
         channel: formData.attendanceMode,
-        onlineUrl: formData.meetingLink,
+        onlineUrl: resolvedMeetingLink,
       };
 
       if (editingMeeting?._id) {

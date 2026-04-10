@@ -138,6 +138,7 @@ export default function UserFormPage() {
   const isView = searchParams.get("mode") === "view";
   const toast = useToast();
   const currentUser = getCurrentUser();
+  const currentCompanyId = currentUser?.companyId || "";
   const isSuperAdmin = currentUser?.role === "super_admin";
   const isBranchManager = currentUser?.role === "branch_manager";
   const apiBase = isSuperAdmin ? "/super-admin/users" : "/users";
@@ -376,7 +377,7 @@ export default function UserFormPage() {
           status: u.status || "active",
           language: u.language || "en",
           timezone: u.timezone || "Asia/Kolkata",
-          companyId: u.companyId?._id || u.companyId || currentUser?.companyId || "",
+          companyId: u.companyId?._id || u.companyId || currentCompanyId || "",
         });
         setStep(0);
       } catch (_) {
@@ -386,7 +387,7 @@ export default function UserFormPage() {
       }
     })();
     return () => { active = false; };
-  }, [id, isEdit, apiBase, currentUser]);
+  }, [id, isEdit, apiBase, currentCompanyId]);
 
   const buildPayload = (statusOverride) => {
     const payload = {
@@ -472,8 +473,11 @@ export default function UserFormPage() {
   }, [getStepSchema, formData]);
 
   const handleStepClick = async (targetStep) => {
-    if (isView) return;
     if (targetStep <= step) {
+      setStep(targetStep);
+      return;
+    }
+    if (isView) {
       setStep(targetStep);
       return;
     }
@@ -579,8 +583,7 @@ export default function UserFormPage() {
                     onClick={() => handleStepClick(idx)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors ${
                       active ? "bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]" : done ? "bg-white text-[#111827] border-[#E5E7EB] hover:bg-[#F8FAFC]" : "bg-white text-[#6B7280] border-[#E5E7EB] hover:bg-[#F8FAFC]"
-                    } ${isView ? "cursor-default" : ""}`}
-                    disabled={isView}
+                    }`}
                     title={s.label}
                   >
                     {s.icon}

@@ -51,7 +51,10 @@ const CitySelect = ({ value, onChange, placeholder = "Search and select city..."
   const fetchCities = async (q) => {
     setLoading(true);
     try {
-      const res = await API.get(`/cities?q=${q}`);
+      const search = String(q || "").trim();
+      const res = await API.get("/cities", {
+        params: search ? { q: search } : {}
+      });
       setCities(res.data.data);
     } catch (err) {
       console.error("Fetch cities failed", err);
