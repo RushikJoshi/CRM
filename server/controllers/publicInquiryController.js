@@ -195,6 +195,8 @@ exports.publicCreateInquiry = async (req, res) => {
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
         let inquiry = await Inquiry.findOne({
             companyId,
+            type: "INQUIRY",
+            isDeleted: false,
             $or: [{ emailNormalized: normalizedEmail }, { phoneNormalized: normalizedPhone || "NONE" }],
             createdAt: { $gte: twentyFourHoursAgo }
         });
@@ -243,6 +245,7 @@ exports.publicCreateInquiry = async (req, res) => {
                 source: source || "landing_page",
                 courseSelected,
                 testScore: testScore || 0,
+                type: "INQUIRY",
                 status: "new",
                 companyId,
                 branchId: resolved.branch._id,
